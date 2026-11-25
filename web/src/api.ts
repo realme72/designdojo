@@ -42,6 +42,24 @@ export type RunEntry = {
   result: JudgeResult
 }
 
+export type Smell = {
+  id: string
+  title: string
+  suggests: string[]
+  level: 'warning' | 'info'
+  file: string
+  line_start: number
+  line_end: number
+  symbol: string
+  evidence: string
+}
+export type Analysis = {
+  lang: Lang
+  smells: Smell[]
+  mermaid: string
+  stats: { files: number; lines: number; classes: number; abstractions: number; methods: number }
+}
+
 async function req<T>(method: string, url: string, body?: unknown): Promise<T> {
   const r = await fetch(url, {
     method,
@@ -77,6 +95,7 @@ export const api = {
   reset: (id: string, lang: Lang) => req<{ ok: true; backup: string | null }>('POST', `${ws(id, lang)}/reset`),
   judge: (id: string, lang: Lang, mode: Mode) => req<RunEntry>('POST', `${ws(id, lang)}/judge`, { mode }),
   history: (id: string, lang: Lang) => req<RunEntry[]>('GET', `${ws(id, lang)}/history`),
+  analysis: (id: string, lang: Lang) => req<Analysis>('GET', `${ws(id, lang)}/analysis`),
 }
 
 export const EXT: Record<Lang, string> = { java: '.java', python: '.py' }

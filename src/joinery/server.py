@@ -252,6 +252,14 @@ def history(problem_id: str, lang: str, limit: int = 30):
     return list(reversed(entries))[:limit]
 
 
+@app.get("/api/ws/{problem_id}/{lang}/analysis")
+def analysis(problem_id: str, lang: str):
+    from .analyzer import analyze
+
+    ws = _workspace(problem_id, lang)
+    return analyze(ws.root, ws.lang, concurrency=ws.problem.concurrency, contract_types=ws.problem.contract_types)
+
+
 # ------------------------------------------------------------------ web UI
 
 

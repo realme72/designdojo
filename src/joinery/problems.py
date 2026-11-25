@@ -41,6 +41,15 @@ class Problem:
         return load_contract(self.root / "contract.yaml")
 
     @property
+    def concurrency(self) -> bool:
+        return "concurrency" in (self.meta.get("tags") or [])
+
+    @property
+    def contract_types(self) -> set[str]:
+        c = self.contract
+        return set(c.interfaces) | set(c.provided)
+
+    @property
     def statement(self) -> str:
         return (self.root / self.meta.get("statement", "statement.md")).read_text()
 

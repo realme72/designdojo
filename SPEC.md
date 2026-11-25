@@ -8,8 +8,9 @@ A personal LLD practice playground. Pick a problem, design and implement it in
 and a **coach** that points at specific lines and says *"this is where
 principle/pattern X would help, and here's why."*
 
-Status: v1 (2026-11-26). **M0, M1 and M5 (web UI) done**: Parking Lot judged
-end-to-end in Java and Python, from the CLI or the browser. M2–M4 next. Single user (self-prep). May go public later.
+Status: v1 (2026-11-26). **M0, M1, M2 (analyzer) and M5 (web UI) done**: Parking Lot
+judged end-to-end in Java and Python from the CLI or browser, with design signals and a
+class diagram. M3 (coach) and M4 (curveballs) next. Single user (self-prep). May go public later.
 
 ---
 
@@ -238,6 +239,15 @@ Each detector outputs `{smell_id, file, line_start, line_end, evidence}`.
 | `SPECULATIVE_PATTERN` | Factory with one product, interface with one trivial impl, Singleton without need | **Over-engineering**; simplify |
 
 Detectors are allowed to be noisy. The coach decides what's worth reporting.
+
+As built (M2): all of the above except `MANUAL_FANOUT` and `PRIMITIVE_OBSESSION`
+(too noisy without type information), plus `DIRECT_TIME` (reads the system clock
+instead of the injected Clock). Smells carry `level`: `warning` or `info` (a
+single-implementation interface or a Singleton is `info`). `UNGUARDED_SHARED` only runs
+for problems tagged `concurrency`, and treats `synchronized` methods/blocks,
+`.lock()` callers and Python `with <lock>` blocks as guarded. Calibration: both
+reference solutions produce zero warnings; the naive fixtures produce exactly
+TYPE_SWITCH ×2 + UNGUARDED_SHARED.
 
 ---
 

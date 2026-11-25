@@ -51,6 +51,32 @@ def cmd_submit(args) -> int:
     return _judge(args, list(SUITES))
 
 
+def cmd_analyze(args) -> int:
+    from .analyzer import analyze
+
+    ws = Workspace.open(Path(args.dir))
+    a = analyze(ws.root, ws.lang, concurrency=ws.problem.concurrency, contract_types=ws.problem.contract_types)
+    if args.json:
+        print(json.dumps(a, indent=2))
+        return 0
+    if args.mermaid:
+        print(a["mermaid"])
+        return 0
+    st = a["stats"]
+    print(report.bold(f"{ws.problem.title} · {ws.lang} · design signals"))
+    print(report.dim(f"{st['files']} files, {st['lines']} lines, {st['classes']} classes, "
+                     f"{st['abstractions']} abstractions, {st['methods']} methods\n"))
+    if not a["smells"]:
+        print(report.green("  No smells detected."))
+    for s in a["smells"]:
+        mark = report.yellow("!") if s["level"] == "warning" else report.dim("i")
+        print(f"  {mark} {s['title']}  {report.dim(s['file'] + ':' + str(s['line_start']))}")
+        print(f"      {s['evidence']}")
+        print(report.dim(f"      → {', '.join(s['suggests'])}"))
+    print(report.dim("\n  These are signals, not verdicts. The coach (M3) decides which ones matter here."))
+    return 0
+
+
 def cmd_build_images(args) -> int:
     for lang in codegen.LANGS:
         tag = ensure_image(lang, force=args.force, quiet=False)
@@ -93,6 +119,12 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("dir", help="workspace dir")
         s.add_argument("--json", action="store_true", help="print raw result JSON")
         s.set_defaults(fn=fn)
+
+    s = sub.add_parser("analyze", help="class graph + design smells (static; nothing is executed)")
+    s.add_argument("dir", help="workspace dir")
+    s.add_argument("--json", action="store_true")
+    s.add_argument("--mermaid", action="store_true", help="print the class diagram as Mermaid")
+    s.set_defaults(fn=cmd_analyze)
 
     s = sub.add_parser("serve", help="start the web UI")
     s.add_argument("--host", default="127.0.0.1")

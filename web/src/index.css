@@ -265,6 +265,29 @@ kbd {
 .coming h3 { color: var(--text); margin: 0 0 6px; font-size: 15px; }
 .coming ul { padding-left: 18px; }
 
+/* ---------- design signals ---------- */
+.note { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; max-width: 760px; }
+.signal { border: 1px solid var(--border); border-left: 3px solid var(--warn); border-radius: var(--radius); padding: 9px 12px; margin-bottom: 8px; }
+.signal.info { border-left-color: var(--faint); }
+.signal-head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.signal-title { font-weight: 600; }
+.signal .loc { font: 12px var(--mono); cursor: pointer; text-decoration: none; }
+.signal .loc:hover { text-decoration: underline; }
+.signal-body { font-size: 12.5px; margin: 4px 0 6px 23px; }
+.signal .chips { margin-left: 23px; }
+.signal .chip { height: 20px; font-size: 11.5px; }
+.ic-info { color: var(--faint); flex-shrink: 0; }
+.diagram-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.diagram { overflow: auto; }
+.diagram svg { max-width: 100% !important; height: auto; display: block; margin: 0 auto; }
+.diagram-wrap.full {
+  position: fixed; inset: 24px; z-index: 41; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: var(--shadow); padding: 12px 16px; display: flex; flex-direction: column;
+}
+.diagram-wrap.full .diagram { flex: 1; min-height: 0; display: grid; place-items: center; }
+.diagram-wrap.full .diagram svg { max-height: 100%; width: auto; }
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / 45%); }
+
 /* ---------- history ---------- */
 .hist-row {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 16px; border: 0;

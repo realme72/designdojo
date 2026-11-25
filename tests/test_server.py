@@ -63,3 +63,15 @@ def test_judge_strips_hidden_details(client):
             if not suite["visible"] and case["status"] != "pass":
                 assert not {"expected", "actual", "step"} & case.keys(), case
     assert c.get("/api/ws/parking-lot/python/history").json()[0]["id"] == entry["id"]
+
+
+def test_concurrent_workspace_opens_never_see_partial_files(client):
+    """Regression: the page fires several requests at once; each re-scaffolds the workspace."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    c, _ = client
+    c.get("/api/ws/parking-lot/java")
+    urls = ["/api/ws/parking-lot/java", "/api/ws/parking-lot/java/history", "/api/ws/parking-lot/java/analysis"] * 16
+    with ThreadPoolExecutor(16) as pool:
+        codes = list(pool.map(lambda u: c.get(u).status_code, urls))
+    assert set(codes) == {200}

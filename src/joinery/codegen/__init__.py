@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import threading
 from pathlib import Path
 
 from ..contract import Contract
@@ -10,13 +12,17 @@ LANGS = tuple(GENERATORS)
 
 
 def write_files(root: Path, files: dict[str, str], overwrite: bool = True) -> list[Path]:
+    """Write atomically (temp + rename) and skip unchanged files, so concurrent readers never
+    see a half-written file and editors don't see spurious changes."""
     written = []
     for rel, src in files.items():
         path = root / rel
-        if path.exists() and not overwrite:
+        if path.exists() and (not overwrite or path.read_text() == src):
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(src)
+        tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+        tmp.write_text(src)
+        os.replace(tmp, path)
         written.append(path)
     return written
 

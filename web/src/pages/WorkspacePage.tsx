@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import remarkGfm from 'remark-gfm'
-import { api, EXT, LANG_LABEL, type Lang, type Mode, type ProblemDetail, type RunEntry } from '../api'
+import { api, EXT, LANG_LABEL, type Analysis, type Lang, type Mode, type ProblemDetail, type RunEntry } from '../api'
 import Brand from '../components/Brand'
+import DesignPanel from '../components/DesignPanel'
 import FileTree from '../components/FileTree'
 import ResultsPanel from '../components/ResultsPanel'
 import Timer from '../components/Timer'
@@ -58,6 +59,9 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
   const [bottomTab, setBottomTab] = useState<'tests' | 'review'>('tests')
   const [toast, setToast] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [analysis, setAnalysis] = useState<Analysis | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
 
   const filesRef = useRef(files)
   filesRef.current = files
@@ -123,6 +127,24 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     await Promise.all(dirty.map(saveFile))
   }, [saveFile])
 
+  const runAnalysis = useCallback(async () => {
+    setAnalyzing(true)
+    try {
+      await flushAll()
+      setAnalysis(await api.analysis(problemId, lang))
+      setAnalysisError(null)
+    } catch (e) {
+      setAnalysisError((e as Error).message)
+    } finally {
+      setAnalyzing(false)
+    }
+  }, [flushAll, problemId, lang])
+
+  // Re-analyze when the review tab is opened, and after every run.
+  useEffect(() => {
+    if (bottomTab === 'review') runAnalysis()
+  }, [bottomTab, runAnalysis])
+
   const onChange = (value: string | undefined) => {
     if (!active || value === undefined || !files[active]?.editable) return
     const path = active
@@ -164,6 +186,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
         const e = await api.judge(problemId, lang, mode)
         setEntry(e)
         setHistory((h) => [e, ...h])
+        api.analysis(problemId, lang).then(setAnalysis, () => {})
       } catch (err) {
         setToast((err as Error).message)
       } finally {
@@ -251,7 +274,22 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
           endColumn: model.getLineMaxColumn(Math.min(d.line, model.getLineCount())),
         })),
     )
-  }, [entry, active, files])
+    monaco.editor.setModelMarkers(
+      model,
+      'joinery-design',
+      (analysis?.smells ?? [])
+        .filter((s) => s.file === active && s.line_start <= model.getLineCount())
+        .map((s) => ({
+          severity: s.level === 'warning' ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Info,
+          message: `${s.title}: ${s.evidence}\nConsider: ${s.suggests.join(', ')}`,
+          source: 'Joinery design signals',
+          startLineNumber: s.line_start,
+          endLineNumber: s.line_start,
+          startColumn: model.getLineFirstNonWhitespaceColumn(s.line_start) || 1,
+          endColumn: model.getLineMaxColumn(s.line_start),
+        })),
+    )
+  }, [entry, active, files, analysis])
 
   const onMount: OnMount = (ed, m) => {
     editorRef.current = ed
@@ -480,6 +518,9 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                     </button>
                     <button className={bottomTab === 'review' ? 'on' : ''} onClick={() => setBottomTab('review')}>
                       <Sparkles size={13} /> Design review
+                      {analysis && analysis.smells.some((s) => s.level === 'warning') && (
+                        <span className="tab-badge">{analysis.smells.filter((s) => s.level === 'warning').length}</span>
+                      )}
                     </button>
                   </div>
                   <div className="pane-scroll">
@@ -492,19 +533,14 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                         isLatest={!!entry && history[0]?.id === entry.id}
                       />
                     ) : (
-                      <div className="coming">
-                        <h3>The design coach isn't built yet</h3>
-                        <p>
-                          This tab is where milestones M2 and M3 land. The coach will review your code and leave comments
-                          on specific lines:
-                        </p>
-                        <ul>
-                          <li>where a principle (OCP, SRP, DIP…) or pattern would help, and why it matters in this problem</li>
-                          <li>what you did well</li>
-                          <li>where you over-engineered</li>
-                          <li>a class diagram generated from your code</li>
-                        </ul>
-                      </div>
+                      <DesignPanel
+                        analysis={analysis}
+                        loading={analyzing}
+                        error={analysisError}
+                        dark={dark}
+                        onRefresh={runAnalysis}
+                        onJump={jump}
+                      />
                     )}
                   </div>
                 </div>
