@@ -1,6 +1,7 @@
 id: parking-lot
 title: Parking Lot
 difficulty: medium
+category: Booking & reservations
 time_limit_min: 60
 statement: statement.md
 tags: [strategy, open-closed, concurrency]

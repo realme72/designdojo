@@ -1,0 +1,22 @@
+config: {hold_seconds: 300}
+scenarios:
+  - name: one_seat_many_buyers
+    repeat: 20
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 2, cols: 5}}
+      - parallel: {threads: 50, call: hold, args: {show_id: S1, user: "u{i}", seats: [B1]}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {SeatUnavailable: 49}}
+  - name: overlapping_requests_all_or_nothing
+    repeat: 20
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 2, cols: 30}}
+      - parallel: {threads: 30, call: hold, args: {show_id: S1, user: "u{i}", seats: ["A{i+1}", B1]}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {SeatUnavailable: 29}}
+      - {call: available, args: {show_id: S1}, expect: 58}
+  - name: double_confirm_race
+    repeat: 20
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 2}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1]}, bind: h}
+      - parallel: {threads: 20, call: confirm, args: {hold_id: $h}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {UnknownHold: 19}}

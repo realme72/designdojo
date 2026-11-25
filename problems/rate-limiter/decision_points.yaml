@@ -1,0 +1,27 @@
+- id: algorithms
+  keywords: [algorithm, fixed, sliding, token, bucket, window]
+  question: How are the three algorithms organised?
+  good: One interface (e.g. allow(now) -> bool) with a class per algorithm, created by a small factory from the rule; the limiter never switches on the algorithm per request.
+  smells: [TYPE_SWITCH, GOD_CLASS]
+  principles: [OCP]
+  patterns: [Strategy, Factory]
+- id: per_client_state
+  keywords: [client, state, rule, configure, reset]
+  question: Where does per-client state live?
+  good: Each client owns one algorithm instance holding its own state; reconfiguring replaces the instance.
+  principles: [SRP]
+- id: time
+  keywords: [clock, now, time]
+  question: Where does time come from?
+  good: Only the injected Clock, passed into the algorithm, so behaviour is deterministic and testable.
+  smells: [DIRECT_TIME]
+  principles: [DIP]
+- id: precision
+  keywords: [tokens, refill, fraction, rate, float]
+  question: How are fractional token refills handled?
+  good: Exact arithmetic (e.g. tokens scaled by window_seconds) instead of floats that drift.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What makes check-and-record atomic?
+  good: Each client's decision (check + record) happens under that client's lock; different clients don't contend.
+  smells: [UNGUARDED_SHARED]

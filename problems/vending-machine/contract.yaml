@@ -1,0 +1,43 @@
+enums:
+  Coin: [ONE, TWO, FIVE, TEN]
+
+dtos:
+  MachineConfig:
+    coins: "map[Coin, int]"
+  Vend:
+    code: str
+    change: "list[Coin]"
+
+interfaces:
+  VendingMachine:
+    add_product:
+      params: {code: str, name: str, price: int, quantity: int}
+      returns: void
+      raises: [InvalidProduct]
+    insert:
+      params: {coin: Coin}
+      returns: int
+      doc: Returns the session balance.
+    select:
+      params: {code: str}
+      returns: Vend
+      raises: [UnknownProduct, SoldOut, InsufficientFunds, CannotMakeChange]
+    cancel:
+      returns: "list[Coin]"
+    balance:
+      returns: int
+    stock:
+      params: {code: str}
+      returns: int
+      raises: [UnknownProduct]
+
+entrypoint:
+  name: create
+  params: {config: MachineConfig}
+  returns: VendingMachine
+
+errors: [InvalidProduct, UnknownProduct, SoldOut, InsufficientFunds, CannotMakeChange]
+
+docs:
+  MachineConfig: Initial coins available for change; missing coins mean zero.
+  Vend: change is listed from highest to lowest coin value.

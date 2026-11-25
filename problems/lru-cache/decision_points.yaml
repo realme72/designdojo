@@ -1,0 +1,19 @@
+- id: structure
+  keywords: [node, linked, list, map, dict, head, tail, ordered]
+  question: Which data structures give O(1) get and put?
+  good: A hash map to nodes of a doubly linked list (or an ordered map with move-to-end); no scanning on get/put.
+- id: eviction_policy
+  keywords: [evict, policy, least, recent, capacity]
+  question: Is the eviction policy separable from storage?
+  good: Eviction is isolated (a policy object or one clearly named method), so LFU or TTL could replace it without touching get/put callers.
+  principles: [SRP, OCP]
+  patterns: [Strategy]
+- id: concurrency
+  keywords: [lock, synchronized, thread]
+  question: What keeps the map and the recency order consistent under concurrent access?
+  good: One lock covers each operation's map + list update together (get mutates recency too).
+  smells: [UNGUARDED_SHARED]
+- id: overengineering
+  question: Is anything abstracted without a reason to vary?
+  good: A cache this small needs no factories or singletons.
+  smells: [SPECULATIVE_PATTERN]

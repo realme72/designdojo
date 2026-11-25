@@ -1,0 +1,26 @@
+- id: dispatch
+  keywords: [dispatch, assign, nearest, distance, choose, best, cost]
+  question: Where does the choice of elevator for a hall call live?
+  good: Dispatch is a strategy object the controller delegates to; a new algorithm is a new class.
+  smells: [TYPE_SWITCH, GOD_CLASS]
+  principles: [OCP, SRP]
+  patterns: [Strategy]
+- id: elevator_state
+  keywords: [direction, idle, moving, state, reverse]
+  question: How is an elevator's behaviour per state (idle, moving up, moving down) expressed?
+  good: Each elevator owns its movement logic; state-dependent behaviour is in the elevator (or State objects), not switch blocks in the controller.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: requests
+  keywords: [stops, request, press, call, floor]
+  question: How are pending stops stored and served in order?
+  good: An ordered structure per elevator that makes "next stop ahead" and "any stop ahead" cheap and clear.
+- id: concurrency
+  keywords: [lock, synchronized, thread, concurrent]
+  question: What protects an elevator's stops when calls arrive concurrently?
+  good: Mutations of an elevator's stops are atomic (per-elevator lock or one controller lock held briefly).
+  smells: [UNGUARDED_SHARED]
+- id: overengineering
+  question: Is anything abstracted that has no reason to vary?
+  good: No speculative factories or singletons.
+  smells: [SPECULATIVE_PATTERN]

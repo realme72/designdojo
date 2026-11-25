@@ -1,0 +1,111 @@
+scenarios:
+  - name: equal_leftover_cents_go_first
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - call: add_expense
+        args: {paid_by: A, amount: 100, split_type: EQUAL, shares: [{user: B, value: 0}, {user: A, value: 0}, {user: C, value: 0}]}
+      - {call: balances, expect: [{user: A, amount: 67}, {user: B, amount: -34}, {user: C, amount: -33}]}
+  - name: percent_leftover_cents_go_first
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - call: add_expense
+        args: {paid_by: A, amount: 1001, split_type: PERCENT, shares: [{user: B, value: 50}, {user: C, value: 50}]}
+      - {call: balances, expect: [{user: A, amount: 1001}, {user: B, amount: -501}, {user: C, amount: -500}]}
+  - name: percent_uneven
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - call: add_expense
+        args: {paid_by: B, amount: 999, split_type: PERCENT, shares: [{user: A, value: 70}, {user: B, value: 30}]}
+      - {call: balance, args: {user_id: A}, expect: -700}
+      - {call: balance, args: {user_id: B}, expect: 700}
+  - name: exact_must_match_amount
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - call: add_expense
+        args: {paid_by: A, amount: 500, split_type: EXACT, shares: [{user: B, value: 400}]}
+        expect_error: InvalidSplit
+      - {call: balance, args: {user_id: A}, expect: 0}
+  - name: rejected_expense_changes_nothing
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - call: add_expense
+        args: {paid_by: A, amount: 100, split_type: EXACT, shares: [{user: A, value: 150}, {user: B, value: -50}]}
+        expect_error: InvalidSplit
+      - {call: balances, expect: [{user: A, amount: 0}, {user: B, amount: 0}]}
+  - name: invalid_amounts_and_shapes
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_expense, args: {paid_by: A, amount: 0, split_type: EQUAL, shares: [{user: B, value: 0}]}, expect_error: InvalidSplit}
+      - {call: add_expense, args: {paid_by: A, amount: 100, split_type: EQUAL, shares: []}, expect_error: InvalidSplit}
+      - call: add_expense
+        args: {paid_by: A, amount: 100, split_type: EQUAL, shares: [{user: B, value: 0}, {user: B, value: 0}]}
+        expect_error: InvalidSplit
+  - name: unknown_users
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_expense, args: {paid_by: Z, amount: 100, split_type: EQUAL, shares: [{user: A, value: 0}]}, expect_error: UnknownUser}
+      - {call: add_expense, args: {paid_by: A, amount: 100, split_type: EXACT, shares: [{user: Z, value: 10}]}, expect_error: UnknownUser}
+      - {call: balance, args: {user_id: Z}, expect_error: UnknownUser}
+      - {call: settle, args: {from_user: Z, to_user: A, amount: 5}, expect_error: UnknownUser}
+  - name: duplicate_user
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: A}, expect_error: DuplicateUser}
+  - name: expense_ids_unique
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_expense, args: {paid_by: A, amount: 10, split_type: EQUAL, shares: [{user: B, value: 0}]}, bind: e1}
+      - {call: add_expense, args: {paid_by: A, amount: 10, split_type: EQUAL, shares: [{user: B, value: 0}]}, bind: e2}
+      - assert: {distinct: [$e1, $e2]}
+  - name: settle_up_reduces_debt
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - call: add_expense
+        args: {paid_by: A, amount: 300, split_type: EQUAL, shares: [{user: A, value: 0}, {user: B, value: 0}, {user: C, value: 0}]}
+      - {call: settle, args: {from_user: B, to_user: A, amount: 100}}
+      - {call: balances, expect: [{user: A, amount: 100}, {user: B, amount: 0}, {user: C, amount: -100}]}
+  - name: invalid_settlements
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: settle, args: {from_user: A, to_user: B, amount: 0}, expect_error: InvalidAmount}
+      - {call: settle, args: {from_user: A, to_user: A, amount: 10}, expect_error: InvalidAmount}
+  - name: balances_include_idle_users
+    steps:
+      - {call: add_user, args: {user_id: D}}
+      - {call: add_user, args: {user_id: A}}
+      - {call: balances, expect: [{user: A, amount: 0}, {user: D, amount: 0}]}
+  - name: simplify_skips_middleman
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - {call: add_expense, args: {paid_by: A, amount: 300, split_type: EXACT, shares: [{user: B, value: 300}]}}
+      - {call: add_expense, args: {paid_by: B, amount: 300, split_type: EXACT, shares: [{user: C, value: 300}]}}
+      - {call: simplify, expect: [{from_user: C, to_user: A, amount: 300}]}
+  - name: simplify_largest_first
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - {call: add_user, args: {user_id: D}}
+      - {call: add_expense, args: {paid_by: A, amount: 800, split_type: EXACT, shares: [{user: C, value: 600}, {user: D, value: 200}]}}
+      - {call: add_expense, args: {paid_by: B, amount: 300, split_type: EXACT, shares: [{user: A, value: 300}]}}
+      - call: simplify
+        expect: [{from_user: C, to_user: A, amount: 500}, {from_user: D, to_user: B, amount: 200}, {from_user: C, to_user: B, amount: 100}]
+      - {call: balance, args: {user_id: A}, expect: 500}
+  - name: simplify_nothing_owed
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: simplify, expect: []}

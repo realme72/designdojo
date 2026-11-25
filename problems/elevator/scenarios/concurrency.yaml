@@ -1,0 +1,16 @@
+config: {floors: 30, elevators: 1}
+scenarios:
+  - name: concurrent_hall_calls_all_registered
+    repeat: 15
+    steps:
+      - parallel: {threads: 20, call: call, args: {floor: "{i+2}", direction: UP}, collect: r}
+      - assert: {of: r, ok_count: 20}
+      - call: status
+        args: {elevator_id: 1}
+        expect: {stops: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]}
+  - name: concurrent_car_calls_same_floor
+    repeat: 15
+    steps:
+      - parallel: {threads: 20, call: press, args: {elevator_id: 1, floor: 7}, collect: r}
+      - assert: {of: r, ok_count: 20}
+      - {call: status, args: {elevator_id: 1}, expect: {stops: [7]}}

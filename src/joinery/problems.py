@@ -75,6 +75,84 @@ class Problem:
         return {"name": name, "scenarios": scenarios}
 
 
+JAVA_RESERVED = set("""abstract assert boolean break byte case catch char class const continue default do double
+else enum extends final finally float for goto if implements import instanceof int interface long native new
+package private protected public return short static strictfp super switch synchronized this throw throws
+transient try void volatile while true false null var record yield sealed permits""".split())
+PY_RESERVED = set("""False None True and as assert async await break class continue def del elif else except
+finally for from global if import in is lambda nonlocal not or pass raise return try while with yield
+self cls""".split())
+
+STEP_KEYS = {"call", "args", "expect", "expect_error", "bind", "advance_clock", "parallel", "assert"}
+
+
+def lint_problem(p: Problem) -> list[str]:
+    """Static checks that catch authoring mistakes before anything runs."""
+    issues: list[str] = []
+    try:
+        c = p.contract
+    except Exception as e:  # noqa: BLE001
+        return [f"contract: {e}"]
+    for key in ("title", "difficulty", "category"):
+        if key not in p.meta:
+            issues.append(f"problem.yaml: missing {key}")
+    from .contract import snake_to_camel
+
+    names = [(f"field {d}.{f.name}", f.name) for d, fs in c.dtos.items() for f in fs]
+    for group in (c.interfaces, c.provided):
+        for iname, methods in group.items():
+            for m in methods.values():
+                names.append((f"method {iname}.{m.name}", m.name))
+                names += [(f"param {iname}.{m.name}({p.name})", p.name) for p in m.params]
+    names += [(f"entrypoint param {p.name}", p.name) for p in c.entrypoint.params]
+    for what, n in names:
+        if snake_to_camel(n) in JAVA_RESERVED or n in PY_RESERVED:
+            issues.append(f"contract: {what} is a reserved word in Java or Python")
+    iface = c.interfaces[c.entrypoint.returns["name"]]
+    entry_params = {x.name for x in c.entrypoint.params if not (x.type.get("kind") == "iface")}
+    seen: set[str] = set()
+    for suite in SUITES:
+        data = p.suite(suite)
+        if suite == "sample" and not data["scenarios"]:
+            issues.append("scenarios/sample.yaml: no scenarios")
+        for sc in data["scenarios"]:
+            where = f"{suite}/{sc.get('name', '?')}"
+            if sc["name"] in seen:
+                issues.append(f"{where}: scenario name used in more than one suite")
+            seen.add(sc["name"])
+            for prm in entry_params:
+                if prm not in sc:
+                    issues.append(f"{where}: missing entrypoint argument {prm!r}")
+            for i, st in enumerate(sc.get("steps") or [], 1):
+                unknown = set(st) - STEP_KEYS
+                if unknown:
+                    issues.append(f"{where} step {i}: unknown keys {sorted(unknown)}")
+                call = st.get("call") or (st.get("parallel") or {}).get("call")
+                if call is not None:
+                    if call not in iface:
+                        issues.append(f"{where} step {i}: {call!r} is not a method of {c.entrypoint.returns['name']}")
+                        continue
+                    args = st.get("args") or (st.get("parallel") or {}).get("args") or {}
+                    want = {x.name for x in iface[call].params}
+                    if set(args) != want:
+                        issues.append(f"{where} step {i}: {call} args {sorted(args)} != contract {sorted(want)}")
+                err = st.get("expect_error")
+                if err is not None and err not in c.errors:
+                    issues.append(f"{where} step {i}: unknown error {err!r}")
+    if (p.meta.get("tags") and "concurrency" in p.meta["tags"]) != bool(p.suite("concurrency")["scenarios"]):
+        issues.append("tag 'concurrency' and scenarios/concurrency.yaml must go together")
+    ids = [d["id"] for d in p.decision_points]
+    if not ids:
+        issues.append("decision_points.yaml: missing or empty")
+    for d in p.decision_points:
+        for k in ("id", "question", "good"):
+            if k not in d:
+                issues.append(f"decision point {d.get('id', '?')}: missing {k}")
+    if not (p.root / "reference" / "python" / "solution").is_dir():
+        issues.append("reference/python/solution missing")
+    return issues
+
+
 def list_problems() -> list[Problem]:
     if not PROBLEMS_DIR.is_dir():
         return []

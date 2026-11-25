@@ -20,9 +20,23 @@ def failures(result: dict) -> dict[str, set[str]]:
     return {s["name"]: {c["name"] for c in s["cases"] if c["status"] != "pass"} for s in result["suites"]}
 
 
-@pytest.mark.parametrize("lang", LANGS)
-def test_reference_passes_everything(lang):
-    result = judge(Workspace.open(REF / lang), list(SUITES))
+def _references():
+    from joinery.problems import list_problems
+
+    for p in list_problems():
+        for lang in LANGS:
+            ref = p.root / "reference" / lang
+            if (ref / "solution").is_dir():
+                yield pytest.param(p.id, lang, id=f"{p.id}-{lang}")
+
+
+@pytest.mark.parametrize("problem_id,lang", list(_references()))
+def test_reference_passes_everything(problem_id, lang):
+    import json
+
+    ref = ROOT / "problems" / problem_id / "reference" / lang
+    (ref / ".joinery.json").write_text(json.dumps({"problem": problem_id, "lang": lang}) + "\n")
+    result = judge(Workspace.open(ref), list(SUITES))
     assert failures(result) == {s: set() for s in SUITES}
 
 
@@ -92,3 +106,23 @@ public final class Solution {
 """
     cases = judge(workspace("java", {"solution/Solution.java": src}), ["sample"])["suites"][0]["cases"]
     assert all(c["kind"] == "timeout" for c in cases)
+
+
+def _stub_only():
+    from joinery.problems import list_problems
+
+    for p in list_problems():
+        for lang in LANGS:
+            if not (p.root / "reference" / lang / "solution").is_dir():
+                yield pytest.param(p.id, lang, id=f"{p.id}-{lang}-stub")
+
+
+@pytest.mark.parametrize("problem_id,lang", list(_stub_only()))
+def test_generated_contract_compiles(problem_id, lang, tmp_path):
+    """Problems without a reference in this language must still give users a compiling stub."""
+    from joinery.judge import scaffold
+    from joinery.problems import get_problem
+
+    scaffold(get_problem(problem_id), lang, tmp_path / "ws")
+    result = judge(Workspace.open(tmp_path / "ws"), ["sample"])
+    assert result["status"] == "ok", result

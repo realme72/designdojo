@@ -273,6 +273,15 @@ class Scenario:
         for err, want in (a.get("error_count") or {}).items():
             if errs.get(err, 0) != int(want):
                 raise Failure(n, "assertion", f"wrong number of {err} errors", {"error_count": a["error_count"]}, summary)
+        if "value_count" in a:
+            counts: dict[str, int] = {}
+            for o in oks:
+                k = json.dumps(o, sort_keys=True)
+                counts[k] = counts.get(k, 0) + 1
+            for k, want in a["value_count"].items():
+                if counts.get(k, 0) != int(want):
+                    raise Failure(n, "assertion", f"wrong number of calls returning {k}",
+                                  {"value_count": a["value_count"]}, {"value_count": counts})
         if "unique" in a:
             fields = a["unique"] if isinstance(a["unique"], list) else [a["unique"]]
             for f in fields:
@@ -291,7 +300,7 @@ class Scenario:
     def resolve(self, v, i: int):
         if isinstance(v, str):
             if i >= 0:
-                v = v.replace("{i}", str(i))
+                v = re.sub(r"\{i(?:\+(\d+))?\}", lambda m: str(i + int(m.group(1) or 0)), v)
             return self.lookup(v) if v.startswith("$") else v
         if isinstance(v, dict):
             return {k: self.resolve(x, i) for k, x in v.items()}

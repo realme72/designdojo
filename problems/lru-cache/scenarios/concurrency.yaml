@@ -1,0 +1,18 @@
+config: {capacity: 50}
+scenarios:
+  - name: never_exceeds_capacity
+    repeat: 15
+    steps:
+      - parallel: {threads: 100, call: put, args: {key: "k{i}", value: "v{i}"}, collect: r}
+      - assert: {of: r, ok_count: 100}
+      - {call: size, expect: 50}
+      - {call: keys, bind: ks}
+      - assert: {distinct: $ks}
+  - name: concurrent_reads_and_writes
+    repeat: 15
+    steps:
+      - {call: put, args: {key: hot, value: x}}
+      - parallel: {threads: 60, call: put, args: {key: "k{i}", value: "v"}, collect: w}
+      - parallel: {threads: 60, call: get, args: {key: "k{i}"}, collect: g}
+      - assert: {of: w, ok_count: 60}
+      - {call: size, expect: 50}

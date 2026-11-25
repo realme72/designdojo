@@ -1,0 +1,7 @@
+id: movie-booking
+title: Movie Ticket Booking (BookMyShow)
+difficulty: medium
+category: Booking & reservations
+time_limit_min: 60
+statement: statement.md
+tags: [state, concurrency, locking]

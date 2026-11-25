@@ -1,0 +1,59 @@
+enums:
+  SeatState: [AVAILABLE, HELD, BOOKED]
+
+dtos:
+  BookingConfig:
+    hold_seconds: long
+  Booking:
+    id: str
+    show_id: str
+    user: str
+    seats: list[str]
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  BookingSystem:
+    add_show:
+      params: {show_id: str, rows: int, cols: int}
+      returns: void
+      raises: [DuplicateShow, InvalidLayout]
+    hold:
+      params: {show_id: str, user: str, seats: "list[str]"}
+      returns: str
+      raises: [UnknownShow, InvalidSeat, SeatUnavailable]
+      doc: All-or-nothing. Returns a hold id.
+    confirm:
+      params: {hold_id: str}
+      returns: Booking
+      raises: [UnknownHold, HoldExpired]
+    release:
+      params: {hold_id: str}
+      returns: void
+      raises: [UnknownHold, HoldExpired]
+    cancel:
+      params: {booking_id: str}
+      returns: void
+      raises: [UnknownBooking]
+    available:
+      params: {show_id: str}
+      returns: int
+      raises: [UnknownShow]
+    seat_state:
+      params: {show_id: str, seat: str}
+      returns: SeatState
+      raises: [UnknownShow, InvalidSeat]
+
+entrypoint:
+  name: create
+  params: {config: BookingConfig, clock: Clock}
+  returns: BookingSystem
+
+errors: [DuplicateShow, InvalidLayout, UnknownShow, InvalidSeat, SeatUnavailable, UnknownHold, HoldExpired, UnknownBooking]
+
+docs:
+  Booking: seats sorted by row letter, then seat number numerically.

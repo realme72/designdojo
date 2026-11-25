@@ -1,0 +1,21 @@
+scenarios:
+  - name: concurrent_expenses_no_lost_updates
+    repeat: 10
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - parallel:
+          threads: 50
+          call: add_expense
+          args: {paid_by: A, amount: 300, split_type: EQUAL, shares: [{user: A, value: 0}, {user: B, value: 0}, {user: C, value: 0}]}
+          collect: r
+      - assert: {of: r, ok_count: 50, unique: []}
+      - {call: balances, expect: [{user: A, amount: 10000}, {user: B, amount: -5000}, {user: C, amount: -5000}]}
+  - name: concurrent_settlements
+    repeat: 10
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - parallel: {threads: 40, call: settle, args: {from_user: B, to_user: A, amount: 25}, collect: r}
+      - {call: balances, expect: [{user: A, amount: -1000}, {user: B, amount: 1000}]}

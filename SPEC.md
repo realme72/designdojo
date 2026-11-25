@@ -154,7 +154,8 @@ Tests are written once as YAML and run by a small runner in each language.
 
 Step types: `call` (+ `args`, `expect` (subset match), `expect_error`, `bind`),
 `advance_clock`, `parallel`, `assert`. References like `$t.id` or `$a[{i}].ok.id`
-work in args and expectations; `{i}` is the thread index in `parallel`. A file-level
+work in args and expectations; `{i}` (or `{i+N}`) is the thread index in `parallel`,
+and numeric strings are accepted for int/long parameters. A file-level
 `config` is the default for every scenario in it. Every scenario gets a fresh system
 and a judge clock starting at 1700000000.
 
@@ -170,7 +171,8 @@ and a judge clock starting at 1700000000.
         collect: results
     - assert: {of: results, ok_count: 10, error_count: {LotFull: 40}, unique: spot_id}
 ```
-Other assertion: `assert: {distinct: [$a.id, $b.id]}`.
+Other assertions: `assert: {distinct: [$a.id, $b.id]}`, and
+`value_count: {"true": 10}` (how many successful calls returned that JSON value).
 
 - **Java**: real threads spinning at a start line (not parked on a latch) so they
   hit the solution at the same instant; container gets 4 CPUs. Scenario `repeat: N`.

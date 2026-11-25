@@ -1,0 +1,102 @@
+config: {hold_seconds: 300}
+scenarios:
+  - name: hold_is_all_or_nothing
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 4}}
+      - {call: hold, args: {show_id: S1, user: u1, seats: [A3]}}
+      - {call: hold, args: {show_id: S1, user: u2, seats: [A1, A2, A3]}, expect_error: SeatUnavailable}
+      - {call: seat_state, args: {show_id: S1, seat: A1}, expect: AVAILABLE}
+      - {call: available, args: {show_id: S1}, expect: 3}
+  - name: invalid_seat_names
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 2, cols: 5}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [C1]}, expect_error: InvalidSeat}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A0]}, expect_error: InvalidSeat}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A6]}, expect_error: InvalidSeat}
+      - {call: hold, args: {show_id: S1, user: u, seats: [1A]}, expect_error: InvalidSeat}
+      - {call: seat_state, args: {show_id: S1, seat: B9}, expect_error: InvalidSeat}
+  - name: empty_or_repeated_seats
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 5}}
+      - {call: hold, args: {show_id: S1, user: u, seats: []}, expect_error: InvalidSeat}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1, A1]}, expect_error: InvalidSeat}
+      - {call: available, args: {show_id: S1}, expect: 5}
+  - name: unknown_and_duplicate_shows
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 1}}
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 1}, expect_error: DuplicateShow}
+      - {call: hold, args: {show_id: S9, user: u, seats: [A1]}, expect_error: UnknownShow}
+      - {call: available, args: {show_id: S9}, expect_error: UnknownShow}
+  - name: invalid_layouts
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 0, cols: 5}, expect_error: InvalidLayout}
+      - {call: add_show, args: {show_id: S2, rows: 27, cols: 5}, expect_error: InvalidLayout}
+      - {call: add_show, args: {show_id: S3, rows: 2, cols: 0}, expect_error: InvalidLayout}
+  - name: confirm_twice
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 2}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1]}, bind: h}
+      - {call: confirm, args: {hold_id: $h}}
+      - {call: confirm, args: {hold_id: $h}, expect_error: UnknownHold}
+      - {call: confirm, args: {hold_id: nope}, expect_error: UnknownHold}
+  - name: expiry_boundary
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 2}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1]}, bind: h}
+      - advance_clock: 299
+      - {call: seat_state, args: {show_id: S1, seat: A1}, expect: HELD}
+      - {call: confirm, args: {hold_id: $h}, expect: {seats: [A1]}}
+  - name: expired_seats_can_be_rebooked
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 2}}
+      - {call: hold, args: {show_id: S1, user: u1, seats: [A1, A2]}, bind: h}
+      - advance_clock: 301
+      - {call: available, args: {show_id: S1}, expect: 2}
+      - {call: hold, args: {show_id: S1, user: u2, seats: [A2]}, bind: h2}
+      - {call: confirm, args: {hold_id: $h2}, expect: {user: u2, seats: [A2]}}
+      - {call: release, args: {hold_id: $h}, expect_error: HoldExpired}
+  - name: release_frees_seats
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 3}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1, A2]}, bind: h}
+      - {call: release, args: {hold_id: $h}}
+      - {call: available, args: {show_id: S1}, expect: 3}
+      - {call: release, args: {hold_id: $h}, expect_error: UnknownHold}
+      - {call: confirm, args: {hold_id: $h}, expect_error: UnknownHold}
+  - name: cancel_booking_frees_seats
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 3}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A3]}, bind: h}
+      - {call: confirm, args: {hold_id: $h}, bind: b}
+      - {call: hold, args: {show_id: S1, user: v, seats: [A3]}, expect_error: SeatUnavailable}
+      - {call: cancel, args: {booking_id: $b.id}}
+      - {call: seat_state, args: {show_id: S1, seat: A3}, expect: AVAILABLE}
+      - {call: cancel, args: {booking_id: $b.id}, expect_error: UnknownBooking}
+  - name: booked_seat_does_not_expire
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 1}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1]}, bind: h}
+      - {call: confirm, args: {hold_id: $h}}
+      - advance_clock: 10000
+      - {call: seat_state, args: {show_id: S1, seat: A1}, expect: BOOKED}
+      - {call: available, args: {show_id: S1}, expect: 0}
+  - name: seats_sorted_numerically
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 2, cols: 12}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [B1, A10, A2]}, bind: h}
+      - {call: confirm, args: {hold_id: $h}, expect: {seats: [A2, A10, B1]}}
+  - name: shows_are_independent
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 1}}
+      - {call: add_show, args: {show_id: S2, rows: 1, cols: 1}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1]}}
+      - {call: seat_state, args: {show_id: S2, seat: A1}, expect: AVAILABLE}
+  - name: ids_are_unique
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 3}}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A1]}, bind: h1}
+      - {call: hold, args: {show_id: S1, user: u, seats: [A2]}, bind: h2}
+      - {call: confirm, args: {hold_id: $h1}, bind: b1}
+      - {call: confirm, args: {hold_id: $h2}, bind: b2}
+      - assert: {distinct: [$h1, $h2]}
+      - assert: {distinct: [$b1.id, $b2.id]}

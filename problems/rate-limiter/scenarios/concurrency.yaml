@@ -1,0 +1,19 @@
+scenarios:
+  - name: fixed_window_never_over_limit
+    repeat: 15
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: FIXED_WINDOW, limit: 10, window_seconds: 60}}
+      - parallel: {threads: 100, call: allow, args: {client_id: c}, collect: r}
+      - assert: {of: r, ok_count: 100, value_count: {"true": 10, "false": 90}}
+  - name: sliding_log_never_over_limit
+    repeat: 15
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: SLIDING_WINDOW_LOG, limit: 10, window_seconds: 60}}
+      - parallel: {threads: 100, call: allow, args: {client_id: c}, collect: r}
+      - assert: {of: r, ok_count: 100, value_count: {"true": 10, "false": 90}}
+  - name: token_bucket_never_over_limit
+    repeat: 15
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: TOKEN_BUCKET, limit: 10, window_seconds: 60}}
+      - parallel: {threads: 100, call: allow, args: {client_id: c}, collect: r}
+      - assert: {of: r, ok_count: 100, value_count: {"true": 10, "false": 90}}

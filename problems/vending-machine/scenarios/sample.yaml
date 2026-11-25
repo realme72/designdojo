@@ -1,0 +1,20 @@
+config: {coins: {ONE: 5, TWO: 5, FIVE: 5, TEN: 5}}
+scenarios:
+  - name: exact_payment
+    steps:
+      - {call: add_product, args: {code: A1, name: Chips, price: 10, quantity: 2}}
+      - {call: insert, args: {coin: TEN}, expect: 10}
+      - {call: select, args: {code: A1}, expect: {code: A1, change: []}}
+      - {call: stock, args: {code: A1}, expect: 1}
+      - {call: balance, expect: 0}
+  - name: change_returned
+    steps:
+      - {call: add_product, args: {code: B2, name: Soda, price: 7, quantity: 1}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: select, args: {code: B2}, expect: {change: [TWO, ONE]}}
+  - name: insufficient_funds
+    steps:
+      - {call: add_product, args: {code: B2, name: Soda, price: 7, quantity: 1}}
+      - {call: insert, args: {coin: FIVE}}
+      - {call: select, args: {code: B2}, expect_error: InsufficientFunds}
+      - {call: balance, expect: 5}

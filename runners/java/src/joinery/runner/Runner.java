@@ -325,6 +325,19 @@ public final class Runner {
                         return Failure.of(n, "assertion", "wrong number of " + e.getKey() + " errors").with(map("error_count", a.get("error_count")), summary);
                 }
             }
+            if (a.containsKey("value_count")) {
+                Map<String, Object> counts = new LinkedHashMap<>();
+                for (Object r : rs) {
+                    Map<String, Object> m = (Map<String, Object>) r;
+                    if (m.containsKey("ok")) counts.merge(Json.write(m.get("ok")), 1L, (x, y) -> (Long) x + (Long) y);
+                }
+                for (Map.Entry<String, Object> e : ((Map<String, Object>) a.get("value_count")).entrySet()) {
+                    long got = counts.containsKey(e.getKey()) ? (Long) counts.get(e.getKey()) : 0;
+                    if (got != num(e.getValue()))
+                        return Failure.of(n, "assertion", "wrong number of calls returning " + e.getKey())
+                                .with(map("value_count", a.get("value_count")), map("value_count", counts));
+                }
+            }
             if (a.containsKey("unique")) {
                 Object u = a.get("unique");
                 List<Object> fields = u instanceof List ? (List<Object>) u : List.of(u);
@@ -344,7 +357,16 @@ public final class Runner {
 
         Object resolve(Object v, int i) {
             if (v instanceof String s) {
-                if (i >= 0) s = s.replace("{i}", Integer.toString(i));
+                if (i >= 0) {
+                    Matcher tm = Pattern.compile("\\{i(?:\\+(\\d+))?}").matcher(s);
+                    StringBuilder sb = new StringBuilder();
+                    while (tm.find()) {
+                        int off = tm.group(1) == null ? 0 : Integer.parseInt(tm.group(1));
+                        tm.appendReplacement(sb, Integer.toString(i + off));
+                    }
+                    tm.appendTail(sb);
+                    s = sb.toString();
+                }
                 return s.startsWith("$") ? lookup(s) : s;
             }
             if (v instanceof Map<?, ?> m) {
@@ -578,7 +600,10 @@ public final class Runner {
         }
     }
 
-    static long num(Object o) { return ((Number) o).longValue(); }
+    static long num(Object o) {
+        if (o instanceof String s) return Long.parseLong(s.trim());  // templated "{i+1}" args
+        return ((Number) o).longValue();
+    }
 
     static String camel(String s) {
         StringBuilder b = new StringBuilder();

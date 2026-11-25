@@ -1,0 +1,7 @@
+id: elevator
+title: Elevator System
+difficulty: medium
+category: Infrastructure & control
+time_limit_min: 60
+statement: statement.md
+tags: [state, strategy, concurrency]

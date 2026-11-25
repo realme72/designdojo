@@ -1,0 +1,29 @@
+scenarios:
+  - name: fixed_window_basic
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: FIXED_WINDOW, limit: 3, window_seconds: 10}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 10
+      - {call: allow, args: {client_id: c}, expect: true}
+  - name: sliding_log_basic
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: SLIDING_WINDOW_LOG, limit: 2, window_seconds: 10}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 5
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 4
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 1
+      - {call: allow, args: {client_id: c}, expect: true}
+  - name: token_bucket_basic
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: TOKEN_BUCKET, limit: 2, window_seconds: 10}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 5
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}

@@ -113,6 +113,70 @@ def cmd_review(args) -> int:
     return 0
 
 
+def _check_stub_compiles(problem, lang: str) -> str | None:
+    """No reference in this language: make sure the generated contract + stub compile/import."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory(dir=Path.home() / ".cache") as tmp:
+        ws_dir = Path(tmp) / "ws"
+        scaffold(problem, lang, ws_dir)
+        result = judge(Workspace.open(ws_dir), ["sample"])
+    if result.get("status") == "compile_error":
+        return "; ".join(f"{d['file']}:{d['line']} {d['message']}" for d in result["diagnostics"])[:400]
+    if result.get("status") != "ok":
+        return result.get("status", "?")
+    return None
+
+
+def cmd_validate(args) -> int:
+    from .problems import lint_problem
+
+    problems = [get_problem(p) for p in args.problems] if args.problems else list_problems()
+    bad = 0
+    for p in problems:
+        issues = lint_problem(p)
+        line = f"{p.id:<24}"
+        if issues:
+            bad += 1
+            print(report.red(f"{line} lint: {len(issues)} issue(s)"))
+            for i in issues:
+                print(f"    {i}")
+            continue
+        if args.lint_only:
+            print(report.green(f"{line} lint ok"))
+            continue
+        parts = []
+        for lang in codegen.LANGS:
+            ref = p.root / "reference" / lang
+            if not (ref / "solution").is_dir():
+                problem_msg = _check_stub_compiles(p, lang)
+                parts.append(report.red(f"{lang} stub: {problem_msg}") if problem_msg else report.dim(f"{lang} stub ok"))
+                bad += bool(problem_msg)
+                continue
+            meta = ref / ".joinery.json"
+            want = json.dumps({"problem": p.id, "lang": lang}) + "\n"
+            if not meta.exists() or meta.read_text() != want:
+                meta.write_text(want)
+            result = judge(Workspace.open(ref), list(SUITES))
+            passed, total = report.totals(result)
+            ok = result.get("status") == "ok" and passed == total
+            parts.append((report.green if ok else report.red)(f"{lang} {passed}/{total}"))
+            if not ok:
+                bad += 1
+                if args.verbose or result.get("status") != "ok":
+                    print(report.render(result, p.title, lang))
+                else:
+                    for s in result["suites"]:
+                        for case in s["cases"]:
+                            if case["status"] != "pass":
+                                parts.append(f"\n    ✗ {s['name']}/{case['name']}: {case.get('message', '')} "
+                                             f"{json.dumps(case.get('expected')) if 'expected' in case else ''} "
+                                             f"{json.dumps(case.get('actual')) if 'actual' in case else ''}")
+        print(f"{line} " + "  ".join(parts))
+    print(f"\n{len(problems) - bad}/{len(problems)} problems valid")
+    return 1 if bad else 0
+
+
 def cmd_build_images(args) -> int:
     for lang in codegen.LANGS:
         tag = ensure_image(lang, force=args.force, quiet=False)
@@ -168,6 +232,12 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--force", action="store_true", help="ignore the cache")
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_review)
+
+    s = sub.add_parser("validate", help="lint problems and run their reference solutions (authoring)")
+    s.add_argument("problems", nargs="*")
+    s.add_argument("--lint-only", action="store_true")
+    s.add_argument("-v", "--verbose", action="store_true")
+    s.set_defaults(fn=cmd_validate)
 
     s = sub.add_parser("serve", help="start the web UI")
     s.add_argument("--host", default="127.0.0.1")
