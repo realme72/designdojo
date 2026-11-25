@@ -1,0 +1,163 @@
+# Hidden from the solver: only case names and failure kinds are shown.
+config:
+  floors:
+    - {small: 2, medium: 2, large: 1}
+    - {small: 1, medium: 1, large: 1}
+  hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+
+scenarios:
+  - name: available_counts_all_floors
+    steps:
+      - {call: available, args: {size: SMALL}, expect: 3}
+      - {call: available, args: {size: MEDIUM}, expect: 3}
+      - {call: available, args: {size: LARGE}, expect: 2}
+
+  - name: bike_falls_back_to_medium_when_small_full
+    config:
+      floors: [{small: 1, medium: 1, large: 0}]
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: B1, vehicle_type: BIKE}, expect: {spot_size: SMALL}}
+      - {call: park, args: {plate: B2, vehicle_type: BIKE}, expect: {spot_size: MEDIUM}}
+      - {call: available, args: {size: MEDIUM}, expect: 0}
+
+  - name: car_never_takes_small
+    config:
+      floors: [{small: 3, medium: 0, large: 1}]
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, expect: {spot_size: LARGE}}
+      - {call: park, args: {plate: C2, vehicle_type: CAR}, expect_error: LotFull}
+      - {call: available, args: {size: SMALL}, expect: 3}
+
+  - name: truck_takes_large
+    steps:
+      - {call: park, args: {plate: T1, vehicle_type: TRUCK}, expect: {spot_size: LARGE, floor: 1}}
+      - {call: park, args: {plate: T2, vehicle_type: TRUCK}, expect: {spot_size: LARGE, floor: 2}}
+      - {call: park, args: {plate: T3, vehicle_type: TRUCK}, expect_error: LotFull}
+
+  - name: smaller_size_beats_lower_floor
+    config:
+      floors:
+        - {small: 0, medium: 0, large: 1}
+        - {small: 0, medium: 1, large: 0}
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, expect: {spot_size: MEDIUM, floor: 2}}
+
+  - name: lowest_floor_first
+    config:
+      floors:
+        - {small: 0, medium: 1, large: 0}
+        - {small: 0, medium: 1, large: 0}
+        - {small: 0, medium: 1, large: 0}
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, expect: {floor: 1}}
+      - {call: park, args: {plate: C2, vehicle_type: CAR}, expect: {floor: 2}}
+      - {call: park, args: {plate: C3, vehicle_type: CAR}, expect: {floor: 3}}
+
+  - name: freed_lower_floor_is_reused
+    config:
+      floors:
+        - {small: 0, medium: 1, large: 0}
+        - {small: 0, medium: 1, large: 0}
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: a}
+      - {call: park, args: {plate: C2, vehicle_type: CAR}, expect: {floor: 2}}
+      - {call: unpark, args: {ticket_id: $a.id}}
+      - {call: park, args: {plate: C3, vehicle_type: CAR}, expect: {floor: 1}}
+
+  - name: entry_time_comes_from_clock
+    steps:
+      - advance_clock: 500
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, expect: {entry_time: 1700000500}}
+
+  - name: exact_hour_is_one_hour
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - advance_clock: 3600
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 2000}}
+
+  - name: partial_hour_rounds_up
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - advance_clock: 3601
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 4000}}
+
+  - name: zero_duration_charges_minimum_hour
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 2000}}
+
+  - name: long_stay
+    steps:
+      - {call: park, args: {plate: T1, vehicle_type: TRUCK}, bind: t}
+      - advance_clock: 37800          # 10h30m -> 11h
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 55000}}
+
+  - name: fee_uses_spot_size_not_vehicle
+    config:
+      floors: [{small: 0, medium: 1, large: 0}]
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: B1, vehicle_type: BIKE}, bind: t}
+      - advance_clock: 7200
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 4000}}
+
+  - name: receipt_references_ticket
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {ticket_id: $t.id}}
+
+  - name: ticket_cannot_be_used_twice
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - {call: unpark, args: {ticket_id: $t.id}}
+      - {call: unpark, args: {ticket_id: $t.id}, expect_error: InvalidTicket}
+      - {call: available, args: {size: MEDIUM}, expect: 3}
+
+  - name: unknown_ticket_rejected
+    steps:
+      - {call: unpark, args: {ticket_id: "no-such-ticket"}, expect_error: InvalidTicket}
+
+  - name: same_plate_cannot_park_twice
+    steps:
+      - {call: park, args: {plate: KA01, vehicle_type: CAR}}
+      - {call: park, args: {plate: KA01, vehicle_type: CAR}, expect_error: AlreadyParked}
+      - {call: available, args: {size: MEDIUM}, expect: 2}
+
+  - name: plate_can_return_after_leaving
+    steps:
+      - {call: park, args: {plate: KA01, vehicle_type: CAR}, bind: t}
+      - {call: unpark, args: {ticket_id: $t.id}}
+      - {call: park, args: {plate: KA01, vehicle_type: CAR}}
+
+  - name: full_lot_frees_up_after_unpark
+    config:
+      floors: [{small: 0, medium: 1, large: 0}]
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - {call: park, args: {plate: C2, vehicle_type: CAR}, expect_error: LotFull}
+      - {call: unpark, args: {ticket_id: $t.id}}
+      - {call: park, args: {plate: C2, vehicle_type: CAR}}
+
+  - name: failed_park_does_not_hold_plate
+    config:
+      floors: [{small: 0, medium: 1, large: 0}]
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - {call: park, args: {plate: T1, vehicle_type: TRUCK}, expect_error: LotFull}
+      - {call: park, args: {plate: T1, vehicle_type: CAR}}
+
+  - name: ids_are_unique
+    steps:
+      - {call: park, args: {plate: A, vehicle_type: CAR}, bind: a}
+      - {call: park, args: {plate: B, vehicle_type: CAR}, bind: b}
+      - {call: park, args: {plate: C, vehicle_type: BIKE}, bind: c}
+      - assert:
+          distinct: [$a.id, $b.id, $c.id]
+      - assert:
+          distinct: [$a.spot_id, $b.spot_id, $c.spot_id]

@@ -1,0 +1,36 @@
+# Visible to the solver. Failures show full expected/actual.
+config: &lot
+  floors:
+    - {small: 2, medium: 2, large: 1}
+    - {small: 1, medium: 1, large: 1}
+  hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+
+scenarios:
+  - name: car_parks_and_pays_one_hour
+    steps:
+      - call: park
+        args: {plate: KA01, vehicle_type: CAR}
+        expect: {plate: KA01, floor: 1, spot_size: MEDIUM, entry_time: 1700000000}
+        bind: t
+      - advance_clock: 3600
+      - call: unpark
+        args: {ticket_id: $t.id}
+        expect: {ticket_id: $t.id, fee_cents: 2000}
+
+  - name: bike_takes_a_small_spot
+    steps:
+      - call: park
+        args: {plate: BIKE1, vehicle_type: BIKE}
+        expect: {spot_size: SMALL, floor: 1}
+      - call: available
+        args: {size: SMALL}
+        expect: 2
+
+  - name: truck_with_no_large_spot_is_rejected
+    config:
+      floors: [{small: 4, medium: 4, large: 0}]
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - call: park
+        args: {plate: TRK1, vehicle_type: TRUCK}
+        expect_error: LotFull

@@ -1,0 +1,61 @@
+package: contract
+
+enums:
+  VehicleType: [BIKE, CAR, TRUCK]
+  SpotSize: [SMALL, MEDIUM, LARGE]
+
+dtos:
+  FloorConfig:
+    small: int
+    medium: int
+    large: int
+  LotConfig:
+    floors: list[FloorConfig]
+    hourly_rate_cents: map[SpotSize, long]
+  Ticket:
+    id: str
+    plate: str
+    floor: int
+    spot_size: SpotSize
+    spot_id: str
+    entry_time: long
+  Receipt:
+    ticket_id: str
+    fee_cents: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  ParkingLotApi:
+    park:
+      params: {plate: str, vehicle_type: VehicleType}
+      returns: Ticket
+      raises: [LotFull, AlreadyParked]
+      doc: Park in the smallest compatible free size, lowest floor first.
+    unpark:
+      params: {ticket_id: str}
+      returns: Receipt
+      raises: [InvalidTicket]
+      doc: Free the spot and charge ceil(hours) (min 1) x the spot size's hourly rate.
+    available:
+      params: {size: SpotSize}
+      returns: int
+      doc: Number of free spots of this size across all floors.
+
+entrypoint:
+  name: create
+  params: {config: LotConfig, clock: Clock}
+  returns: ParkingLotApi
+
+errors: [LotFull, AlreadyParked, InvalidTicket]
+
+docs:
+  LotConfig: "floors[0] is floor 1. hourly_rate_cents has a rate for every SpotSize."
+  Ticket: "floor is 1-based. spot_id is any id you choose, unique across the lot."
+  LotFull: No compatible free spot.
+  AlreadyParked: This plate already holds an active ticket.
+  InvalidTicket: Unknown ticket, or one that was already redeemed.

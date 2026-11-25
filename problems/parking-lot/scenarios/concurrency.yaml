@@ -1,0 +1,44 @@
+# Hidden. Each scenario is repeated to shake out races.
+config:
+  floors: [{small: 0, medium: 10, large: 0}]
+  hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+
+scenarios:
+  - name: last_spots_race
+    repeat: 20
+    steps:
+      - parallel: {threads: 50, call: park, args: {plate: "P{i}", vehicle_type: CAR}, collect: r}
+      - assert: {of: r, ok_count: 10, error_count: {LotFull: 40}, unique: spot_id}
+      - {call: available, args: {size: MEDIUM}, expect: 0}
+
+  - name: ticket_ids_unique_under_load
+    repeat: 10
+    config:
+      floors: [{small: 0, medium: 100, large: 0}]
+      hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+    steps:
+      - parallel: {threads: 100, call: park, args: {plate: "P{i}", vehicle_type: CAR}, collect: r}
+      - assert: {of: r, ok_count: 100, unique: [id, spot_id]}
+
+  - name: same_plate_race
+    repeat: 20
+    steps:
+      - parallel: {threads: 20, call: park, args: {plate: SAME, vehicle_type: CAR}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {AlreadyParked: 19}}
+      - {call: available, args: {size: MEDIUM}, expect: 9}
+
+  - name: double_redeem_race
+    repeat: 20
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - parallel: {threads: 20, call: unpark, args: {ticket_id: $t.id}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {InvalidTicket: 19}}
+      - {call: available, args: {size: MEDIUM}, expect: 10}
+
+  - name: concurrent_park_then_unpark
+    repeat: 10
+    steps:
+      - parallel: {threads: 10, call: park, args: {plate: "P{i}", vehicle_type: CAR}, collect: a}
+      - parallel: {threads: 10, call: unpark, args: {ticket_id: "$a[{i}].ok.id"}, collect: u}
+      - assert: {of: u, ok_count: 10}
+      - {call: available, args: {size: MEDIUM}, expect: 10}
