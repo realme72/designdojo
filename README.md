@@ -20,6 +20,28 @@ Problem statement, editor with file tree (autosave), Run (⌘↵) / Submit (⌘�
 results with compile errors shown in the editor, run history, and an interview timer.
 Frontend dev with hot reload: `uv run joinery serve` + `cd web && npm run dev` (port 5174).
 
+## Design coach
+
+Reviews your design against the problem's decision points: line-anchored comments naming
+the principle or pattern, why it matters in this problem, and three hints revealed one at
+a time. Uses Groq's free tier:
+
+```sh
+cp .env.example .env        # then set GROQ_API_KEY
+uv run joinery review work/parking-lot-java --hints 2
+```
+
+Each review is budgeted to ~5.2k input + 2k output tokens (under the 8k tokens/minute
+limit) and cached by content, so re-reviewing an unchanged design is free. Models rotate
+when one hits its daily limit (`JOINERY_COACH_MODELS` to change the order). Interview
+mode keeps the coach locked until you Submit.
+
+**When Groq isn't available** (no key, daily limit, network), reviews fall back to an
+offline coach built from static analysis: each detected signal becomes a comment with the
+principle, three hints and why it matters in this problem, matched to the problem's
+decision points (via their `keywords`). It's clearly labelled, never invents a design score,
+and marks decision points without signals "not assessed" rather than "good".
+
 ## CLI
 
 ```sh

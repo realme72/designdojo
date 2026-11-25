@@ -49,6 +49,11 @@ class Problem:
         c = self.contract
         return set(c.interfaces) | set(c.provided)
 
+    @cached_property
+    def decision_points(self) -> list[dict]:
+        path = self.root / "decision_points.yaml"
+        return yaml.safe_load(path.read_text()) or [] if path.exists() else []
+
     @property
     def statement(self) -> str:
         return (self.root / self.meta.get("statement", "statement.md")).read_text()

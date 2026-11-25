@@ -1,5 +1,6 @@
 # Where design choices matter in this problem. Used by the coach (M3); never shown verbatim.
 - id: pricing
+  keywords: [fee, rate, price, cents, hourly, hours, charge, pay, receipt]   # words that tie code to this decision (offline coach)
   question: How is the fee computed, and where does that rule live?
   good: Pricing sits behind an abstraction (policy/strategy) injected into the lot; a new rule is a new class.
   smells: [TYPE_SWITCH, PRIMITIVE_OBSESSION]
@@ -8,6 +9,7 @@
   curveball_link: weekend-pricing
 
 - id: allocation
+  keywords: [allocate, claim, free, floor, available, pick, nearest]   # words that tie code to this decision (offline coach)
   question: How is a spot chosen for a vehicle?
   good: Allocation policy is separate from ticket bookkeeping and swappable.
   smells: [TYPE_SWITCH, GOD_CLASS]
@@ -16,6 +18,7 @@
   curveball_link: nearest-to-gate
 
 - id: compatibility
+  keywords: [fit, fits, sizes, compatible, compatibility, allowed]   # words that tie code to this decision (offline coach)
   question: How is "which vehicle fits which spot" expressed?
   good: One data-driven table or polymorphic rule; adding a vehicle type touches one place.
   smells: [TYPE_SWITCH]
@@ -23,12 +26,14 @@
   curveball_link: ev-charging
 
 - id: time
+  keywords: [clock, now, time, entry]   # words that tie code to this decision (offline coach)
   question: Where does time come from?
   good: Only from the injected Clock.
   smells: [NEW_IN_LOGIC]
   principles: [DIP]
 
 - id: concurrency
+  keywords: [lock, thread, synchronized, concurrent, race, atomic]   # words that tie code to this decision (offline coach)
   question: What stops two cars getting the same spot, or a ticket being redeemed twice?
   good: Atomic claim of a spot and atomic removal of the ticket; locks are short and never held across pricing.
   smells: [UNGUARDED_SHARED]

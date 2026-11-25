@@ -31,6 +31,10 @@ EXTENSIONS = {"java": ".java", "python": ".py"}
 MAX_FILE_BYTES = 200_000
 MODES = {"run": ["sample"], "submit": list(SUITES)}
 
+from .coach.provider import load_env  # noqa: E402
+
+load_env(REPO_ROOT / ".env")
+
 app = FastAPI(title="Joinery", docs_url="/api/docs", openapi_url="/api/openapi.json")
 _locks: dict[str, threading.Lock] = {}
 _locks_guard = threading.Lock()
@@ -258,6 +262,54 @@ def analysis(problem_id: str, lang: str):
 
     ws = _workspace(problem_id, lang)
     return analyze(ws.root, ws.lang, concurrency=ws.problem.concurrency, contract_types=ws.problem.contract_types)
+
+
+class ReviewBody(BaseModel):
+    force: bool = False
+
+
+def _last_run(ws: Workspace) -> dict | None:
+    path = ws.root / HISTORY_FILE
+    if not path.exists():
+        return None
+    lines = [line for line in path.read_text().splitlines() if line.strip()]
+    return json.loads(lines[-1]) if lines else None
+
+
+@app.post("/api/ws/{problem_id}/{lang}/review")
+def coach_review(problem_id: str, lang: str, body: ReviewBody):
+    from .coach import CoachError, CoachUnavailable, review
+
+    ws = _workspace(problem_id, lang)
+    lock = _lock(ws)
+    if not lock.acquire(blocking=False):
+        raise HTTPException(409, "a run or review is already in progress for this workspace")
+    try:
+        return review(ws, last_run=_last_run(ws), force=body.force)
+    except CoachError as e:
+        raise HTTPException(503, str(e)) from None
+    except CoachUnavailable as e:
+        raise HTTPException(429, str(e)) from None
+    finally:
+        lock.release()
+
+
+@app.get("/api/ws/{problem_id}/{lang}/review")
+def coach_latest(problem_id: str, lang: str):
+    from .coach import latest
+
+    return latest(_workspace(problem_id, lang)) or {"review": None}
+
+
+@app.get("/api/coach/status")
+def coach_status():
+    from .coach.provider import CoachError, default_provider
+
+    try:
+        p = default_provider()
+    except CoachError as e:
+        return {"configured": False, "message": str(e)}
+    return {"configured": True, "provider": p.name, **p.usage_today()}
 
 
 # ------------------------------------------------------------------ web UI

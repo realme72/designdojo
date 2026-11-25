@@ -288,6 +288,54 @@ kbd {
 .diagram-wrap.full .diagram svg { max-height: 100%; width: auto; }
 .scrim { position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / 45%); }
 
+/* ---------- coach ---------- */
+.coach-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.coach-summary { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.coach-summary p { margin: 0; max-width: 760px; }
+.score-ring {
+  flex-shrink: 0; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 19px; font-weight: 700; line-height: 1; border: 3px solid var(--border-strong); padding-top: 6px;
+}
+.score-ring span { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: -8px; }
+.score-ring.ok { border-color: var(--pass); color: var(--pass); }
+.score-ring.mid { border-color: var(--warn); color: var(--warn); }
+.score-ring.low { border-color: var(--fail); color: var(--fail); }
+.dp-list { display: grid; gap: 4px; margin-bottom: 14px; }
+.dp { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
+.dp svg { color: var(--pass); align-self: center; }
+.dp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex-shrink: 0; align-self: center; margin: 0 2px; }
+.dp-partial .dp-dot { background: var(--warn); }
+.dp-missed .dp-dot { background: var(--fail); }
+.dp-id { font-weight: 600; text-transform: capitalize; min-width: 110px; }
+.dp-status { font-size: 11.5px; color: var(--muted); min-width: 70px; }
+.dp-note { color: var(--muted); }
+.coach-comment { border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 10px; }
+.coach-comment.k-praise { border-left-color: var(--pass); }
+.coach-comment.k-warning { border-left-color: var(--fail); }
+.coach-comment.k-over { border-left-color: var(--warn); }
+.coach-comment .signal-head svg { color: var(--accent); flex-shrink: 0; }
+.coach-comment.k-praise .signal-head svg { color: var(--pass); }
+.coach-comment.k-warning .signal-head svg { color: var(--fail); }
+.coach-comment.k-over .signal-head svg { color: var(--warn); }
+.kind-label { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.chips.tight { margin: 6px 0 0 23px; }
+.chip.dim { opacity: .7; font-style: italic; }
+.hints { margin: 8px 0 6px; padding-left: 42px; font-size: 13px; }
+.hints li { margin: 3px 0; }
+.hints li::marker { color: var(--faint); font-size: 12px; }
+.coach-actions { display: flex; gap: 6px; margin-left: 23px; }
+.example { margin: 8px 0 0 23px; padding: 10px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12px; overflow: auto; }
+.why { margin: 8px 0 0 23px; font-size: 12.5px; color: var(--muted); }
+.why strong { color: var(--text); font-weight: 600; }
+.coming h3 { display: flex; align-items: center; gap: 6px; }
+
+.offline-banner {
+  display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin-bottom: 12px;
+  border-radius: var(--radius); background: var(--warn-soft); color: var(--text); font-size: 12.5px;
+}
+.offline-banner svg { color: var(--warn); flex-shrink: 0; margin-top: 2px; }
+.dp-not_assessed .dp-status { color: var(--faint); }
+
 /* ---------- history ---------- */
 .hist-row {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 16px; border: 0;

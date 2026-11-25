@@ -28,8 +28,18 @@ const fmt = (s: number) => {
 }
 
 /** Interview mode: a countdown from the problem's time limit. Survives reloads. */
-export default function Timer({ problemId, limitMin }: { problemId: string; limitMin: number }) {
-  const [start, setStart] = useState<number | null>(() => load(problemId))
+export function interviewStart(problemId: string): number | null {
+  return load(problemId)
+}
+
+type TimerProps = { problemId: string; limitMin: number; onChange?: (start: number | null) => void }
+
+export default function Timer({ problemId, limitMin, onChange }: TimerProps) {
+  const [start, setStartState] = useState<number | null>(() => load(problemId))
+  const setStart = (v: number | null) => {
+    setStartState(v)
+    onChange?.(v)
+  }
   const [now, setNow] = useState(() => Date.now())
   const [confirm, setConfirm] = useState(false)
 

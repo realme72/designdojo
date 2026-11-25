@@ -4,12 +4,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import remarkGfm from 'remark-gfm'
-import { api, EXT, LANG_LABEL, type Analysis, type Lang, type Mode, type ProblemDetail, type RunEntry } from '../api'
+import {
+  api,
+  EXT,
+  LANG_LABEL,
+  type Analysis,
+  type CoachStatus,
+  type Lang,
+  type Mode,
+  type ProblemDetail,
+  type ReviewResult,
+  type RunEntry,
+} from '../api'
 import Brand from '../components/Brand'
 import DesignPanel from '../components/DesignPanel'
 import FileTree from '../components/FileTree'
 import ResultsPanel from '../components/ResultsPanel'
-import Timer from '../components/Timer'
+import Timer, { interviewStart } from '../components/Timer'
 import { monaco } from '../monaco'
 
 type FileState = { content: string; saved: string; editable: boolean }
@@ -62,6 +73,11 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [coachResult, setCoachResult] = useState<ReviewResult | null>(null)
+  const [coachStatus, setCoachStatus] = useState<CoachStatus | null>(null)
+  const [coaching, setCoaching] = useState(false)
+  const [coachError, setCoachError] = useState<string | null>(null)
+  const [timerStart, setTimerStart] = useState<number | null>(() => interviewStart(problemId))
 
   const filesRef = useRef(files)
   filesRef.current = files
@@ -88,6 +104,8 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
         if (cancelled) return
         setProblem(p)
         setHistory(h)
+        api.latestReview(problemId, lang).then((r) => r.review && setCoachResult(r), () => {})
+        api.coachStatus().then(setCoachStatus, () => {})
         setEntry(h[0] ?? null)
         document.title = `${p.title} · ${LANG_LABEL[lang]} · Joinery`
       })
@@ -144,6 +162,27 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
   useEffect(() => {
     if (bottomTab === 'review') runAnalysis()
   }, [bottomTab, runAnalysis])
+
+  const runCoach = useCallback(
+    async (force: boolean) => {
+      setCoaching(true)
+      setCoachError(null)
+      try {
+        await flushAll()
+        setCoachResult(await api.review(problemId, lang, force))
+        api.analysis(problemId, lang).then(setAnalysis, () => {})
+      } catch (e) {
+        setCoachError((e as Error).message)
+      } finally {
+        setCoaching(false)
+      }
+    },
+    [flushAll, problemId, lang],
+  )
+
+  // Interview mode: the coach is locked until a Submit made after the timer started.
+  const coachLocked =
+    timerStart !== null && !history.some((h) => h.mode === 'submit' && h.at * 1000 >= timerStart)
 
   const onChange = (value: string | undefined) => {
     if (!active || value === undefined || !files[active]?.editable) return
@@ -289,7 +328,22 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
           endColumn: model.getLineMaxColumn(s.line_start),
         })),
     )
-  }, [entry, active, files, analysis])
+    monaco.editor.setModelMarkers(
+      model,
+      'joinery-coach',
+      (coachLocked ? [] : (coachResult?.review?.comments ?? []))
+        .filter((c) => c.file === active && c.line_start <= model.getLineCount())
+        .map((c) => ({
+          severity: c.kind === 'warning' ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Info,
+          message: `Coach · ${c.title}${c.principle ? ` (${c.principle})` : ''}\n${c.hints[0]}`,
+          source: 'Joinery coach',
+          startLineNumber: c.line_start,
+          endLineNumber: Math.min(c.line_end, model.getLineCount()),
+          startColumn: model.getLineFirstNonWhitespaceColumn(c.line_start) || 1,
+          endColumn: model.getLineMaxColumn(Math.min(c.line_end, model.getLineCount())),
+        })),
+    )
+  }, [entry, active, files, analysis, coachResult, coachLocked])
 
   const onMount: OnMount = (ed, m) => {
     editorRef.current = ed
@@ -384,7 +438,9 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
             </button>
           ))}
         </div>
-        {problem.time_limit_min && <Timer problemId={problemId} limitMin={problem.time_limit_min} />}
+        {problem.time_limit_min && (
+          <Timer problemId={problemId} limitMin={problem.time_limit_min} onChange={setTimerStart} />
+        )}
         <button className="btn" onClick={() => judge('run')} disabled={!!running} title="Run samples (⌘↵)">
           <Play size={14} /> Run
         </button>
@@ -534,6 +590,14 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                       />
                     ) : (
                       <DesignPanel
+                        coach={{
+                          result: coachResult,
+                          status: coachStatus,
+                          loading: coaching,
+                          error: coachError,
+                          locked: coachLocked,
+                          onReview: runCoach,
+                        }}
                         analysis={analysis}
                         loading={analyzing}
                         error={analysisError}

@@ -1,6 +1,7 @@
 import { AlertTriangle, Info, Loader2, Maximize2, RefreshCw, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import type { Analysis } from '../api'
+import type { Analysis, CoachStatus, ReviewResult } from '../api'
+import CoachView from './CoachView'
 
 let mermaidReady: Promise<typeof import('mermaid').default> | null = null
 function loadMermaid() {
@@ -67,6 +68,14 @@ function Diagram({ code, dark }: { code: string; dark: boolean }) {
 }
 
 type Props = {
+  coach: {
+    result: ReviewResult | null
+    status: CoachStatus | null
+    loading: boolean
+    error: string | null
+    locked: boolean
+    onReview: (force: boolean) => void
+  }
   analysis: Analysis | null
   loading: boolean
   error: string | null
@@ -75,8 +84,8 @@ type Props = {
   onJump: (file: string, line: number) => void
 }
 
-export default function DesignPanel({ analysis, loading, error, dark, onRefresh, onJump }: Props) {
-  const [view, setView] = useState<'signals' | 'diagram'>('signals')
+export default function DesignPanel({ coach, analysis, loading, error, dark, onRefresh, onJump }: Props) {
+  const [view, setView] = useState<'coach' | 'signals' | 'diagram'>('coach')
   if (!analysis) {
     return (
       <div className="running">
@@ -93,6 +102,12 @@ export default function DesignPanel({ analysis, loading, error, dark, onRefresh,
     <div className="results">
       <div className="summary">
         <div className="segmented">
+          <button className={view === 'coach' ? 'on' : ''} onClick={() => setView('coach')}>
+            Coach
+            {coach.result?.review && coach.result.review.comments.length > 0 && (
+              <span className="tab-badge">{coach.result.review.comments.length}</span>
+            )}
+          </button>
           <button className={view === 'signals' ? 'on' : ''} onClick={() => setView('signals')}>
             Signals {analysis.smells.length > 0 && <span className="tab-badge">{analysis.smells.length}</span>}
           </button>
@@ -109,7 +124,9 @@ export default function DesignPanel({ analysis, loading, error, dark, onRefresh,
         </button>
       </div>
 
-      {view === 'diagram' ? (
+      {view === 'coach' ? (
+        <CoachView {...coach} onJump={onJump} />
+      ) : view === 'diagram' ? (
         <Diagram code={analysis.mermaid} dark={dark} />
       ) : (
         <>

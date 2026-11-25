@@ -8,9 +8,10 @@ A personal LLD practice playground. Pick a problem, design and implement it in
 and a **coach** that points at specific lines and says *"this is where
 principle/pattern X would help, and here's why."*
 
-Status: v1 (2026-11-26). **M0, M1, M2 (analyzer) and M5 (web UI) done**: Parking Lot
-judged end-to-end in Java and Python from the CLI or browser, with design signals and a
-class diagram. M3 (coach) and M4 (curveballs) next. Single user (self-prep). May go public later.
+Status: v1 (2026-11-26). **M0–M3 and M5 done**: Parking Lot judged end-to-end in Java
+and Python from the CLI or browser, with design signals, a class diagram and the LLM
+coach (Groq free tier; validated against fake responses, not yet run on a live key).
+M4 (curveballs) and M6 (more problems) next. Single user (self-prep). May go public later.
 
 ---
 
@@ -325,9 +326,24 @@ toward copying it. Decision points describe *what good looks like*, not code.
 - Don't fail working code for style. Separate "wrong" from "could be better".
 - Interview mode: no comments before submit.
 
-### 7.5 Provider
-Pluggable `CoachProvider` interface. **Open decision**: provider/model and budget.
-Expect ~5–10k input tokens per review. Cache by `(code hash, curveball, hint level)`.
+### 7.5 Provider (decided: Groq free tier)
+`Provider` protocol; `GroqProvider` rotates `openai/gpt-oss-120b → qwen/qwen3.8-27b →
+openai/gpt-oss-20b`. Free-tier constraints drive the design: 8k tokens/min per model with
+`prompt + max_tokens` reserved, so input is capped at ~5.2k (large solutions collapse
+un-flagged files to signature outlines) and `max_tokens=2000`; gpt-oss gets
+`reasoning_effort: low`. 200k tokens/day per model (≈28 reviews) is visible only in 429
+bodies: those are logged, and a model hitting a daily limit is skipped until the next UTC
+day. Per-minute 429s with `retry-after ≤ 15s` wait once. Reviews are cached by a hash of
+the full prompt, so an unchanged design costs nothing. All three hints come back in one
+call; the UI reveals them one at a time.
+
+### 7.6 Offline fallback
+If the provider fails (no key, every model over its daily limit, network), `review()`
+returns an offline review instead of an error: each smell maps to a templated comment
+(kind, principle, pattern, three hints) and to the decision point whose `smells` include
+it and whose `keywords` best match the flagged code. Warning-level signals mark that
+decision `missed`; info-level ones only add "worth a look". No design score. Labelled
+`meta.source = "offline"` with a human reason, and never written to the AI cache.
 
 ---
 

@@ -77,6 +77,42 @@ def cmd_analyze(args) -> int:
     return 0
 
 
+def cmd_review(args) -> int:
+    from .coach import CoachError, CoachUnavailable, review
+
+    ws = Workspace.open(Path(args.dir))
+    hist = ws.root / ".joinery-history.jsonl"
+    last = json.loads(hist.read_text().splitlines()[-1]) if hist.exists() and hist.read_text().strip() else None
+    try:
+        out = review(ws, last_run=last, force=args.force)
+    except (CoachError, CoachUnavailable) as e:
+        print(f"coach: {e}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(out, indent=2))
+        return 0
+    r, m = out["review"], out["meta"]
+    print(report.bold(f"{ws.problem.title} · {ws.lang} · design review")
+          + report.dim(f"  ({m['model']}{', cached' if m['cached'] else ''})"))
+    if r["design_score"] is not None:
+        print(f"\n  Design score: {report.bold(str(r['design_score']))}/100")
+    print(f"  {r['summary']}\n")
+    marks = {"good": report.green("✓"), "partial": report.yellow("~"), "missed": report.red("✗")}
+    for d in r["decision_points"]:
+        print(f"  {marks.get(d['status'], report.dim('·'))} {d['id']:<16} {report.dim(d['note'] or d['status'])}")
+    for c in r["comments"]:
+        tag = " · ".join(x for x in (c["principle"], c["pattern"]) if x)
+        print(f"\n  {report.bold(c['title'])}  {report.dim(c['file'] + ':' + str(c['line_start']))}"
+              + (f"  [{tag}]" if tag else "") + report.dim(f"  {c['kind']}"))
+        for i, h in enumerate(c["hints"][: args.hints], 1):
+            print(f"    hint {i}: {h}")
+        if c["why_here"]:
+            print(report.dim(f"    why here: {c['why_here']}"))
+    if m.get("dropped_comments"):
+        print(report.dim(f"\n  ({m['dropped_comments']} comment(s) dropped: they pointed at lines that don't exist)"))
+    return 0
+
+
 def cmd_build_images(args) -> int:
     for lang in codegen.LANGS:
         tag = ensure_image(lang, force=args.force, quiet=False)
@@ -126,6 +162,13 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--mermaid", action="store_true", help="print the class diagram as Mermaid")
     s.set_defaults(fn=cmd_analyze)
 
+    s = sub.add_parser("review", help="design review from the coach (LLM; uses GROQ_API_KEY)")
+    s.add_argument("dir", help="workspace dir")
+    s.add_argument("--hints", type=int, default=1, choices=(1, 2, 3), help="how many hints to reveal per comment")
+    s.add_argument("--force", action="store_true", help="ignore the cache")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(fn=cmd_review)
+
     s = sub.add_parser("serve", help="start the web UI")
     s.add_argument("--host", default="127.0.0.1")
     s.add_argument("--port", type=int, default=8765)
@@ -138,6 +181,10 @@ def main(argv: list[str] | None = None) -> int:
     s.set_defaults(fn=cmd_build_images)
 
     args = ap.parse_args(argv)
+    from .coach.provider import load_env
+    from .problems import REPO_ROOT
+
+    load_env(REPO_ROOT / ".env")
     try:
         return args.fn(args)
     except (JudgeError, ProblemError) as e:
