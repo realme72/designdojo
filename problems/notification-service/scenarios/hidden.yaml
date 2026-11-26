@@ -1,0 +1,66 @@
+config: {max_per_hour: 2}
+scenarios:
+  - name: high_priority_bypasses_and_counts
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [SMS]}}
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: HIGH}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: HIGH}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: HIGH}, expect: [{status: SENT}]}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{status: RATE_LIMITED}]}
+  - name: sliding_hour
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [EMAIL]}}
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - advance_clock: 1800
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - advance_clock: 1799
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{status: RATE_LIMITED}]}
+      - advance_clock: 1
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{status: SENT}]}
+  - name: limits_are_per_channel
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [EMAIL]}}
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: set_preferences, args: {user: u, channels: [EMAIL, PUSH]}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{channel: EMAIL, status: RATE_LIMITED}, {channel: PUSH, status: SENT}]}
+  - name: provider_down
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [EMAIL, SMS]}}
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: set_provider_down, args: {channel: SMS, down: true}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: HIGH}, expect: [{channel: EMAIL, status: SENT}, {channel: SMS, status: FAILED}]}
+      - {call: outbox, args: {user: u, channel: SMS}, expect: []}
+      - {call: set_provider_down, args: {channel: SMS, down: false}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{status: SENT}, {status: SENT}]}
+  - name: failed_does_not_count
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [SMS]}}
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: set_provider_down, args: {channel: SMS, down: true}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: set_provider_down, args: {channel: SMS, down: false}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{status: SENT}]}
+  - name: no_preferences_no_deliveries
+    steps:
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: send, args: {user: nobody, template_id: t, vars: {}, priority: HIGH}, expect: []}
+  - name: template_errors
+    steps:
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: add_template, args: {template_id: t, body: y}, expect_error: DuplicateTemplate}
+      - {call: send, args: {user: u, template_id: nope, vars: {}, priority: LOW}, expect_error: UnknownTemplate}
+  - name: repeated_placeholders_and_extra_vars
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [EMAIL]}}
+      - {call: add_template, args: {template_id: t, body: "{a}-{a}-{b_2}"}}
+      - {call: send, args: {user: u, template_id: t, vars: {a: x, b_2: y, unused: z}, priority: LOW}, expect: [{message: x-x-y}]}
+  - name: values_are_not_re_rendered
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [EMAIL]}}
+      - {call: add_template, args: {template_id: t, body: "Hi {name}"}}
+      - {call: send, args: {user: u, template_id: t, vars: {name: "{name}"}, priority: LOW}, expect: [{message: "Hi {name}"}]}

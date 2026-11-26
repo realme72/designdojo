@@ -1,0 +1,45 @@
+enums:
+  Channel: [EMAIL, SMS, PUSH]
+  Priority: [LOW, HIGH]
+  Status: [SENT, RATE_LIMITED, FAILED]
+
+dtos:
+  NotifyConfig:
+    max_per_hour: int
+  Delivery:
+    channel: Channel
+    status: Status
+    message: str
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Notifier:
+    set_preferences:
+      params: {user: str, channels: "list[Channel]"}
+      returns: void
+    add_template:
+      params: {template_id: str, body: str}
+      returns: void
+      raises: [DuplicateTemplate]
+    set_provider_down:
+      params: {channel: Channel, down: bool}
+      returns: void
+    send:
+      params: {user: str, template_id: str, vars: "map[str, str]", priority: Priority}
+      returns: "list[Delivery]"
+      raises: [UnknownTemplate, MissingVariable]
+    outbox:
+      params: {user: str, channel: Channel}
+      returns: "list[str]"
+
+entrypoint:
+  name: create
+  params: {config: NotifyConfig, clock: Clock}
+  returns: Notifier
+
+errors: [DuplicateTemplate, UnknownTemplate, MissingVariable]

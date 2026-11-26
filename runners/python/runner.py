@@ -288,7 +288,7 @@ class Scenario:
         if "value_count" in a:
             counts: dict[str, int] = {}
             for o in oks:
-                k = json.dumps(o, sort_keys=True)
+                k = json.dumps(o, sort_keys=True, separators=(",", ":"))  # canonical: same text as the Java runner
                 counts[k] = counts.get(k, 0) + 1
             for k, want in a["value_count"].items():
                 if counts.get(k, 0) != int(want):

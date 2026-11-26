@@ -349,7 +349,7 @@ public final class Runner {
                 Map<String, Object> counts = new LinkedHashMap<>();
                 for (Object r : rs) {
                     Map<String, Object> m = (Map<String, Object>) r;
-                    if (m.containsKey("ok")) counts.merge(Json.write(m.get("ok")), 1L, (x, y) -> (Long) x + (Long) y);
+                    if (m.containsKey("ok")) counts.merge(Json.write(canonical(m.get("ok"))), 1L, (x, y) -> (Long) x + (Long) y);
                 }
                 for (Map.Entry<String, Object> e : ((Map<String, Object>) a.get("value_count")).entrySet()) {
                     long got = counts.containsKey(e.getKey()) ? (Long) counts.get(e.getKey()) : 0;
@@ -623,6 +623,21 @@ public final class Runner {
             if (hasDetail) { m.put("expected", expected); m.put("actual", actual); }
             return m;
         }
+    }
+
+    /** Sorted map keys, recursively: Json.write of this matches Python's sort_keys + compact separators. */
+    static Object canonical(Object v) {
+        if (v instanceof Map<?, ?> m) {
+            java.util.TreeMap<String, Object> out = new java.util.TreeMap<>();
+            for (Map.Entry<?, ?> e : m.entrySet()) out.put(String.valueOf(e.getKey()), canonical(e.getValue()));
+            return out;
+        }
+        if (v instanceof List<?> l) {
+            List<Object> out = new ArrayList<>();
+            for (Object o : l) out.add(canonical(o));
+            return out;
+        }
+        return v;
     }
 
     static long num(Object o) {

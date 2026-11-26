@@ -1,0 +1,23 @@
+config: {max_per_hour: 2}
+scenarios:
+  - name: render_and_send
+    steps:
+      - {call: set_preferences, args: {user: ann, channels: [SMS, EMAIL]}}
+      - {call: add_template, args: {template_id: otp, body: "Hi {name}, your code is {code}"}}
+      - call: send
+        args: {user: ann, template_id: otp, vars: {name: Ann, code: "4821"}, priority: LOW}
+        expect: [{channel: EMAIL, status: SENT, message: "Hi Ann, your code is 4821"}, {channel: SMS, status: SENT}]
+      - {call: outbox, args: {user: ann, channel: SMS}, expect: ["Hi Ann, your code is 4821"]}
+  - name: missing_variable
+    steps:
+      - {call: set_preferences, args: {user: ann, channels: [EMAIL]}}
+      - {call: add_template, args: {template_id: t, body: "Hello {name}"}}
+      - {call: send, args: {user: ann, template_id: t, vars: {}, priority: LOW}, expect_error: MissingVariable}
+      - {call: outbox, args: {user: ann, channel: EMAIL}, expect: []}
+  - name: rate_limited
+    steps:
+      - {call: set_preferences, args: {user: ann, channels: [PUSH]}}
+      - {call: add_template, args: {template_id: t, body: hi}}
+      - {call: send, args: {user: ann, template_id: t, vars: {}, priority: LOW}}
+      - {call: send, args: {user: ann, template_id: t, vars: {}, priority: LOW}}
+      - {call: send, args: {user: ann, template_id: t, vars: {}, priority: LOW}, expect: [{channel: PUSH, status: RATE_LIMITED}]}
