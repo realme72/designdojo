@@ -1,0 +1,13 @@
+config: {epoch: 1600000000, worker_id: 7, sequence_bits: 12}
+scenarios:
+  - name: unique_under_load
+    repeat: 10
+    steps:
+      - parallel: {threads: 200, call: next_id, collect: r}
+      - assert: {of: r, ok_count: 200, unique: "."}
+  - name: exhaustion_is_exact
+    repeat: 10
+    config: {epoch: 1600000000, worker_id: 7, sequence_bits: 4}
+    steps:
+      - parallel: {threads: 40, call: next_id, collect: r}
+      - assert: {of: r, ok_count: 16, error_count: {SequenceExhausted: 24}, unique: "."}

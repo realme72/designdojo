@@ -1,0 +1,15 @@
+- id: layout
+  keywords: [shift, bits, mask, layout, timestamp, sequence, worker]
+  question: Is the bit layout defined once?
+  good: Shifts and masks come from one layout definition used by both next_id and parse.
+  principles: [DRY, SRP]
+- id: clock
+  keywords: [clock, now, backwards, skew]
+  question: How are time and clock skew handled?
+  good: Injected clock; going backwards is detected explicitly against the last issued second.
+  smells: [DIRECT_TIME]
+- id: concurrency
+  keywords: [lock, synchronized, atomic, thread]
+  question: Is (last second, sequence) updated atomically?
+  good: Both are read and updated under one lock (or packed into one atomic value).
+  smells: [UNGUARDED_SHARED]

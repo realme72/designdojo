@@ -1,0 +1,7 @@
+id: id-generator
+title: Unique ID Generator (Snowflake)
+difficulty: easy
+category: Infrastructure & control
+time_limit_min: 30
+statement: statement.md
+tags: [concurrency, bit-manipulation]

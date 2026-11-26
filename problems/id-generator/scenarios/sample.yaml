@@ -1,0 +1,17 @@
+config: {epoch: 1699999990, worker_id: 5, sequence_bits: 12}
+scenarios:
+  - name: layout
+    steps:
+      - {call: next_id, expect: 41963520}
+      - {call: next_id, expect: 41963521}
+  - name: parse_roundtrip
+    steps:
+      - {call: next_id, bind: a}
+      - {call: next_id, bind: b}
+      - {call: parse, args: {id: $b}, expect: {timestamp: 1700000000, worker: 5, sequence: 1}}
+  - name: sequence_resets_next_second
+    steps:
+      - {call: next_id}
+      - advance_clock: 1
+      - {call: next_id, bind: x}
+      - {call: parse, args: {id: $x}, expect: {timestamp: 1700000001, sequence: 0}}
