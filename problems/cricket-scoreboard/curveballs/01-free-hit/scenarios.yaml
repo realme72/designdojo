@@ -1,0 +1,21 @@
+config: {overs: 2, batters: [rohit, gill, kohli, rahul]}
+scenarios:
+  - name: free_hit_after_no_ball
+    steps:
+      - {call: is_free_hit, expect: false}
+      - {call: bowl, args: {bowler: bumrah, runs: 0, extra: NO_BALL, wicket: false}, expect: {runs: 1}}
+      - {call: is_free_hit, expect: true}
+      - {call: bowl, args: {bowler: bumrah, runs: 0, extra: NONE, wicket: true}, expect_error: InvalidBall}
+      - {call: bowl, args: {bowler: bumrah, runs: 4, extra: NONE, wicket: false}, expect: {runs: 5, wickets: 0}}
+      - {call: is_free_hit, expect: false}
+      - {call: bowl, args: {bowler: bumrah, runs: 0, extra: NONE, wicket: true}, expect: {wickets: 1}}
+  - name: carries_over_extras
+    steps:
+      - {call: bowl, args: {bowler: bumrah, runs: 0, extra: NO_BALL, wicket: false}}
+      - {call: bowl, args: {bowler: bumrah, runs: 0, extra: WIDE, wicket: false}}
+      - {call: is_free_hit, expect: true}
+      - {call: bowl, args: {bowler: bumrah, runs: 0, extra: NO_BALL, wicket: false}}
+      - {call: is_free_hit, expect: true}
+      - {call: bowl, args: {bowler: bumrah, runs: 1, extra: BYE, wicket: false}}
+      - {call: is_free_hit, expect: false}
+      - {call: score, expect: {runs: 4, overs: "0.1"}}

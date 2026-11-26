@@ -29,6 +29,7 @@ class University(Registrar):
     def __init__(self, max_courses: int):
         self._max = max_courses
         self._courses: dict[str, Course] = {}
+        self._overrides: set[tuple[str, str]] = set()  # (student, course) with prerequisites waived
         self._students: dict[str, Student] = {}
         self._lock = threading.Lock()  # one lock: seats and per-student limits span courses
         self._rules: list[Callable[[Student, Course], None]] = [
@@ -44,6 +45,8 @@ class University(Registrar):
             raise AlreadyRegistered(c.id)
 
     def _prerequisites_met(self, s: Student, c: Course) -> None:
+        if (s.id, c.id) in self._overrides:
+            return
         missing = [p for p in c.prerequisites if p not in s.completed]
         if missing:
             raise MissingPrerequisite(missing)
@@ -75,6 +78,11 @@ class University(Registrar):
         with self._lock:
             self._course(course_id)
             self._student(student).completed.add(course_id)
+
+    def grant_override(self, student: str, course_id: str) -> None:
+        with self._lock:
+            self._course(course_id)
+            self._overrides.add((student, course_id))
 
     def enroll(self, student: str, course_id: str) -> EnrollmentStatus:
         with self._lock:

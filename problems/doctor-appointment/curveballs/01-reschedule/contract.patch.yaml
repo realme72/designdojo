@@ -1,0 +1,6 @@
+interfaces:
+  Clinic:
+    reschedule:
+      params: {appointment_id: str, new_start: long}
+      returns: void
+      raises: [UnknownAppointment, InvalidState, SlotUnavailable, PatientConflict]

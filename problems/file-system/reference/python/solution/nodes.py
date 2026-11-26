@@ -8,6 +8,10 @@ class Node(ABC):
     def size(self) -> int: ...
 
     @abstractmethod
+    def clone(self) -> "Node":
+        """Deep copy (Prototype)."""
+
+    @abstractmethod
     def files(self, prefix: str):
         """Yield (full_path, File) for every file at or under this node."""
 
@@ -19,6 +23,9 @@ class File(Node):
     def size(self):
         return len(self.content)
 
+    def clone(self):
+        return File(self.content)
+
     def files(self, prefix):
         yield prefix, self
 
@@ -29,6 +36,11 @@ class Directory(Node):
 
     def size(self):
         return sum(c.size() for c in self.children.values())
+
+    def clone(self):
+        d = Directory()
+        d.children = {name: child.clone() for name, child in self.children.items()}
+        return d
 
     def files(self, prefix):
         for name, child in self.children.items():

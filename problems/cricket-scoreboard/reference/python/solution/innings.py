@@ -27,6 +27,7 @@ class Innings(Scoreboard):
         self._runs = self._wickets = self._legal = 0
         self._over_bowler: str | None = None
         self._last_over_bowler: str | None = None
+        self._free_hit = False
 
     def _complete(self) -> bool:
         return self._legal >= self._max_balls or self._wickets >= len(self._order) - 1
@@ -37,12 +38,18 @@ class Innings(Scoreboard):
         rule = RULES[extra]
         if not 0 <= runs <= 6 or (wicket and (not rule.legal or runs)):
             raise InvalidBall(f"{runs} {extra.name} wicket={wicket}")
+        if wicket and self._free_hit:
+            raise InvalidBall("no dismissal on a free hit")
         new_over = self._legal % BALLS_PER_OVER == 0 and self._over_bowler is None
         if new_over and bowler == self._last_over_bowler:
             raise SameBowler(bowler)
         if not new_over and bowler != self._over_bowler:
             raise BowlerChange(bowler)
         self._over_bowler = bowler
+        if rule.legal:
+            self._free_hit = False
+        if extra is Extra.NO_BALL:
+            self._free_hit = True
 
         striker = self._stats[self._order[self._striker]]
         self._runs += runs + rule.penalty
@@ -63,6 +70,9 @@ class Innings(Scoreboard):
                 self._swap()
                 self._last_over_bowler, self._over_bowler = bowler, None
         return self.score()
+
+    def is_free_hit(self) -> bool:
+        return self._free_hit
 
     def _swap(self) -> None:
         self._striker, self._other = self._other, self._striker

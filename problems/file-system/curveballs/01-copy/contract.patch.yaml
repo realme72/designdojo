@@ -1,0 +1,6 @@
+interfaces:
+  FileSystem:
+    copy:
+      params: {src: str, dst: str}
+      returns: void
+      raises: [InvalidPath, NotFound, NotADirectory, AlreadyExists]

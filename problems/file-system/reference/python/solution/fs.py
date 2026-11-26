@@ -100,6 +100,20 @@ class MemoryFileSystem(FileSystem):
         del src_parent.children[s[-1]]
         dst_parent.children[d[-1]] = node
 
+    def copy(self, src: str, dst: str) -> None:
+        s, d = parts(src), parts(dst)
+        if not s or d[:len(s)] == s:
+            raise InvalidPath(f"{src} -> {dst}")
+        node = self._parent(s).children.get(s[-1])
+        if node is None:
+            raise NotFound(src)
+        if not d:
+            raise AlreadyExists(dst)
+        dst_parent = self._parent(d)
+        if d[-1] in dst_parent.children:
+            raise AlreadyExists(dst)
+        dst_parent.children[d[-1]] = node.clone()
+
     def size(self, path: str) -> int:
         return self._walk(parts(path)).size()
 

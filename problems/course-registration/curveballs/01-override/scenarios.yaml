@@ -1,0 +1,21 @@
+config: {max_courses: 1}
+scenarios:
+  - name: override_waives_prerequisites
+    steps:
+      - {call: add_course, args: {course_id: c101, capacity: 2, prerequisites: []}}
+      - {call: add_course, args: {course_id: c201, capacity: 2, prerequisites: [c101]}}
+      - {call: enroll, args: {student: s1, course_id: c201}, expect_error: MissingPrerequisite}
+      - {call: grant_override, args: {student: s1, course_id: c201}}
+      - {call: enroll, args: {student: s1, course_id: c201}, expect: ENROLLED}
+      - {call: enroll, args: {student: s2, course_id: c201}, expect_error: MissingPrerequisite}
+      - {call: grant_override, args: {student: s1, course_id: c999}, expect_error: UnknownCourse}
+  - name: other_rules_still_apply
+    steps:
+      - {call: add_course, args: {course_id: c101, capacity: 2, prerequisites: []}}
+      - {call: add_course, args: {course_id: c201, capacity: 2, prerequisites: [c101]}}
+      - {call: grant_override, args: {student: s1, course_id: c201}}
+      - {call: enroll, args: {student: s1, course_id: c101}, expect: ENROLLED}
+      - {call: enroll, args: {student: s1, course_id: c201}, expect_error: TooManyCourses}
+      - {call: drop, args: {student: s1, course_id: c101}}
+      - {call: enroll, args: {student: s1, course_id: c201}, expect: ENROLLED}
+      - {call: enroll, args: {student: s1, course_id: c201}, expect_error: AlreadyRegistered}

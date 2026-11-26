@@ -1,0 +1,6 @@
+interfaces:
+  Registrar:
+    grant_override:
+      params: {student: str, course_id: str}
+      returns: void
+      raises: [UnknownCourse]

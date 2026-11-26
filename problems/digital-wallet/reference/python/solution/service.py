@@ -4,8 +4,9 @@ import itertools
 import threading
 from dataclasses import dataclass, field
 
-from contract import (DuplicateWallet, Entry, EntryType, IdempotencyConflict, InsufficientFunds, InvalidAmount,
-                      LimitExceeded, SameWallet, Transaction, UnknownWallet, WalletService)
+from contract import (AlreadyReversed, DuplicateWallet, Entry, EntryType, IdempotencyConflict, InsufficientFunds,
+                      InvalidAmount, LimitExceeded, SameWallet, Transaction, UnknownTransaction, UnknownWallet,
+                      WalletService)
 
 
 @dataclass
@@ -30,6 +31,9 @@ class Wallets(WalletService):
         self._keys_lock = threading.Lock()  # one in-flight transfer per key at a time
         self._key_locks: dict[str, threading.Lock] = {}
         self._ids = itertools.count(1)
+        self._txns: dict[str, Transaction] = {}
+        self._reversed: set[str] = set()
+        self._txn_lock = threading.Lock()
 
     def _wallet(self, user: str) -> Wallet:
         with self._registry:
@@ -87,6 +91,31 @@ class Wallets(WalletService):
                 dst.post(EntryType.TRANSFER_IN, amount, amount)
             txn = Transaction(f"T{next(self._ids)}", from_user, to_user, amount)
             self._keys[idempotency_key] = (fingerprint, txn)
+            with self._txn_lock:
+                self._txns[txn.id] = txn
+            return txn
+
+    def _move(self, src: Wallet, dst: Wallet, amount: int, out: EntryType, into: EntryType) -> None:
+        first, second = sorted((src, dst), key=lambda w: w.user)  # global lock order: no deadlock
+        with first.lock, second.lock:
+            if src.balance < amount:
+                raise InsufficientFunds(src.user)
+            src.post(out, amount, -amount)
+            dst.post(into, amount, amount)
+
+    def reverse(self, transaction_id: str) -> Transaction:
+        with self._txn_lock:  # also makes "reverse once" atomic
+            original = self._txns.get(transaction_id)
+            if original is None:
+                raise UnknownTransaction(transaction_id)
+            if transaction_id in self._reversed:
+                raise AlreadyReversed(transaction_id)
+            src, dst = self._wallet(original.to_user), self._wallet(original.from_user)
+            self._move(src, dst, original.amount, EntryType.REVERSAL_OUT, EntryType.REVERSAL_IN)
+            self._reversed.add(transaction_id)
+            txn = Transaction(f"T{next(self._ids)}", src.user, dst.user, original.amount)
+            self._txns[txn.id] = txn
+            self._reversed.add(txn.id)  # a reversal is final
             return txn
 
     def balance(self, user: str) -> int:

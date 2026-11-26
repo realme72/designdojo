@@ -1,0 +1,4 @@
+interfaces:
+  Scoreboard:
+    is_free_hit:
+      returns: bool

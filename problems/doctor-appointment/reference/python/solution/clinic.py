@@ -88,6 +88,26 @@ class ClinicService(Clinic):
             del self._by_patient[patient][appointment_id]
             self._doctors[appt.doctor_id].slots[appt.start] = None
 
+    def reschedule(self, appointment_id: str, new_start: int) -> None:
+        with self._lock:
+            found = self._appts.get(appointment_id)
+            if found is None:
+                raise UnknownAppointment(appointment_id)
+            patient, old = found
+            now = self._clock.now()
+            if now >= old.start:
+                raise InvalidState("appointment already started")
+            d = self._doctors[old.doctor_id]
+            if d.slots.get(new_start, "missing") is not None or new_start < now:
+                raise SlotUnavailable(f"{d.id}@{new_start}")
+            end = new_start + d.slot_seconds
+            if any(a.id != old.id and a.start < end and new_start < a.end for a in self._by_patient[patient].values()):
+                raise PatientConflict(patient)
+            moved = Appointment(old.id, d.id, new_start, end)
+            d.slots[old.start], d.slots[new_start] = None, moved.id
+            self._appts[moved.id] = (patient, moved)
+            self._by_patient[patient][moved.id] = moved
+
     def appointments(self, patient: str) -> list[Appointment]:
         with self._lock:
             return sorted(self._by_patient[patient].values(), key=lambda a: a.start)

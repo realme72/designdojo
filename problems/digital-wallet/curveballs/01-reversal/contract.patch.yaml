@@ -1,0 +1,9 @@
+enums:
+  EntryType: [REVERSAL_IN, REVERSAL_OUT]
+interfaces:
+  WalletService:
+    reverse:
+      params: {transaction_id: str}
+      returns: Transaction
+      raises: [UnknownTransaction, AlreadyReversed, InsufficientFunds]
+errors: [UnknownTransaction, AlreadyReversed]

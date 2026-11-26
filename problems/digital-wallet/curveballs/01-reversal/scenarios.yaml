@@ -1,0 +1,28 @@
+config: {max_transfer: 100}
+scenarios:
+  - name: reverse_transfer
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: deposit, args: {user: a, amount: 1000}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 100, idempotency_key: k1}, bind: t}
+      - {call: deposit, args: {user: b, amount: 500}}
+      - {call: reverse, args: {transaction_id: $t.id}, expect: {from_user: b, to_user: a, amount: 100}}
+      - {call: balance, args: {user: a}, expect: 1000}
+      - {call: balance, args: {user: b}, expect: 500}
+      - {call: history, args: {user: a}, expect: [{type: DEPOSIT}, {type: TRANSFER_OUT, amount: 100, balance_after: 900}, {type: REVERSAL_IN, amount: 100, balance_after: 1000}]}
+      - {call: history, args: {user: b}, expect: [{type: TRANSFER_IN}, {type: DEPOSIT}, {type: REVERSAL_OUT, amount: 100, balance_after: 500}]}
+      - {call: reverse, args: {transaction_id: $t.id}, expect_error: AlreadyReversed}
+      - {call: reverse, args: {transaction_id: T999}, expect_error: UnknownTransaction}
+  - name: recipient_already_spent
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: deposit, args: {user: a, amount: 100}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 80, idempotency_key: k1}, bind: t}
+      - {call: withdraw, args: {user: b, amount: 50}}
+      - {call: reverse, args: {transaction_id: $t.id}, expect_error: InsufficientFunds}
+      - {call: balance, args: {user: a}, expect: 20}
+      - {call: balance, args: {user: b}, expect: 30}
+      - {call: deposit, args: {user: b, amount: 50}}
+      - {call: reverse, args: {transaction_id: $t.id}, expect: {amount: 80}}

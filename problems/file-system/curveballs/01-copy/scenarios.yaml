@@ -1,0 +1,24 @@
+scenarios:
+  - name: deep_copy_is_independent
+    steps:
+      - {call: mkdir, args: {path: /a/b}}
+      - {call: write_file, args: {path: /a/b/x.txt, content: hi}}
+      - {call: write_file, args: {path: /a/top.md, content: "#"}}
+      - {call: copy, args: {src: /a, dst: /c}}
+      - {call: read_file, args: {path: /c/b/x.txt}, expect: hi}
+      - {call: write_file, args: {path: /c/b/x.txt, content: changed}}
+      - {call: write_file, args: {path: /c/b/new.txt, content: n}}
+      - {call: read_file, args: {path: /a/b/x.txt}, expect: hi}
+      - {call: ls, args: {path: /a/b}, expect: [x.txt]}
+      - {call: ls, args: {path: /}, expect: [a, c]}
+      - {call: size, args: {path: /c}, expect: 9}
+  - name: copy_file_and_errors
+    steps:
+      - {call: mkdir, args: {path: /a}}
+      - {call: write_file, args: {path: /a/x.txt, content: hi}}
+      - {call: copy, args: {src: /a/x.txt, dst: /y.txt}}
+      - {call: read_file, args: {path: /y.txt}, expect: hi}
+      - {call: copy, args: {src: /a, dst: /y.txt}, expect_error: AlreadyExists}
+      - {call: copy, args: {src: /a, dst: /a/inner}, expect_error: InvalidPath}
+      - {call: copy, args: {src: /nope, dst: /q}, expect_error: NotFound}
+      - {call: copy, args: {src: /a/x.txt, dst: /missing/x.txt}, expect_error: NotFound}

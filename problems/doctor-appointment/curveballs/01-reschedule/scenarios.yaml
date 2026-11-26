@@ -1,0 +1,30 @@
+scenarios:
+  - name: move_to_another_slot
+    steps:
+      - {call: add_doctor, args: {doctor_id: d1, specialty: derma, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d1, start: 1700003600, end: 1700009000}}
+      - {call: book, args: {patient: p1, doctor_id: d1, start: 1700003600}, bind: a}
+      - {call: reschedule, args: {appointment_id: $a, new_start: 1700007200}}
+      - {call: appointments, args: {patient: p1}, expect: [{id: $a, start: 1700007200, end: 1700009000}]}
+      - {call: available_slots, args: {specialty: derma, start: 1700000000, end: 1700100000}, expect: [{start: 1700003600}, {start: 1700005400}]}
+  - name: all_or_nothing
+    steps:
+      - {call: add_doctor, args: {doctor_id: d1, specialty: derma, slot_minutes: 30}}
+      - {call: add_doctor, args: {doctor_id: d2, specialty: ortho, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d1, start: 1700003600, end: 1700009000}}
+      - {call: add_availability, args: {doctor_id: d2, start: 1700003600, end: 1700005400}}
+      - {call: book, args: {patient: p1, doctor_id: d1, start: 1700007200}, bind: a}
+      - {call: book, args: {patient: p2, doctor_id: d1, start: 1700005400}}
+      - {call: book, args: {patient: p1, doctor_id: d2, start: 1700003600}}
+      - {call: reschedule, args: {appointment_id: $a, new_start: 1700005400}, expect_error: SlotUnavailable}
+      - {call: reschedule, args: {appointment_id: $a, new_start: 1700003600}, expect_error: PatientConflict}
+      - {call: reschedule, args: {appointment_id: $a, new_start: 1700001234}, expect_error: SlotUnavailable}
+      - {call: appointments, args: {patient: p1}, expect: [{doctor_id: d2}, {doctor_id: d1, start: 1700007200}]}
+      - {call: reschedule, args: {appointment_id: A999, new_start: 1700003600}, expect_error: UnknownAppointment}
+  - name: started_cannot_move
+    steps:
+      - {call: add_doctor, args: {doctor_id: d1, specialty: derma, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d1, start: 1700003600, end: 1700009000}}
+      - {call: book, args: {patient: p1, doctor_id: d1, start: 1700003600}, bind: a}
+      - advance_clock: 3600
+      - {call: reschedule, args: {appointment_id: $a, new_start: 1700007200}, expect_error: InvalidState}
