@@ -1,0 +1,63 @@
+enums:
+  VehicleClass: [MINI, SEDAN, SUV]
+  DriverStatus: [AVAILABLE, ON_TRIP, OFFLINE]
+  TripStatus: [ASSIGNED, STARTED, COMPLETED, CANCELLED]
+
+dtos:
+  RideConfig:
+    max_radius: long
+    base_fare: "map[VehicleClass, long]"
+    per_unit: "map[VehicleClass, long]"
+  Trip:
+    id: str
+    rider: str
+    driver: str
+    vehicle: VehicleClass
+    status: TripStatus
+    fare: long
+
+interfaces:
+  RideService:
+    add_driver:
+      params: {driver_id: str, vehicle: VehicleClass, x: long, y: long}
+      returns: void
+      raises: [DuplicateDriver]
+    update_location:
+      params: {driver_id: str, x: long, y: long}
+      returns: void
+      raises: [UnknownDriver]
+    set_online:
+      params: {driver_id: str, online: bool}
+      returns: void
+      raises: [UnknownDriver, InvalidState]
+    request_ride:
+      params: {rider: str, vehicle: VehicleClass, x: long, y: long, dest_x: long, dest_y: long}
+      returns: Trip
+      raises: [RiderBusy, NoDriverAvailable]
+    start_trip:
+      params: {trip_id: str}
+      returns: Trip
+      raises: [UnknownTrip, InvalidState]
+    end_trip:
+      params: {trip_id: str}
+      returns: Trip
+      raises: [UnknownTrip, InvalidState]
+    cancel_trip:
+      params: {trip_id: str}
+      returns: Trip
+      raises: [UnknownTrip, InvalidState]
+    trip:
+      params: {trip_id: str}
+      returns: Trip
+      raises: [UnknownTrip]
+    driver_status:
+      params: {driver_id: str}
+      returns: DriverStatus
+      raises: [UnknownDriver]
+
+entrypoint:
+  name: create
+  params: {config: RideConfig}
+  returns: RideService
+
+errors: [DuplicateDriver, UnknownDriver, InvalidState, RiderBusy, NoDriverAvailable, UnknownTrip]

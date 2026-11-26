@@ -1,0 +1,22 @@
+config:
+  max_radius: 100
+  base_fare: {MINI: 500, SEDAN: 800, SUV: 1200}
+  per_unit: {MINI: 100, SEDAN: 150, SUV: 200}
+scenarios:
+  - name: one_trip_per_driver
+    repeat: 15
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 1, y: 0}}
+      - {call: add_driver, args: {driver_id: d2, vehicle: MINI, x: 2, y: 0}}
+      - {call: add_driver, args: {driver_id: d3, vehicle: MINI, x: 3, y: 0}}
+      - {call: add_driver, args: {driver_id: d4, vehicle: MINI, x: 4, y: 0}}
+      - {call: add_driver, args: {driver_id: d5, vehicle: MINI, x: 5, y: 0}}
+      - parallel: {threads: 20, call: request_ride, args: {rider: "r{i}", vehicle: MINI, x: 0, y: 0, dest_x: 9, dest_y: 9}, collect: r}
+      - assert: {of: r, ok_count: 5, error_count: {NoDriverAvailable: 15}, unique: driver}
+  - name: same_rider_double_tap
+    repeat: 15
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 1, y: 0}}
+      - {call: add_driver, args: {driver_id: d2, vehicle: MINI, x: 2, y: 0}}
+      - parallel: {threads: 10, call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 9, dest_y: 9}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {RiderBusy: 9}}

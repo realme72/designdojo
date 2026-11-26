@@ -1,0 +1,16 @@
+scenarios:
+  - name: no_double_booking
+    repeat: 15
+    steps:
+      - {call: add_room, args: {number: "101", type: DOUBLE, nightly_rate: 5000}}
+      - {call: add_room, args: {number: "102", type: DOUBLE, nightly_rate: 5000}}
+      - {call: add_room, args: {number: "103", type: DOUBLE, nightly_rate: 5000}}
+      - parallel: {threads: 20, call: book, args: {guest: "g{i}", type: DOUBLE, check_in: "2023-12-01", check_out: "2023-12-03"}, collect: r}
+      - assert: {of: r, ok_count: 3, error_count: {NoAvailability: 17}, unique: room}
+  - name: concurrent_cancel_once
+    repeat: 15
+    steps:
+      - {call: add_room, args: {number: "101", type: DOUBLE, nightly_rate: 5000}}
+      - {call: book, args: {guest: a, type: DOUBLE, check_in: "2023-12-01", check_out: "2023-12-03"}, bind: b}
+      - parallel: {threads: 20, call: cancel, args: {reservation_id: $b.id}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {InvalidState: 19}}

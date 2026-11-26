@@ -1,0 +1,85 @@
+config:
+  max_radius: 10
+  base_fare: {MINI: 500, SEDAN: 800, SUV: 1200}
+  per_unit: {MINI: 100, SEDAN: 150, SUV: 200}
+scenarios:
+  - name: radius_is_inclusive
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 6, y: 8}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect: {driver: d1}}
+  - name: outside_radius
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 8, y: 7}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect_error: NoDriverAvailable}
+  - name: euclidean_not_manhattan
+    steps:
+      - {call: add_driver, args: {driver_id: a, vehicle: MINI, x: 4, y: 4}}
+      - {call: add_driver, args: {driver_id: b, vehicle: MINI, x: 6, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect: {driver: a}}
+  - name: tie_goes_to_lowest_id
+    steps:
+      - {call: add_driver, args: {driver_id: zed, vehicle: SUV, x: 0, y: 3}}
+      - {call: add_driver, args: {driver_id: amy, vehicle: SUV, x: 3, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: SUV, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect: {driver: amy}}
+  - name: busy_and_offline_drivers_skipped
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: SEDAN, x: 0, y: 0}}
+      - {call: add_driver, args: {driver_id: d2, vehicle: SEDAN, x: 1, y: 0}}
+      - {call: add_driver, args: {driver_id: d3, vehicle: SEDAN, x: 2, y: 0}}
+      - {call: set_online, args: {driver_id: d1, online: false}}
+      - {call: request_ride, args: {rider: r1, vehicle: SEDAN, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect: {driver: d2}}
+      - {call: request_ride, args: {rider: r2, vehicle: SEDAN, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect: {driver: d3}}
+      - {call: request_ride, args: {rider: r3, vehicle: SEDAN, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect_error: NoDriverAvailable}
+  - name: driver_ends_at_destination
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 50, dest_y: 50}, bind: t}
+      - {call: start_trip, args: {trip_id: $t.id}}
+      - {call: end_trip, args: {trip_id: $t.id}, expect: {fare: 10500}}
+      - {call: request_ride, args: {rider: r2, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 0}, expect_error: NoDriverAvailable}
+      - {call: request_ride, args: {rider: r2, vehicle: MINI, x: 48, y: 47, dest_x: 1, dest_y: 0}, expect: {driver: d1}}
+  - name: cancel_frees_driver_in_place
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 50, dest_y: 50}, bind: t}
+      - {call: cancel_trip, args: {trip_id: $t.id}, expect: {status: CANCELLED, fare: 0}}
+      - {call: driver_status, args: {driver_id: d1}, expect: AVAILABLE}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 1, y: 1, dest_x: 2, dest_y: 2}, expect: {driver: d1}}
+  - name: illegal_transitions
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 1}, bind: t}
+      - {call: end_trip, args: {trip_id: $t.id}, expect_error: InvalidState}
+      - {call: start_trip, args: {trip_id: $t.id}}
+      - {call: cancel_trip, args: {trip_id: $t.id}, expect_error: InvalidState}
+      - {call: start_trip, args: {trip_id: $t.id}, expect_error: InvalidState}
+      - {call: end_trip, args: {trip_id: $t.id}}
+      - {call: end_trip, args: {trip_id: $t.id}, expect_error: InvalidState}
+  - name: rider_busy_until_done
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: add_driver, args: {driver_id: d2, vehicle: MINI, x: 0, y: 1}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 1}, bind: t}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 1}, expect_error: RiderBusy}
+      - {call: start_trip, args: {trip_id: $t.id}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 1}, expect_error: RiderBusy}
+      - {call: end_trip, args: {trip_id: $t.id}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 1}, expect: {driver: d2}}
+  - name: offline_while_on_trip
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 1}}
+      - {call: set_online, args: {driver_id: d1, online: false}, expect_error: InvalidState}
+  - name: location_updates_affect_matching
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 100, y: 100}}
+      - {call: update_location, args: {driver_id: d1, x: 2, y: 2}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 1, dest_y: 1}, expect: {driver: d1}}
+  - name: unknowns_and_duplicates
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: add_driver, args: {driver_id: d1, vehicle: SUV, x: 0, y: 0}, expect_error: DuplicateDriver}
+      - {call: update_location, args: {driver_id: zz, x: 0, y: 0}, expect_error: UnknownDriver}
+      - {call: driver_status, args: {driver_id: zz}, expect_error: UnknownDriver}
+      - {call: trip, args: {trip_id: nope}, expect_error: UnknownTrip}
+      - {call: start_trip, args: {trip_id: nope}, expect_error: UnknownTrip}

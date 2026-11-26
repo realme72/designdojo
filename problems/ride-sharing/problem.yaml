@@ -1,0 +1,7 @@
+id: ride-sharing
+title: Ride Sharing (Uber / Ola)
+difficulty: hard
+category: Booking & reservations
+time_limit_min: 60
+statement: statement.md
+tags: [strategy, state, concurrency]

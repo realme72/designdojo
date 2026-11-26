@@ -1,0 +1,28 @@
+- id: matching
+  keywords: [match, nearest, distance, radius, assign, closest]
+  question: Where does driver matching live?
+  good: A matching strategy (interface) picks a driver from candidates; the service doesn't hard-code "nearest".
+  smells: [GOD_CLASS]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: pricing
+  keywords: [fare, base, per, unit, price, surge]
+  question: Where is the fare computed?
+  good: A pricing strategy per vehicle class (or a pricing policy) so surge or time-based pricing plugs in without touching trips.
+  smells: [TYPE_SWITCH]
+  patterns: [Strategy]
+- id: trip_lifecycle
+  keywords: [status, assigned, started, completed, cancelled, transition]
+  question: How are trip and driver status transitions enforced?
+  good: Explicit transition rules in one place; driver status changes follow trip transitions.
+  smells: [STATE_FLAG]
+  patterns: [State]
+- id: geo
+  keywords: [location, x, y, grid, index]
+  question: How would nearby-driver lookup scale?
+  good: Location queries behind an interface (could be a grid/geohash index later); current linear scan is fine for the problem.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents assigning one driver to two riders?
+  good: Selecting a driver and marking them ON_TRIP happen atomically.
+  smells: [UNGUARDED_SHARED]

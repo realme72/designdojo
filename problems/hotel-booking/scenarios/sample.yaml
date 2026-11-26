@@ -1,0 +1,19 @@
+scenarios:
+  - name: book_lowest_free_room
+    steps:
+      - {call: add_room, args: {number: "102", type: DOUBLE, nightly_rate: 5000}}
+      - {call: add_room, args: {number: "101", type: DOUBLE, nightly_rate: 5000}}
+      - call: book
+        args: {guest: ann, type: DOUBLE, check_in: "2023-12-01", check_out: "2023-12-04"}
+        expect: {guest: ann, room: "101", total: 15000, status: CONFIRMED}
+      - {call: search, args: {type: DOUBLE, check_in: "2023-12-02", check_out: "2023-12-03"}, expect: ["102"]}
+  - name: same_day_turnover
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-01", check_out: "2023-12-03"}}
+      - {call: book, args: {guest: b, type: SINGLE, check_in: "2023-12-03", check_out: "2023-12-05"}, expect: {room: "101"}}
+  - name: no_availability
+    steps:
+      - {call: add_room, args: {number: "101", type: SUITE, nightly_rate: 9000}}
+      - {call: book, args: {guest: a, type: SUITE, check_in: "2023-12-01", check_out: "2023-12-05"}}
+      - {call: book, args: {guest: b, type: SUITE, check_in: "2023-12-04", check_out: "2023-12-06"}, expect_error: NoAvailability}
