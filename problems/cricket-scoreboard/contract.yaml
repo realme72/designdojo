@@ -1,0 +1,40 @@
+enums:
+  Extra: [NONE, WIDE, NO_BALL, BYE, LEG_BYE]
+
+dtos:
+  InningsConfig:
+    overs: int
+    batters: "list[str]"
+  Score:
+    runs: int
+    wickets: int
+    overs: str
+    complete: bool
+  BatterStats:
+    runs: int
+    balls: int
+    out: bool
+
+interfaces:
+  Scoreboard:
+    bowl:
+      params: {bowler: str, runs: int, extra: Extra, wicket: bool}
+      returns: Score
+      raises: [InningsOver, InvalidBall, SameBowler, BowlerChange]
+    score:
+      returns: Score
+    striker:
+      returns: str
+    non_striker:
+      returns: str
+    batter:
+      params: {name: str}
+      returns: BatterStats
+      raises: [UnknownBatter]
+
+entrypoint:
+  name: create
+  params: {config: InningsConfig}
+  returns: Scoreboard
+
+errors: [InningsOver, InvalidBall, SameBowler, BowlerChange, UnknownBatter]

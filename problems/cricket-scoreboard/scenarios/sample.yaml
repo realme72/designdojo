@@ -1,0 +1,17 @@
+config: {overs: 2, batters: [rohit, gill, kohli, rahul]}
+scenarios:
+  - name: runs_and_strike
+    steps:
+      - {call: bowl, args: {bowler: b1, runs: 4, extra: NONE, wicket: false}, expect: {runs: 4, overs: "0.1"}}
+      - {call: bowl, args: {bowler: b1, runs: 1, extra: NONE, wicket: false}, expect: {runs: 5, overs: "0.2"}}
+      - {call: striker, expect: gill}
+      - {call: batter, args: {name: rohit}, expect: {runs: 5, balls: 2, out: false}}
+  - name: wide_is_not_a_ball
+    steps:
+      - {call: bowl, args: {bowler: b1, runs: 0, extra: WIDE, wicket: false}, expect: {runs: 1, overs: "0.0"}}
+      - {call: batter, args: {name: rohit}, expect: {balls: 0}}
+  - name: wicket_brings_next_batter
+    steps:
+      - {call: bowl, args: {bowler: b1, runs: 0, extra: NONE, wicket: true}, expect: {wickets: 1}}
+      - {call: striker, expect: kohli}
+      - {call: batter, args: {name: rohit}, expect: {out: true, balls: 1}}
