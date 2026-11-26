@@ -1,0 +1,7 @@
+id: chess
+title: Chess
+difficulty: hard
+category: Games
+time_limit_min: 75
+statement: statement.md
+tags: [games, polymorphism, rules]

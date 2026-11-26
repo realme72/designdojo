@@ -196,6 +196,10 @@ def lint_problem(p: Problem) -> list[str]:
                     issues.append(f"{where} step {i}: unknown error {err!r}")
     if (p.meta.get("tags") and "concurrency" in p.meta["tags"]) != bool(p.suite("concurrency")["scenarios"]):
         issues.append("tag 'concurrency' and scenarios/concurrency.yaml must go together")
+    try:
+        p.decision_points
+    except Exception as e:  # noqa: BLE001
+        return issues + [f"decision_points.yaml: {str(e).splitlines()[0]} ({type(e).__name__})"]
     ids = [d["id"] for d in p.decision_points]
     if not ids:
         issues.append("decision_points.yaml: missing or empty")

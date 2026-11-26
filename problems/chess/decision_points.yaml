@@ -1,0 +1,22 @@
+- id: move_generation
+  keywords: [piece, knight, bishop, rook, queen, king, pawn, moves, directions]
+  question: How do pieces generate moves?
+  good: Polymorphic pieces (or a direction/slide table per piece type) producing pseudo-legal moves; no giant switch in the game loop.
+  smells: [TYPE_SWITCH, GOD_CLASS]
+  principles: [OCP, LSP]
+  patterns: [Strategy]
+- id: legality
+  keywords: [check, legal, king, attacked, pin, simulate]
+  question: Where is "can't leave your king in check" enforced?
+  good: "Once, generically - try the pseudo-legal move on a copy (or make/unmake) and test whether the mover's king is attacked."
+  principles: [DRY, SRP]
+- id: board_model
+  keywords: [board, square, grid, position, coordinate]
+  question: Is the board separate from the game rules?
+  good: Board (pieces on squares, coordinate parsing) vs Game (turns, status, history).
+  principles: [SRP]
+- id: game_state
+  keywords: [status, checkmate, stalemate, over, turn]
+  question: How are end states detected?
+  good: Status is derived from "in check?" and "any legal move?" for the side to move, computed after each move.
+  smells: [STATE_FLAG]

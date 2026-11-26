@@ -1,0 +1,79 @@
+config: {setup: [], to_move: WHITE}
+scenarios:
+  - name: knight_and_blocked_pieces_at_start
+    steps:
+      - {call: legal_moves, args: {square: g1}, expect: [f3, h3]}
+      - {call: legal_moves, args: {square: c1}, expect: []}
+      - {call: legal_moves, args: {square: e2}, expect: [e3, e4]}
+      - {call: legal_moves, args: {square: e7}, expect: []}
+      - {call: legal_moves, args: {square: e4}, expect: []}
+  - name: capture_reports_piece
+    steps:
+      - {call: move, args: {from_sq: e2, to_sq: e4, promotion: ""}}
+      - {call: move, args: {from_sq: d7, to_sq: d5, promotion: ""}}
+      - {call: move, args: {from_sq: e4, to_sq: d5, promotion: ""}, expect: {captured: p}}
+      - {call: move, args: {from_sq: d8, to_sq: d5, promotion: ""}, expect: {captured: P}}
+  - name: pawn_cannot_capture_forward
+    steps:
+      - {call: move, args: {from_sq: e2, to_sq: e4, promotion: ""}}
+      - {call: move, args: {from_sq: e7, to_sq: e5, promotion: ""}}
+      - {call: move, args: {from_sq: e4, to_sq: e5, promotion: ""}, expect_error: IllegalMove}
+      - {call: legal_moves, args: {square: e4}, expect: []}
+  - name: pinned_piece_cannot_move
+    config: {setup: ["....r..k", "........", "........", "........", "........", "........", "....B...", "....K..."], to_move: WHITE}
+    steps:
+      - {call: legal_moves, args: {square: e2}, expect: []}
+      - {call: move, args: {from_sq: e2, to_sq: d3, promotion: ""}, expect_error: IllegalMove}
+  - name: must_answer_check
+    config: {setup: ["....r..k", "........", "........", "........", "........", "........", "R.......", "....K..."], to_move: WHITE}
+    steps:
+      - {call: status, expect: CHECK}
+      - {call: move, args: {from_sq: a2, to_sq: a3, promotion: ""}, expect_error: IllegalMove}
+      - {call: move, args: {from_sq: a2, to_sq: e2, promotion: ""}, expect: {status: IN_PROGRESS}}
+  - name: giving_check
+    config: {setup: ["....k...", "........", "........", "........", "........", "........", "........", "R...K..."], to_move: WHITE}
+    steps:
+      - {call: move, args: {from_sq: a1, to_sq: a8, promotion: ""}, expect: {status: CHECK}}
+      - {call: legal_moves, args: {square: e8}, expect: [d7, e7, f7]}
+  - name: king_cannot_walk_into_check
+    config: {setup: ["....k...", "........", "........", "........", "........", "........", ".....r..", "....K..."], to_move: WHITE}
+    steps:
+      - {call: legal_moves, args: {square: e1}, expect: [d1, f2]}
+  - name: stalemate
+    config: {setup: ["k.......", "........", "..K.....", ".Q......", "........", "........", "........", "........"], to_move: WHITE}
+    steps:
+      - {call: move, args: {from_sq: b5, to_sq: b6, promotion: ""}, expect: {status: STALEMATE}}
+      - {call: move, args: {from_sq: a8, to_sq: a7, promotion: ""}, expect_error: GameOver}
+  - name: back_rank_mate
+    config: {setup: ["......k.", ".....ppp", "........", "........", "........", "........", "........", "R.....K."], to_move: WHITE}
+    steps:
+      - {call: move, args: {from_sq: a1, to_sq: a8, promotion: ""}, expect: {status: CHECKMATE}}
+      - {call: status, expect: CHECKMATE}
+  - name: promotion
+    config: {setup: [".......k", "P.......", "........", "........", "........", "........", "........", "....K..."], to_move: WHITE}
+    steps:
+      - {call: move, args: {from_sq: a7, to_sq: a8, promotion: x}, expect_error: IllegalMove}
+      - {call: move, args: {from_sq: a7, to_sq: a8, promotion: K}, expect_error: IllegalMove}
+      - {call: move, args: {from_sq: a7, to_sq: a8, promotion: ""}, expect: {status: CHECK}}
+      - {call: board, expect: [Q......k, "........", "........", "........", "........", "........", "........", "....K..."]}
+  - name: underpromotion_to_knight
+    config: {setup: [".......k", "P.......", "........", "........", "........", "........", "........", "....K..."], to_move: WHITE}
+    steps:
+      - {call: move, args: {from_sq: a7, to_sq: a8, promotion: n}, expect: {status: IN_PROGRESS}}
+      - {call: board, expect: [N......k, "........", "........", "........", "........", "........", "........", "....K..."]}
+  - name: double_step_blocked
+    config: {setup: ["....k...", "........", "........", "........", "........", "....n...", "....P...", "....K..."], to_move: WHITE}
+    steps:
+      - {call: legal_moves, args: {square: e2}, expect: []}
+      - {call: move, args: {from_sq: e2, to_sq: e4, promotion: ""}, expect_error: IllegalMove}
+  - name: invalid_squares
+    steps:
+      - {call: move, args: {from_sq: z9, to_sq: e4, promotion: ""}, expect_error: InvalidSquare}
+      - {call: move, args: {from_sq: e2, to_sq: e9, promotion: ""}, expect_error: InvalidSquare}
+      - {call: legal_moves, args: {square: "i1"}, expect_error: InvalidSquare}
+  - name: sliders_blocked_and_capture
+    config: {setup: ["....k...", "........", "........", "...p....", "........", ".B......", "........", "....K..."], to_move: WHITE}
+    steps:
+      - {call: legal_moves, args: {square: b3}, expect: [a2, a4, c2, c4, d1, d5]}
+      - {call: move, args: {from_sq: b3, to_sq: e6, promotion: ""}, expect_error: IllegalMove}
+      - {call: move, args: {from_sq: b3, to_sq: d5, promotion: ""}, expect: {captured: p}}
