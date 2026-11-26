@@ -17,7 +17,7 @@ def client(tmp_path, monkeypatch):
 
 def test_problems_and_workspace_scaffold(client):
     c, root = client
-    assert [p["id"] for p in c.get("/api/problems").json()] == ["parking-lot"]
+    assert "parking-lot" in [p["id"] for p in c.get("/api/problems").json()]
     ws = c.get("/api/ws/parking-lot/python").json()
     paths = {f["path"]: f["editable"] for f in ws["files"]}
     assert paths["solution/__init__.py"] is True

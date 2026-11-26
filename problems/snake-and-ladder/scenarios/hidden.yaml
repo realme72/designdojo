@@ -1,0 +1,94 @@
+config:
+  size: 30
+  snakes: {17: 4, 27: 1}
+  ladders: {3: 22, 5: 8, 25: 30}
+scenarios:
+  - name: six_gives_another_turn
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: add_player, args: {name: bob}}
+      - {call: move, args: {player: ann, roll: 6}, expect: {to_pos: 6, next_player: ann}}
+      - {call: move, args: {player: ann, roll: 1}, expect: {to_pos: 7, next_player: bob}}
+      - {call: current_player, expect: bob}
+  - name: overshoot_stays_put
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: move, args: {player: ann, roll: 3}}
+      - {call: move, args: {player: ann, roll: 6}, expect: {from_pos: 22, to_pos: 28}}
+      - {call: move, args: {player: ann, roll: 4}, expect: {from_pos: 28, to_pos: 28, won: false}}
+      - {call: position, args: {player: ann}, expect: 28}
+  - name: exact_landing_wins
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: add_player, args: {name: bob}}
+      - {call: move, args: {player: ann, roll: 3}}
+      - {call: move, args: {player: bob, roll: 1}}
+      - {call: move, args: {player: ann, roll: 6}, expect: {to_pos: 28}}
+      - {call: move, args: {player: ann, roll: 2}, expect: {to_pos: 30, won: true, next_player: ""}}
+      - {call: winner, expect: ann}
+      - {call: move, args: {player: bob, roll: 1}, expect_error: GameOver}
+      - {call: current_player, expect_error: GameOver}
+  - name: ladder_top_is_win
+    config:
+      size: 30
+      snakes: {}
+      ladders: {4: 30}
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: move, args: {player: ann, roll: 4}, expect: {to_pos: 30, won: true}}
+  - name: six_does_not_extend_after_win
+    config:
+      size: 10
+      snakes: {}
+      ladders: {}
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: add_player, args: {name: bob}}
+      - {call: move, args: {player: ann, roll: 4}}
+      - {call: move, args: {player: bob, roll: 1}}
+      - {call: move, args: {player: ann, roll: 6}, expect: {won: true, next_player: ""}}
+  - name: invalid_rolls
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: move, args: {player: ann, roll: 0}, expect_error: InvalidRoll}
+      - {call: move, args: {player: ann, roll: 7}, expect_error: InvalidRoll}
+      - {call: position, args: {player: ann}, expect: 0}
+  - name: error_precedence
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: add_player, args: {name: bob}}
+      - {call: move, args: {player: zed, roll: 9}, expect_error: UnknownPlayer}
+      - {call: move, args: {player: bob, roll: 9}, expect_error: NotYourTurn}
+  - name: joining_rules
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: add_player, args: {name: ann}, expect_error: DuplicatePlayer}
+      - {call: move, args: {player: ann, roll: 1}}
+      - {call: add_player, args: {name: bob}, expect_error: GameStarted}
+  - name: no_players
+    steps:
+      - {call: current_player, expect_error: NoPlayers}
+      - {call: winner, expect: ""}
+      - {call: position, args: {player: ann}, expect_error: UnknownPlayer}
+  - name: turn_order_wraps
+    steps:
+      - {call: add_player, args: {name: a}}
+      - {call: add_player, args: {name: b}}
+      - {call: add_player, args: {name: c}}
+      - {call: move, args: {player: a, roll: 1}}
+      - {call: move, args: {player: b, roll: 1}}
+      - {call: move, args: {player: c, roll: 1}, expect: {next_player: a}}
+      - {call: current_player, expect: a}
+  - name: players_share_squares
+    steps:
+      - {call: add_player, args: {name: a}}
+      - {call: add_player, args: {name: b}}
+      - {call: move, args: {player: a, roll: 2}}
+      - {call: move, args: {player: b, roll: 2}, expect: {to_pos: 2}}
+      - {call: position, args: {player: a}, expect: 2}
+  - name: snake_from_overshoot_free_path
+    steps:
+      - {call: add_player, args: {name: a}}
+      - {call: move, args: {player: a, roll: 5}, expect: {to_pos: 8}}
+      - {call: move, args: {player: a, roll: 6}, expect: {to_pos: 14}}
+      - {call: move, args: {player: a, roll: 3}, expect: {to_pos: 4}}
