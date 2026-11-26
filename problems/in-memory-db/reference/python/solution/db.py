@@ -47,6 +47,11 @@ class MemoryDB(Database):
         with t.lock:
             return t.delete(where)
 
+    def add_unique(self, table: str, column: str) -> None:
+        t = self._table(table)
+        with t.lock:
+            t.add_unique(column)
+
     def create_index(self, table: str, column: str) -> None:
         t = self._table(table)
         with t.lock:

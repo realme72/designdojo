@@ -1,0 +1,6 @@
+interfaces:
+  Database:
+    add_unique:
+      params: {table: str, column: str}
+      returns: void
+      raises: [UnknownTable, UnknownColumn, InvalidSchema]

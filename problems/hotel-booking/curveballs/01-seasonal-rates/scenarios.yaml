@@ -1,0 +1,18 @@
+scenarios:
+  - name: holiday_nights
+    steps:
+      - {call: add_room, args: {number: "101", type: DOUBLE, nightly_rate: 1000}}
+      - {call: add_room, args: {number: "201", type: SINGLE, nightly_rate: 500}}
+      - {call: book, args: {guest: bob, type: DOUBLE, check_in: "2023-12-01", check_out: "2023-12-02"}, bind: early}
+      - {call: set_seasonal_rate, args: {type: DOUBLE, start: "2023-12-24", end: "2023-12-26", percent: 150}}
+      - {call: book, args: {guest: ann, type: DOUBLE, check_in: "2023-12-23", check_out: "2023-12-27"}, expect: {total: 5000}}
+      - {call: book, args: {guest: ann, type: SINGLE, check_in: "2023-12-24", check_out: "2023-12-25"}, expect: {total: 500}}
+      - {call: reservations, args: {guest: bob}, expect: [{total: 1000}]}
+  - name: last_season_wins
+    steps:
+      - {call: add_room, args: {number: "301", type: SUITE, nightly_rate: 1001}}
+      - {call: set_seasonal_rate, args: {type: SUITE, start: "2023-12-01", end: "2023-12-31", percent: 120}}
+      - {call: set_seasonal_rate, args: {type: SUITE, start: "2023-12-10", end: "2023-12-11", percent: 50}}
+      - {call: book, args: {guest: ann, type: SUITE, check_in: "2023-12-09", check_out: "2023-12-12"}, expect: {total: 2902}}
+      - {call: set_seasonal_rate, args: {type: SUITE, start: "2023-12-11", end: "2023-12-10", percent: 50}, expect_error: InvalidDates}
+      - {call: set_seasonal_rate, args: {type: SUITE, start: "soon", end: "2023-12-10", percent: 50}, expect_error: InvalidDates}

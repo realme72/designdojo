@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from collections import defaultdict
 
-from contract import DuplicateKey, InvalidQuery, InvalidRow, UnknownColumn
+from contract import DuplicateKey, InvalidQuery, InvalidRow, InvalidSchema, UnknownColumn
 
 
 class Table:
@@ -11,6 +11,7 @@ class Table:
         self.columns, self.pk = list(columns), pk
         self.rows: dict[str, dict[str, str]] = {}
         self.indexes: dict[str, defaultdict[str, set[str]]] = {}
+        self.unique: set[str] = set()
         self.lock = threading.Lock()
 
     # ---- schema checks ----
@@ -18,6 +19,20 @@ class Table:
         unknown = [n for n in names if n not in self.columns]
         if unknown:
             raise UnknownColumn(unknown)
+
+    # ---- constraints ----
+    def add_unique(self, column: str) -> None:
+        self.check_columns([column])
+        values = [r[column] for r in self.rows.values()]
+        if len(values) != len(set(values)):
+            raise InvalidSchema(f"{column} already has duplicates")
+        self.unique.add(column)
+
+    def _check_unique(self, rows) -> None:
+        for col in self.unique:
+            values = [r[col] for r in rows]
+            if len(values) != len(set(values)):
+                raise DuplicateKey(col)
 
     # ---- index maintenance ----
     def _index_add(self, key: str, row: dict[str, str]) -> None:
@@ -65,6 +80,7 @@ class Table:
         key = row[self.pk]
         if key in self.rows:
             raise DuplicateKey(key)
+        self._check_unique([*self.rows.values(), row])
         self.rows[key] = dict(row)
         self._index_add(key, self.rows[key])
 
@@ -77,6 +93,7 @@ class Table:
             untouched = set(self.rows) - set(keys)
             if len(set(new_keys)) != len(new_keys) or any(k in untouched for k in new_keys):
                 raise DuplicateKey(values[self.pk])
+        self._check_unique([r for k, r in self.rows.items() if k not in new_rows] + list(new_rows.values()))
         for k in keys:
             self._index_remove(k, self.rows.pop(k))
         for row in new_rows.values():

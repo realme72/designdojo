@@ -66,6 +66,13 @@ class HotelSystem(Hotel):
                 raise DuplicateRoom(number)
             self._rooms[number] = Room(number, type, nightly_rate)
 
+    def set_seasonal_rate(self, type: RoomType, start: str, end: str, percent: int) -> None:
+        s, e = parse(start), parse(end)
+        if e <= s:
+            raise InvalidDates(f"{start}..{end}")
+        with self._lock:
+            self._pricing.add_season(type, s, e, percent)
+
     def _free_rooms(self, type: RoomType, start: date, end: date) -> list[Room]:
         return sorted((r for r in self._rooms.values() if r.type is type and r.free(start, end)),
                       key=lambda r: r.number)
@@ -84,7 +91,7 @@ class HotelSystem(Hotel):
             room = free[0]
             n = next(self._seq)
             res = Reservation(f"R{n}", guest, room.number, check_in, check_out,
-                              self._pricing.total(room.rate, start, end), S.CONFIRMED)
+                              self._pricing.total(room.rate, start, end, room.type), S.CONFIRMED)
             room.stays[res.id] = (start, end)
             self._res[res.id] = res
             self._order[res.id] = n

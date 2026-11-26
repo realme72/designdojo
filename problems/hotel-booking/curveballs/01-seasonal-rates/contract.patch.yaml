@@ -1,0 +1,6 @@
+interfaces:
+  Hotel:
+    set_seasonal_rate:
+      params: {type: RoomType, start: str, end: str, percent: int}
+      returns: void
+      raises: [InvalidDates]

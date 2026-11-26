@@ -1,0 +1,13 @@
+config: {epoch: 1699999990, worker_id: 5, sequence_bits: 12}
+scenarios:
+  - name: lower_bound
+    steps:
+      - {call: min_id_at, args: {timestamp: 1700000000}, expect: 41943040}
+      - {call: next_id, expect: 41963520}
+      - {call: min_id_at, args: {timestamp: 1700000001}, expect: 46137344}
+      - {call: min_id_at, args: {timestamp: 1699999990}, expect: 0}
+      - {call: min_id_at, args: {timestamp: 1699999989}, expect_error: InvalidTimestamp}
+  - name: other_layout
+    config: {epoch: 1699999999, worker_id: 1, sequence_bits: 8}
+    steps:
+      - {call: min_id_at, args: {timestamp: 1700000001}, expect: 524288}

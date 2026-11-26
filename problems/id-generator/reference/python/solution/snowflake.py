@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from dataclasses import dataclass
 
-from contract import ClockMovedBackwards, Clock, IdGenerator, IdParts, SequenceExhausted
+from contract import ClockMovedBackwards, Clock, IdGenerator, IdParts, InvalidTimestamp, SequenceExhausted
 
 WORKER_BITS = 10
 
@@ -45,6 +45,11 @@ class Snowflake(IdGenerator):
             else:
                 self._last, self._seq = ts, 0
             return self._layout.pack(ts, self._worker, self._seq)
+
+    def min_id_at(self, timestamp: int) -> int:
+        if timestamp < self._epoch:
+            raise InvalidTimestamp(timestamp)
+        return self._layout.pack(timestamp - self._epoch, 0, 0)
 
     def parse(self, id: int) -> IdParts:
         ts, worker, seq = self._layout.unpack(id)

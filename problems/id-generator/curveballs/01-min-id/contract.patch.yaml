@@ -1,0 +1,7 @@
+interfaces:
+  IdGenerator:
+    min_id_at:
+      params: {timestamp: long}
+      returns: long
+      raises: [InvalidTimestamp]
+errors: [InvalidTimestamp]

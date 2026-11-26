@@ -1,8 +1,8 @@
 from contract import Inventory
 
-from .allocation import WarehouseOrder
+from .allocation import PriorityOrder
 from .inventory import StockService
 
 
 def create() -> Inventory:
-    return StockService(WarehouseOrder())
+    return StockService(PriorityOrder())

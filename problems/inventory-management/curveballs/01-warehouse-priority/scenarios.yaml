@@ -1,0 +1,18 @@
+scenarios:
+  - name: priority_first
+    steps:
+      - {call: receive, args: {sku: s1, warehouse: A, qty: 5}}
+      - {call: receive, args: {sku: s1, warehouse: B, qty: 5}}
+      - {call: receive, args: {sku: s1, warehouse: C, qty: 5}}
+      - {call: set_priority, args: {warehouse: C, priority: 1}}
+      - {call: set_priority, args: {warehouse: B, priority: 2}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: s1, qty: 7}]}, expect: [{warehouse: C, qty: 5}, {warehouse: B, qty: 2}]}
+      - {call: reserve, args: {order_id: o2, lines: [{sku: s1, qty: 6}]}, expect: [{warehouse: B, qty: 3}, {warehouse: A, qty: 3}]}
+  - name: ties_by_name
+    steps:
+      - {call: receive, args: {sku: s1, warehouse: B, qty: 2}}
+      - {call: receive, args: {sku: s1, warehouse: A, qty: 2}}
+      - {call: receive, args: {sku: s1, warehouse: Z, qty: 2}}
+      - {call: set_priority, args: {warehouse: B, priority: 1}}
+      - {call: set_priority, args: {warehouse: A, priority: 1}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: s1, qty: 5}]}, expect: [{warehouse: A, qty: 2}, {warehouse: B, qty: 2}, {warehouse: Z, qty: 1}]}

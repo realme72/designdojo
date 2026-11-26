@@ -1,0 +1,5 @@
+interfaces:
+  Inventory:
+    set_priority:
+      params: {warehouse: str, priority: int}
+      returns: void

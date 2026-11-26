@@ -1,0 +1,26 @@
+config: {delivery_fee: 40}
+scenarios:
+  - name: capped_discount
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r1}}
+      - {call: add_item, args: {restaurant_id: r1, item_id: dosa, price: 120}}
+      - {call: add_item, args: {restaurant_id: r1, item_id: chai, price: 30}}
+      - {call: add_coupon, args: {code: SAVE20, percent_off: 20, max_off: 50}}
+      - call: place_order
+        args: {customer: c1, restaurant_id: r1, lines: [{item_id: dosa, qty: 2}, {item_id: chai, qty: 1}]}
+        bind: o
+      - {call: apply_coupon, args: {order_id: $o.id, code: SAVE20}, expect: {total: 260, status: PLACED}}
+      - {call: order, args: {order_id: $o.id}, expect: {total: 260}}
+      - {call: apply_coupon, args: {order_id: $o.id, code: SAVE20}, expect_error: InvalidCoupon}
+  - name: percent_and_errors
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r1}}
+      - {call: add_item, args: {restaurant_id: r1, item_id: chai, price: 35}}
+      - {call: add_coupon, args: {code: TEN, percent_off: 10, max_off: 1000}}
+      - {call: place_order, args: {customer: c1, restaurant_id: r1, lines: [{item_id: chai, qty: 1}]}, bind: o}
+      - {call: apply_coupon, args: {order_id: $o.id, code: NOPE}, expect_error: InvalidCoupon}
+      - {call: apply_coupon, args: {order_id: $o.id, code: TEN}, expect: {total: 72}}
+      - {call: place_order, args: {customer: c1, restaurant_id: r1, lines: [{item_id: chai, qty: 1}]}, bind: p}
+      - {call: accept, args: {order_id: $p.id}}
+      - {call: apply_coupon, args: {order_id: $p.id, code: TEN}, expect_error: InvalidState}
+      - {call: apply_coupon, args: {order_id: O999, code: TEN}, expect_error: UnknownOrder}

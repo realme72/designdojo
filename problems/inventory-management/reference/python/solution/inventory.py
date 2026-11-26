@@ -79,6 +79,10 @@ class StockService(Inventory):
             self._check(sku)
             self._thresholds[sku] = threshold
 
+    def set_priority(self, warehouse: str, priority: int) -> None:
+        with self._lock:
+            self._strategy.priorities[warehouse] = priority
+
     def low_stock(self) -> list[str]:
         with self._lock:
             return sorted(s for s, t in self._thresholds.items() if sum(self._free(s).values()) < t)

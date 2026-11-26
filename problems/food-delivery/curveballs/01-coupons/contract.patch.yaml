@@ -1,0 +1,10 @@
+interfaces:
+  FoodDelivery:
+    add_coupon:
+      params: {code: str, percent_off: int, max_off: long}
+      returns: void
+    apply_coupon:
+      params: {order_id: str, code: str}
+      returns: Order
+      raises: [UnknownOrder, InvalidState, InvalidCoupon]
+errors: [InvalidCoupon]

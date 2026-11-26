@@ -1,0 +1,23 @@
+scenarios:
+  - name: unique_email
+    steps:
+      - {call: create_table, args: {name: users, columns: [id, email, name], primary_key: id}}
+      - {call: insert, args: {table: users, row: {id: "1", email: a@x, name: A}}}
+      - {call: insert, args: {table: users, row: {id: "2", email: b@x, name: B}}}
+      - {call: add_unique, args: {table: users, column: email}}
+      - {call: insert, args: {table: users, row: {id: "3", email: a@x, name: C}}, expect_error: DuplicateKey}
+      - {call: update, args: {table: users, where: {id: "2"}, values: {email: a@x}}, expect_error: DuplicateKey}
+      - {call: select, args: {table: users, where: {id: "2"}, order_by: "", limit: 0}, expect: [{email: b@x}]}
+      - {call: update, args: {table: users, where: {id: "2"}, values: {email: c@x}}, expect: 1}
+      - {call: insert, args: {table: users, row: {id: "3", email: b@x, name: C}}}
+      - {call: update, args: {table: users, where: {}, values: {email: same@x}}, expect_error: DuplicateKey}
+      - {call: select, args: {table: users, where: {}, order_by: "", limit: 0}, expect: [{email: a@x}, {email: c@x}, {email: b@x}]}
+  - name: constraint_errors
+    steps:
+      - {call: create_table, args: {name: users, columns: [id, name], primary_key: id}}
+      - {call: insert, args: {table: users, row: {id: "1", name: A}}}
+      - {call: insert, args: {table: users, row: {id: "2", name: A}}}
+      - {call: add_unique, args: {table: users, column: name}, expect_error: InvalidSchema}
+      - {call: insert, args: {table: users, row: {id: "3", name: A}}}
+      - {call: add_unique, args: {table: nope, column: name}, expect_error: UnknownTable}
+      - {call: add_unique, args: {table: users, column: bogus}, expect_error: UnknownColumn}

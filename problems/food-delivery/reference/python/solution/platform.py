@@ -5,7 +5,7 @@ import threading
 from collections import deque
 from dataclasses import dataclass
 
-from contract import (FoodDelivery, InvalidOrder, InvalidState, ItemUnavailable, Order, OrderLine, OrderStatus,
+from contract import (FoodDelivery, InvalidCoupon, InvalidOrder, InvalidState, ItemUnavailable, Order, OrderLine, OrderStatus,
                       UnknownItem, UnknownOrder, UnknownRestaurant)
 
 from .notifications import CustomerInbox, OrderListener
@@ -34,6 +34,8 @@ class OrderRecord:
     total: int
     status: OrderStatus = S.PLACED
     agent: str = ""
+    subtotal: int = 0
+    coupon: str = ""
 
     def view(self) -> Order:
         return Order(self.id, self.customer, self.restaurant, self.status, self.total, self.agent)
@@ -49,6 +51,7 @@ class Platform(FoodDelivery):
         self._free: set[str] = set()
         self._waiting: deque[str] = deque()
         self._ids = itertools.count(1)
+        self._coupons: dict[str, tuple[int, int]] = {}  # code -> (percent, cap)
         self._lock = threading.RLock()
 
     # ---- catalog ----
@@ -123,9 +126,25 @@ class Platform(FoodDelivery):
                 if not item.available:
                     raise ItemUnavailable(l.item_id)
                 total += item.price * l.qty
-            o = OrderRecord(f"O{next(self._ids)}", customer, restaurant_id, total)
+            o = OrderRecord(f"O{next(self._ids)}", customer, restaurant_id, total, subtotal=total - self._fee)
             self._orders[o.id] = o
             self._notify(o)
+            return o.view()
+
+    def add_coupon(self, code: str, percent_off: int, max_off: int) -> None:
+        with self._lock:
+            self._coupons[code] = (percent_off, max_off)
+
+    def apply_coupon(self, order_id: str, code: str) -> Order:
+        with self._lock:
+            o = self._order(order_id)
+            if o.status is not S.PLACED:
+                raise InvalidState(f"{o.status.name}: coupons apply before acceptance")
+            if code not in self._coupons or o.coupon:
+                raise InvalidCoupon(code)
+            percent, cap = self._coupons[code]
+            o.total -= min(o.subtotal * percent // 100, cap)
+            o.coupon = code
             return o.view()
 
     def accept(self, order_id: str) -> Order:
