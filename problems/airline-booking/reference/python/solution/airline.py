@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from contract import (Airline, Booking, Clock, DuplicateFlight, FlightDeparted, InvalidRequest, InvalidState,
                       NotEnoughSeats, SeatClass, UnknownBooking, UnknownFlight)
 
-PREFIX = {SeatClass.ECONOMY: "E", SeatClass.BUSINESS: "B"}
+PREFIX = {SeatClass.ECONOMY: "E", SeatClass.BUSINESS: "B", SeatClass.PREMIUM_ECONOMY: "P"}
 
 
 class LoadFactorFare:

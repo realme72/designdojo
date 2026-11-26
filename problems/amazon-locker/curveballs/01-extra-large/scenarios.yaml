@@ -1,0 +1,15 @@
+config: {hold_seconds: 100}
+scenarios:
+  - name: extra_large_only_in_extra_large
+    steps:
+      - {call: add_locker, args: {locker_id: l, size: LARGE}}
+      - {call: add_locker, args: {locker_id: x, size: EXTRA_LARGE}}
+      - {call: deposit, args: {package_id: fridge, size: EXTRA_LARGE, code: c1}, expect: x}
+      - {call: deposit, args: {package_id: tv, size: EXTRA_LARGE, code: c2}, expect_error: NoLockerAvailable}
+  - name: large_prefers_large_over_extra_large
+    steps:
+      - {call: add_locker, args: {locker_id: x, size: EXTRA_LARGE}}
+      - {call: add_locker, args: {locker_id: l, size: LARGE}}
+      - {call: deposit, args: {package_id: p, size: LARGE, code: c}, expect: l}
+      - {call: deposit, args: {package_id: q, size: SMALL, code: d}, expect: x}
+      - {call: free_count, args: {size: EXTRA_LARGE}, expect: 0}

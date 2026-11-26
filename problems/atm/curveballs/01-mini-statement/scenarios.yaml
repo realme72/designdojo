@@ -1,0 +1,33 @@
+config:
+  notes: {500: 20, 100: 20}
+  accounts: [{card: C1, pin: "1", balance: 10000}, {card: C2, pin: "2", balance: 500}]
+scenarios:
+  - name: newest_first_with_balances
+    steps:
+      - {call: insert_card, args: {card: C1}}
+      - {call: enter_pin, args: {pin: "1"}}
+      - {call: withdraw, args: {amount: 600}}
+      - {call: deposit, args: {amount: 100}}
+      - {call: withdraw, args: {amount: 150}, expect_error: CannotDispense}
+      - {call: mini_statement, expect: [{type: DEPOSIT, amount: 100, balance_after: 9500}, {type: WITHDRAWAL, amount: 600, balance_after: 9400}]}
+  - name: only_last_five_and_survives_sessions
+    steps:
+      - {call: insert_card, args: {card: C1}}
+      - {call: enter_pin, args: {pin: "1"}}
+      - {call: deposit, args: {amount: 1}}
+      - {call: deposit, args: {amount: 2}}
+      - {call: deposit, args: {amount: 3}}
+      - {call: eject}
+      - {call: insert_card, args: {card: C1}}
+      - {call: enter_pin, args: {pin: "1"}}
+      - {call: deposit, args: {amount: 4}}
+      - {call: deposit, args: {amount: 5}}
+      - {call: deposit, args: {amount: 6}}
+      - {call: mini_statement, expect: [{amount: 6}, {amount: 5}, {amount: 4}, {amount: 3}, {amount: 2}]}
+  - name: per_card_and_needs_auth
+    steps:
+      - {call: mini_statement, expect_error: InvalidState}
+      - {call: insert_card, args: {card: C2}}
+      - {call: mini_statement, expect_error: InvalidState}
+      - {call: enter_pin, args: {pin: "2"}}
+      - {call: mini_statement, expect: []}

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from contract import Account, CardBlocked, UnknownCard, WrongPin
+from contract import Account, CardBlocked, Txn, TxnType, UnknownCard, WrongPin
+
+STATEMENT_SIZE = 5
 
 MAX_ATTEMPTS = 3
 
@@ -12,6 +14,7 @@ class Bank:
         self._accounts = {a.card: {"pin": a.pin, "balance": a.balance} for a in accounts}
         self._failures: dict[str, int] = {}
         self._blocked: set[str] = set()
+        self._ledger: dict[str, list[Txn]] = {}
 
     def check_card(self, card: str) -> None:
         if card not in self._accounts:
@@ -34,4 +37,10 @@ class Bank:
 
     def adjust(self, card: str, delta: int) -> int:
         self._accounts[card]["balance"] += delta
-        return self._accounts[card]["balance"]
+        balance = self._accounts[card]["balance"]
+        kind = TxnType.DEPOSIT if delta > 0 else TxnType.WITHDRAWAL
+        self._ledger.setdefault(card, []).append(Txn(kind, abs(delta), balance))
+        return balance
+
+    def recent(self, card: str) -> list[Txn]:
+        return list(reversed(self._ledger.get(card, [])[-STATEMENT_SIZE:]))

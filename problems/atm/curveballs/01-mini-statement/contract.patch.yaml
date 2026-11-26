@@ -1,0 +1,12 @@
+enums:
+  TxnType: [WITHDRAWAL, DEPOSIT]
+dtos:
+  Txn:
+    type: TxnType
+    amount: long
+    balance_after: long
+interfaces:
+  Atm:
+    mini_statement:
+      returns: "list[Txn]"
+      raises: [InvalidState]

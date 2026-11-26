@@ -93,5 +93,9 @@ class AtmMachine(Atm):
         self.bank.adjust(self.card, -amount)
         return self.dispenser.take(plan)
 
+    def mini_statement(self):
+        self.state.require_auth(self)
+        return self.bank.recent(self.card)
+
     def cash(self) -> int:
         return self.dispenser.total()
