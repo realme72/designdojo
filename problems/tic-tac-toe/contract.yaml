@@ -1,0 +1,33 @@
+enums:
+  Mark: [X, O]
+  GameState: [IN_PROGRESS, X_WON, O_WON, DRAW]
+
+dtos:
+  GameConfig:
+    size: int
+  MoveOutcome:
+    mark: Mark
+    state: GameState
+
+interfaces:
+  TicTacToe:
+    move:
+      params: {row: int, col: int}
+      returns: MoveOutcome
+      raises: [InvalidMove, GameOver]
+    current:
+      returns: Mark
+      raises: [GameOver]
+    state:
+      returns: GameState
+    board:
+      returns: "list[str]"
+    reset:
+      returns: void
+
+entrypoint:
+  name: create
+  params: {config: GameConfig}
+  returns: TicTacToe
+
+errors: [InvalidMove, GameOver]

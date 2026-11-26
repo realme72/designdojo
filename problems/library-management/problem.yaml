@@ -1,0 +1,7 @@
+id: library-management
+title: Library Management System
+difficulty: medium
+category: Booking & reservations
+time_limit_min: 60
+statement: statement.md
+tags: [modeling, concurrency]

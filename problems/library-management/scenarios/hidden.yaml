@@ -1,0 +1,107 @@
+config: {max_loans: 2, loan_days: 14, fine_per_day: 50}
+scenarios:
+  - name: partial_day_counts_as_a_day
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 1}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: l}
+      - advance_clock: 1209601
+      - {call: return_book, args: {loan_id: $l.id}, expect: 50}
+  - name: returned_exactly_at_due_time
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 1}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: l}
+      - advance_clock: 1209600
+      - {call: return_book, args: {loan_id: $l.id}, expect: 0}
+  - name: fines_block_borrowing_until_paid
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 2}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: l}
+      - advance_clock: 1296000
+      - {call: return_book, args: {loan_id: $l.id}, expect: 50}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, expect_error: OutstandingFines}
+      - {call: pay_fine, args: {member_id: m, amount: 20}, expect: 30}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, expect_error: OutstandingFines}
+      - {call: pay_fine, args: {member_id: m, amount: 30}, expect: 0}
+      - {call: checkout, args: {member_id: m, isbn: "1"}}
+  - name: invalid_payments
+    steps:
+      - {call: add_member, args: {member_id: m}}
+      - {call: pay_fine, args: {member_id: m, amount: 10}, expect_error: InvalidAmount}
+      - {call: pay_fine, args: {member_id: m, amount: 0}, expect_error: InvalidAmount}
+      - {call: pay_fine, args: {member_id: z, amount: 10}, expect_error: UnknownMember}
+  - name: loan_limit
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 5}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, expect_error: LoanLimitReached}
+  - name: error_order_fines_before_limit
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 5}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: a}
+      - {call: checkout, args: {member_id: m, isbn: "1"}}
+      - advance_clock: 1300000
+      - {call: return_book, args: {loan_id: $a.id}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, expect_error: OutstandingFines}
+  - name: unknowns
+    steps:
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: z, isbn: "9"}, expect_error: UnknownMember}
+      - {call: checkout, args: {member_id: m, isbn: "9"}, expect_error: UnknownBook}
+      - {call: available, args: {isbn: "9"}, expect_error: UnknownBook}
+      - {call: return_book, args: {loan_id: nope}, expect_error: UnknownLoan}
+      - {call: loans, args: {member_id: z}, expect_error: UnknownMember}
+  - name: duplicate_member_and_bad_copies
+    steps:
+      - {call: add_member, args: {member_id: m}}
+      - {call: add_member, args: {member_id: m}, expect_error: DuplicateMember}
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 0}, expect_error: InvalidCopies}
+  - name: adding_copies_to_existing_book
+    steps:
+      - {call: add_book, args: {isbn: "1", title: Dune, author: Herbert, copies: 1}}
+      - {call: add_book, args: {isbn: "1", title: Other, author: Someone, copies: 2}}
+      - {call: available, args: {isbn: "1"}, expect: 3}
+      - {call: search, args: {query: other}, expect: []}
+  - name: return_twice
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 1}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: l}
+      - {call: return_book, args: {loan_id: $l.id}}
+      - {call: return_book, args: {loan_id: $l.id}, expect_error: UnknownLoan}
+      - {call: available, args: {isbn: "1"}, expect: 1}
+  - name: active_loans_in_order
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 1}}
+      - {call: add_book, args: {isbn: "2", title: U, author: B, copies: 1}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "2"}, bind: a}
+      - advance_clock: 60
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: b}
+      - {call: loans, args: {member_id: m}, expect: [{isbn: "2", due_at: 1701209600}, {isbn: "1", due_at: 1701209660}]}
+      - {call: return_book, args: {loan_id: $a.id}}
+      - {call: loans, args: {member_id: m}, expect: [{isbn: "1"}]}
+  - name: search_title_or_author_case_insensitive
+    steps:
+      - {call: add_book, args: {isbn: "30", title: The Hobbit, author: J.R.R. Tolkien, copies: 1}}
+      - {call: add_book, args: {isbn: "10", title: Dune, author: Frank Herbert, copies: 1}}
+      - {call: add_book, args: {isbn: "20", title: Hobbies at Home, author: Ann Lee, copies: 1}}
+      - {call: search, args: {query: HOBB}, expect: ["20", "30"]}
+      - {call: search, args: {query: herbert}, expect: ["10"]}
+      - {call: search, args: {query: ""}, expect: ["10", "20", "30"]}
+      - {call: search, args: {query: zzz}, expect: []}
+  - name: fines_accumulate_across_loans
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 2}}
+      - {call: add_member, args: {member_id: m}}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: a}
+      - {call: checkout, args: {member_id: m, isbn: "1"}, bind: b}
+      - advance_clock: 1382400
+      - {call: return_book, args: {loan_id: $a.id}, expect: 100}
+      - {call: return_book, args: {loan_id: $b.id}, expect: 100}
+      - {call: fines, args: {member_id: m}, expect: 200}

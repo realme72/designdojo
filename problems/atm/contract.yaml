@@ -1,0 +1,48 @@
+dtos:
+  Account:
+    card: str
+    pin: str
+    balance: long
+  AtmConfig:
+    notes: "map[int, int]"
+    accounts: "list[Account]"
+  NoteBundle:
+    value: int
+    count: int
+
+interfaces:
+  Atm:
+    insert_card:
+      params: {card: str}
+      returns: void
+      raises: [InvalidState, UnknownCard, CardBlocked]
+    enter_pin:
+      params: {pin: str}
+      returns: void
+      raises: [InvalidState, WrongPin, CardBlocked]
+    balance:
+      returns: long
+      raises: [InvalidState]
+    withdraw:
+      params: {amount: long}
+      returns: "list[NoteBundle]"
+      raises: [InvalidState, InvalidAmount, InsufficientFunds, CannotDispense]
+    deposit:
+      params: {amount: long}
+      returns: long
+      raises: [InvalidState, InvalidAmount]
+    eject:
+      returns: void
+      raises: [InvalidState]
+    cash:
+      returns: long
+
+entrypoint:
+  name: create
+  params: {config: AtmConfig}
+  returns: Atm
+
+errors: [InvalidState, UnknownCard, CardBlocked, WrongPin, InvalidAmount, InsufficientFunds, CannotDispense]
+
+docs:
+  AtmConfig: notes maps denomination -> count loaded in the cassettes.
