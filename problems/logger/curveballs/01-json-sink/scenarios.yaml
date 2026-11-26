@@ -1,0 +1,21 @@
+config: {root_level: DEBUG}
+scenarios:
+  - name: json_lines
+    steps:
+      - {call: add_json_sink, args: {name: j, min_level: INFO}}
+      - advance_clock: 3
+      - {call: log, args: {logger: app.db, level: WARN, message: slow query}, expect: 1}
+      - {call: log, args: {logger: app, level: DEBUG, message: hidden}, expect: 0}
+      - {call: output, args: {name: j}, expect: ['{"time":1700000003,"level":"WARN","logger":"app.db","message":"slow query"}']}
+  - name: json_escaping
+    steps:
+      - {call: add_json_sink, args: {name: j, min_level: DEBUG}}
+      - {call: log, args: {logger: x, level: ERROR, message: "he said \"hi\" \\ bye"}}
+      - {call: output, args: {name: j}, expect: ['{"time":1700000000,"level":"ERROR","logger":"x","message":"he said \"hi\" \\ bye"}']}
+  - name: json_and_text_sinks_together
+    steps:
+      - {call: add_sink, args: {name: t, min_level: DEBUG, format: "{message}"}}
+      - {call: add_json_sink, args: {name: j, min_level: DEBUG}}
+      - {call: log, args: {logger: x, level: INFO, message: both}, expect: 2}
+      - {call: output, args: {name: t}, expect: [both]}
+      - {call: add_json_sink, args: {name: t, min_level: DEBUG}, expect_error: DuplicateSink}

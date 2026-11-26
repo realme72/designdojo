@@ -1,0 +1,36 @@
+config: {max_per_hour: 2}
+scenarios:
+  - name: unapproved_template_skipped_on_whatsapp
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [WHATSAPP, EMAIL]}}
+      - {call: add_template, args: {template_id: t, body: hello}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{channel: EMAIL, status: SENT}, {channel: WHATSAPP, status: SKIPPED}]}
+      - {call: outbox, args: {user: u, channel: WHATSAPP}, expect: []}
+  - name: approved_template_sent
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [WHATSAPP]}}
+      - {call: add_template, args: {template_id: t, body: "hi {n}"}}
+      - {call: approve_template, args: {template_id: t}}
+      - {call: send, args: {user: u, template_id: t, vars: {n: Ann}, priority: LOW}, expect: [{channel: WHATSAPP, status: SENT, message: hi Ann}]}
+      - {call: outbox, args: {user: u, channel: WHATSAPP}, expect: [hi Ann]}
+  - name: whatsapp_rate_limited_and_outage
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [WHATSAPP]}}
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: approve_template, args: {template_id: t}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{status: RATE_LIMITED}]}
+      - {call: set_provider_down, args: {channel: WHATSAPP, down: true}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: HIGH}, expect: [{status: FAILED}]}
+  - name: skipped_does_not_count
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [WHATSAPP]}}
+      - {call: add_template, args: {template_id: t, body: x}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}}
+      - {call: approve_template, args: {template_id: t}}
+      - {call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, expect: [{status: SENT}]}
+  - name: approve_unknown
+    steps:
+      - {call: approve_template, args: {template_id: nope}, expect_error: UnknownTemplate}

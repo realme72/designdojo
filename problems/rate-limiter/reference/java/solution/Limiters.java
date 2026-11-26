@@ -12,6 +12,7 @@ final class Limiters {
             case FIXED_WINDOW -> new FixedWindow(limit, window);
             case SLIDING_WINDOW_LOG -> new SlidingLog(limit, window);
             case TOKEN_BUCKET -> new TokenBucket(limit, window, now);
+            case SLIDING_WINDOW_COUNTER -> new SlidingCounter(limit, window);
         };
     }
 
@@ -41,6 +42,29 @@ final class Limiters {
         public boolean allow(long now) {
             while (!log.isEmpty() && log.peekFirst() <= now - window) log.pollFirst();
             if (log.size() < limit) { log.addLast(now); return true; }
+            return false;
+        }
+    }
+
+    /** Two aligned fixed-window counters; the previous one weighted by its remaining overlap. */
+    static final class SlidingCounter implements Limiter {
+        private final long limit;
+        private final long window;
+        private long current = Long.MIN_VALUE;
+        private long curr;
+        private long prev;
+
+        SlidingCounter(int limit, long window) { this.limit = limit; this.window = window; }
+
+        public boolean allow(long now) {
+            long w = Math.floorDiv(now, window);
+            if (w != current) {
+                prev = (current != Long.MIN_VALUE && w == current + 1) ? curr : 0;
+                current = w;
+                curr = 0;
+            }
+            long elapsed = now - w * window;
+            if (prev * (window - elapsed) + curr * window < limit * window) { curr++; return true; }
             return false;
         }
     }

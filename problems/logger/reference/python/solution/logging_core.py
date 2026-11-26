@@ -4,7 +4,7 @@ import threading
 
 from contract import Clock, DuplicateSink, Level, Logging, UnknownSink
 
-from .sinks import Formatter, MemorySink, Record
+from .sinks import Formatter, JsonFormatter, MemorySink, Record
 
 ORDER = {lvl: i for i, lvl in enumerate(Level)}
 
@@ -26,7 +26,12 @@ class LogManager(Logging):
             name = name.rpartition(".")[0]
 
     def add_sink(self, name: str, min_level: Level, format: str) -> None:
-        sink = MemorySink(min_level, Formatter(format))  # validates before registering
+        self._register(name, MemorySink(min_level, Formatter(format)))  # Formatter validates first
+
+    def add_json_sink(self, name: str, min_level: Level) -> None:
+        self._register(name, MemorySink(min_level, JsonFormatter()))
+
+    def _register(self, name: str, sink: MemorySink) -> None:
         with self._lock:
             if name in self._sinks:
                 raise DuplicateSink(name)

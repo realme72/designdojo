@@ -14,6 +14,14 @@ class Elevator:
         self.direction = Direction.IDLE
         self._stops: list[int] = []  # sorted, unique
 
+    @property
+    def in_service(self) -> bool:
+        return self.direction is not Direction.MAINTENANCE
+
+    def set_maintenance(self, on: bool) -> None:
+        self._stops.clear()
+        self.direction = Direction.MAINTENANCE if on else Direction.IDLE
+
     def add_stop(self, floor: int) -> None:
         if self.direction is Direction.IDLE and floor == self.floor:
             return  # served immediately
@@ -34,6 +42,8 @@ class Elevator:
         return bool(self._stops) and self._stops[0] < self.floor
 
     def step(self) -> None:
+        if not self.in_service:
+            return
         if not self._stops:
             self.direction = Direction.IDLE
             return

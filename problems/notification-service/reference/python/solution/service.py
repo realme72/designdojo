@@ -31,11 +31,26 @@ class Sender:
         self.down = False
         self.outbox: defaultdict[str, list[str]] = defaultdict(list)
 
+    def accepts(self, template_id: str) -> bool:
+        """Channel-specific admission rule; most channels take any template."""
+        return True
+
     def deliver(self, user: str, message: str) -> bool:
         if self.down:
             return False
         self.outbox[user].append(message)
         return True
+
+
+class WhatsAppSender(Sender):
+    """Only pre-approved templates may be sent."""
+
+    def __init__(self):
+        super().__init__(Channel.WHATSAPP)
+        self.approved: set[str] = set()
+
+    def accepts(self, template_id: str) -> bool:
+        return template_id in self.approved
 
 
 class RateLimit:
@@ -56,6 +71,7 @@ class RateLimit:
 class NotificationService(Notifier):
     def __init__(self, max_per_hour: int, clock: Clock):
         self._senders = {c: Sender(c) for c in Channel}  # registry: new channel = new Sender
+        self._senders[Channel.WHATSAPP] = WhatsAppSender()
         self._limits = RateLimit(max_per_hour, clock)
         self._prefs: dict[str, set[Channel]] = {}
         self._templates: dict[str, Template] = {}
@@ -86,7 +102,9 @@ class NotificationService(Notifier):
                 if channel not in self._prefs.get(user, ()):
                     continue
                 key = (user, channel)
-                if not self._limits.allowed(key, priority):
+                if not self._senders[channel].accepts(template_id):
+                    out.append(Delivery(channel, Status.SKIPPED, message))
+                elif not self._limits.allowed(key, priority):
                     out.append(Delivery(channel, Status.RATE_LIMITED, message))
                 elif self._senders[channel].deliver(user, message):
                     self._limits.record(key)
@@ -94,6 +112,12 @@ class NotificationService(Notifier):
                 else:
                     out.append(Delivery(channel, Status.FAILED, message))
             return out
+
+    def approve_template(self, template_id: str) -> None:
+        with self._lock:
+            if template_id not in self._templates:
+                raise UnknownTemplate(template_id)
+            self._senders[Channel.WHATSAPP].approved.add(template_id)
 
     def outbox(self, user: str, channel: Channel) -> list[str]:
         with self._lock:

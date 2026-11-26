@@ -1,0 +1,25 @@
+scenarios:
+  - name: shares_two_one_one
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - call: add_expense
+        args: {paid_by: A, amount: 1000, split_type: SHARES, shares: [{user: A, value: 2}, {user: B, value: 1}, {user: C, value: 1}]}
+      - {call: balances, expect: [{user: A, amount: 500}, {user: B, amount: -250}, {user: C, amount: -250}]}
+  - name: shares_leftover_cents
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - call: add_expense
+        args: {paid_by: A, amount: 100, split_type: SHARES, shares: [{user: C, value: 1}, {user: B, value: 1}, {user: A, value: 1}]}
+      - {call: balances, expect: [{user: A, amount: 67}, {user: B, amount: -33}, {user: C, amount: -34}]}
+  - name: zero_shares_allowed_but_not_all
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_expense, args: {paid_by: A, amount: 90, split_type: SHARES, shares: [{user: A, value: 0}, {user: B, value: 3}]}}
+      - {call: balance, args: {user_id: B}, expect: -90}
+      - {call: add_expense, args: {paid_by: A, amount: 90, split_type: SHARES, shares: [{user: A, value: 0}, {user: B, value: 0}]}, expect_error: InvalidSplit}
+      - {call: add_expense, args: {paid_by: A, amount: 90, split_type: SHARES, shares: [{user: A, value: -1}, {user: B, value: 3}]}, expect_error: InvalidSplit}

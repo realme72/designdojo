@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import threading
 
-from contract import Direction, ElevatorStatus, ElevatorSystem, InvalidFloor, InvalidRequest, UnknownElevator
+from contract import (Direction, ElevatorStatus, ElevatorSystem, InvalidFloor, InvalidRequest, NoElevatorAvailable,
+                      UnknownElevator)
 
 from .dispatch import DispatchStrategy
 from .elevator import Elevator
@@ -30,7 +31,10 @@ class Controller(ElevatorSystem):
                 or (direction is Direction.DOWN and floor == 1):
             raise InvalidRequest(f"{direction.name} from {floor}")
         with self._lock:
-            e = self._dispatch.choose(self._elevators, floor, direction)
+            usable = [e for e in self._elevators if e.in_service]
+            if not usable:
+                raise NoElevatorAvailable(floor)
+            e = self._dispatch.choose(usable, floor, direction)
             e.add_stop(floor)
             return e.id
 
@@ -38,7 +42,14 @@ class Controller(ElevatorSystem):
         e = self._elevator(elevator_id)
         self._check_floor(floor)
         with self._lock:
+            if not e.in_service:
+                raise InvalidRequest(f"elevator {elevator_id} is in maintenance")
             e.add_stop(floor)
+
+    def set_maintenance(self, elevator_id: int, enabled: bool) -> None:
+        e = self._elevator(elevator_id)
+        with self._lock:
+            e.set_maintenance(enabled)
 
     def step(self) -> None:
         with self._lock:

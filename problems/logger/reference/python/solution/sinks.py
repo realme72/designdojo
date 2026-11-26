@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import threading
 from abc import ABC, abstractmethod
@@ -33,8 +34,16 @@ class Formatter:
         return "".join(p if i % 2 == 0 else values[p] for i, p in enumerate(self._parts))
 
 
+class JsonFormatter:
+    """Compact JSON object per record, fixed key order."""
+
+    def format(self, r: Record) -> str:
+        return json.dumps({"time": r.time, "level": r.level.name, "logger": r.logger, "message": r.message},
+                          separators=(",", ":"), ensure_ascii=False)
+
+
 class Sink(ABC):
-    def __init__(self, min_level: Level, formatter: Formatter):
+    def __init__(self, min_level: Level, formatter: Formatter | JsonFormatter):
         self.min_level = min_level
         self.formatter = formatter
 
@@ -43,7 +52,7 @@ class Sink(ABC):
 
 
 class MemorySink(Sink):
-    def __init__(self, min_level: Level, formatter: Formatter):
+    def __init__(self, min_level: Level, formatter: Formatter | JsonFormatter):
         super().__init__(min_level, formatter)
         self.lines: list[str] = []
         self._lock = threading.Lock()

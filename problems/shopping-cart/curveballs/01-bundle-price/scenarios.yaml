@@ -1,0 +1,27 @@
+scenarios:
+  - name: three_for_250
+    steps:
+      - {call: add_product, args: {sku: soap, name: Soap, price: 100}}
+      - {call: add_promotion, args: {promo: {code: S3, kind: BUNDLE_PRICE, sku: soap, threshold: 3, value: 250}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: soap, qty: 7}}
+      - {call: bill, args: {cart_id: c}, expect: {subtotal: 700, discount: 100, total: 600}}
+  - name: bundle_never_negative
+    steps:
+      - {call: add_product, args: {sku: soap, name: Soap, price: 50}}
+      - {call: add_promotion, args: {promo: {code: S3, kind: BUNDLE_PRICE, sku: soap, threshold: 3, value: 250}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: soap, qty: 3}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 0, total: 150}}
+  - name: best_promo_still_wins
+    steps:
+      - {call: add_product, args: {sku: soap, name: Soap, price: 100}}
+      - {call: add_promotion, args: {promo: {code: S3, kind: BUNDLE_PRICE, sku: soap, threshold: 3, value: 250}}}
+      - {call: add_promotion, args: {promo: {code: HALF, kind: PERCENT_OFF_SKU, sku: soap, threshold: 0, value: 50}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: soap, qty: 3}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 150}}
+  - name: bundle_validation_and_coupon
+    steps:
+      - {call: add_product, args: {sku: soap, name: Soap, price: 100}}
+      - {call: add_promotion, args: {promo: {code: A, kind: BUNDLE_PRICE, sku: soap, threshold: 0, value: 250}}, expect_error: InvalidPromotion}
+      - {call: add_promotion, args: {promo: {code: B, kind: BUNDLE_PRICE, sku: ghost, threshold: 3, value: 250}}, expect_error: InvalidPromotion}
+      - {call: add_promotion, args: {promo: {code: C, kind: BUNDLE_PRICE, sku: soap, threshold: 3, value: 250}}}
+      - {call: apply_coupon, args: {cart_id: c, code: C}, expect_error: InvalidCoupon}

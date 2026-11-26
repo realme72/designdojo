@@ -1,0 +1,13 @@
+enums:
+  Direction: [MAINTENANCE]
+interfaces:
+  ElevatorSystem:
+    call:
+      raises: [NoElevatorAvailable]
+    press:
+      raises: [InvalidRequest]
+    set_maintenance:
+      params: {elevator_id: int, enabled: bool}
+      returns: void
+      raises: [UnknownElevator]
+errors: [NoElevatorAvailable]

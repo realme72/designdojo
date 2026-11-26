@@ -32,6 +32,15 @@ class ExactSplit(SplitStrategy):
         return values
 
 
+class SharesSplit(SplitStrategy):
+    def owed(self, amount, shares):
+        weights = [s.value for s in shares]
+        if any(w < 0 for w in weights) or sum(weights) < 1:
+            raise InvalidSplit("shares must be non-negative with a positive total")
+        total = sum(weights)
+        return distribute_leftover([amount * w // total for w in weights], amount)
+
+
 class PercentSplit(SplitStrategy):
     def owed(self, amount, shares):
         pcts = [s.value for s in shares]

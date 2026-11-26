@@ -59,9 +59,30 @@ class TokenBucket(Limiter):
         return False
 
 
+class SlidingCounter(Limiter):
+    """Two aligned fixed-window counters; the previous one weighted by how much of it still overlaps."""
+
+    def __init__(self, limit: int, window: int):
+        self.limit, self.window = limit, window
+        self.current, self.curr, self.prev = None, 0, 0
+
+    def allow(self, now):
+        w = now // self.window
+        if w != self.current:
+            self.prev = self.curr if self.current is not None and w == self.current + 1 else 0
+            self.current, self.curr = w, 0
+        elapsed = now - w * self.window
+        if self.prev * (self.window - elapsed) + self.curr * self.window < self.limit * self.window:
+            self.curr += 1
+            return True
+        return False
+
+
 def make_limiter(algorithm: Algorithm, limit: int, window: int, now: int) -> Limiter:
     if algorithm is Algorithm.FIXED_WINDOW:
         return FixedWindow(limit, window)
     if algorithm is Algorithm.SLIDING_WINDOW_LOG:
         return SlidingLog(limit, window)
+    if algorithm is Algorithm.SLIDING_WINDOW_COUNTER:
+        return SlidingCounter(limit, window)
     return TokenBucket(limit, window, now)
