@@ -1,0 +1,14 @@
+- id: frames
+  keywords: [frame, strike, spare, open, roll]
+  question: How are frames modelled?
+  good: Frames as objects (or a clear roll-index walk) where strike/spare/open scoring is explicit and testable.
+  smells: [TYPE_SWITCH]
+- id: tenth_frame
+  keywords: [tenth, last, bonus, final]
+  question: Where does the 10th-frame special case live?
+  good: Isolated in one place (a TenthFrame type or one validation function), not sprinkled through scoring.
+  principles: [SRP, OCP]
+- id: validation
+  keywords: [valid, standing, pins, invalid]
+  question: How are illegal rolls rejected?
+  good: Validation uses "pins standing" derived from the current frame, before recording the roll.

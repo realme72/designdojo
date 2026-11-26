@@ -127,6 +127,9 @@ def lint_problem(p: Problem) -> list[str]:
                 unknown = set(st) - STEP_KEYS
                 if unknown:
                     issues.append(f"{where} step {i}: unknown keys {sorted(unknown)}")
+                if "parallel" in st and "concurrency" not in (p.meta.get("tags") or []):
+                    issues.append(f"{where} step {i}: parallel steps need the 'concurrency' tag "
+                                  "(otherwise non-thread-safe solutions fail unfairly)")
                 call = st.get("call") or (st.get("parallel") or {}).get("call")
                 if call is not None:
                     if call not in iface:

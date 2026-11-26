@@ -1,0 +1,189 @@
+scenarios:
+  - name: strike_needs_two_rolls
+    steps:
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 3}}
+      - {call: frame_scores, expect: []}
+      - {call: roll, args: {pins: 4}}
+      - {call: frame_scores, expect: [17, 24]}
+  - name: perfect_game
+    steps:
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: is_over, expect: true}
+      - {call: score, expect: 300}
+      - {call: roll, args: {pins: 0}, expect_error: GameOver}
+  - name: all_spares_tenth_bonus
+    steps:
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: roll, args: {pins: 5}}
+      - {call: is_over, expect: false}
+      - {call: roll, args: {pins: 5}}
+      - {call: is_over, expect: true}
+      - {call: score, expect: 150}
+  - name: gutter_game_ends_after_twenty
+    steps:
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: is_over, expect: true}
+      - {call: score, expect: 0}
+      - {call: frame_scores, expect: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+  - name: tenth_open_frame_no_bonus
+    steps:
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 3}}
+      - {call: roll, args: {pins: 4}}
+      - {call: is_over, expect: true}
+      - {call: roll, args: {pins: 1}, expect_error: GameOver}
+      - {call: score, expect: 7}
+  - name: tenth_strike_then_partial
+    steps:
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 7}}
+      - {call: roll, args: {pins: 5}, expect_error: InvalidRoll}
+      - {call: roll, args: {pins: 3}}
+      - {call: score, expect: 20}
+  - name: tenth_spare_then_strike
+    steps:
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 7}}
+      - {call: roll, args: {pins: 3}}
+      - {call: roll, args: {pins: 10}}
+      - {call: is_over, expect: true}
+      - {call: score, expect: 20}
+  - name: tenth_double_strike_then_any
+    steps:
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 9}}
+      - {call: score, expect: 29}
+  - name: out_of_range_pins
+    steps:
+      - {call: roll, args: {pins: 11}, expect_error: InvalidRoll}
+      - {call: roll, args: {pins: -1}, expect_error: InvalidRoll}
+      - {call: score, expect: 0}
+  - name: strike_after_strike
+    steps:
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: frame_scores, expect: [30]}
+      - {call: roll, args: {pins: 0}}
+      - {call: roll, args: {pins: 0}}
+      - {call: frame_scores, expect: [30, 50, 60, 60]}

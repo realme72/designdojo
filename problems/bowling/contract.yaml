@@ -1,0 +1,18 @@
+interfaces:
+  BowlingGame:
+    roll:
+      params: {pins: int}
+      returns: void
+      raises: [InvalidRoll, GameOver]
+    frame_scores:
+      returns: "list[int]"
+    score:
+      returns: int
+    is_over:
+      returns: bool
+
+entrypoint:
+  name: create
+  returns: BowlingGame
+
+errors: [InvalidRoll, GameOver]
