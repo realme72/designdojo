@@ -1,0 +1,17 @@
+- id: strategies
+  keywords: [strategy, round, robin, weighted, least, connections, pick, select]
+  question: How are balancing algorithms organised?
+  good: A Strategy interface (pick from healthy servers) with one class per algorithm, chosen via a small factory; the balancer never switches on the algorithm when picking.
+  smells: [TYPE_SWITCH, GOD_CLASS]
+  principles: [OCP]
+  patterns: [Strategy, Factory]
+- id: server_registry
+  keywords: [server, healthy, health, registry, weight]
+  question: Is server membership/health separate from selection?
+  good: A registry owns servers, health and connection counts; strategies only read a snapshot of healthy servers.
+  principles: [SRP]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are pick-and-increment atomic?
+  good: Selecting a server and incrementing its connection count happen under one lock.
+  smells: [UNGUARDED_SHARED]

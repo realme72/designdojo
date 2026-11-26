@@ -1,0 +1,37 @@
+enums:
+  Strategy: [ROUND_ROBIN, WEIGHTED_ROUND_ROBIN, LEAST_CONNECTIONS]
+
+interfaces:
+  LoadBalancer:
+    add_server:
+      params: {server_id: str, weight: int}
+      returns: void
+      raises: [DuplicateServer, InvalidWeight]
+    remove_server:
+      params: {server_id: str}
+      returns: void
+      raises: [UnknownServer]
+    set_healthy:
+      params: {server_id: str, healthy: bool}
+      returns: void
+      raises: [UnknownServer]
+    set_strategy:
+      params: {strategy: Strategy}
+      returns: void
+    acquire:
+      returns: str
+      raises: [NoHealthyServer]
+    release:
+      params: {server_id: str}
+      returns: void
+      raises: [UnknownServer, InvalidState]
+    active:
+      params: {server_id: str}
+      returns: int
+      raises: [UnknownServer]
+
+entrypoint:
+  name: create
+  returns: LoadBalancer
+
+errors: [DuplicateServer, InvalidWeight, UnknownServer, NoHealthyServer, InvalidState]

@@ -1,0 +1,19 @@
+scenarios:
+  - name: least_connections_balances_exactly
+    repeat: 15
+    steps:
+      - {call: add_server, args: {server_id: s1, weight: 1}}
+      - {call: add_server, args: {server_id: s2, weight: 1}}
+      - {call: add_server, args: {server_id: s3, weight: 1}}
+      - {call: add_server, args: {server_id: s4, weight: 1}}
+      - {call: set_strategy, args: {strategy: LEAST_CONNECTIONS}}
+      - parallel: {threads: 100, call: acquire, collect: r}
+      - assert: {of: r, ok_count: 100, value_count: {"\"s1\"": 25, "\"s2\"": 25, "\"s3\"": 25, "\"s4\"": 25}}
+      - {call: active, args: {server_id: s3}, expect: 25}
+  - name: round_robin_even_split
+    repeat: 15
+    steps:
+      - {call: add_server, args: {server_id: a, weight: 1}}
+      - {call: add_server, args: {server_id: b, weight: 1}}
+      - parallel: {threads: 60, call: acquire, collect: r}
+      - assert: {of: r, value_count: {"\"a\"": 30, "\"b\"": 30}}

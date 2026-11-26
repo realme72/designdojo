@@ -1,0 +1,7 @@
+id: load-balancer
+title: Load Balancer
+difficulty: medium
+category: Infrastructure & control
+time_limit_min: 45
+statement: statement.md
+tags: [strategy, concurrency]
