@@ -336,6 +336,33 @@ kbd {
 .offline-banner svg { color: var(--warn); flex-shrink: 0; margin-top: 2px; }
 .dp-not_assessed .dp-status { color: var(--faint); }
 
+/* ---------- curveballs & scoring ---------- */
+.curveball-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--accent); }
+.curveball-section { margin-top: 22px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius); }
+.curveball-section h1 { font-size: 16px; margin-top: 6px; }
+.curveball-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+.lang-select { height: 30px; padding: 0 28px 0 10px; border-radius: 6px; border: 1px solid var(--border-strong);
+  background: var(--panel); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.score-card { display: flex; gap: 18px; align-items: center; padding: 12px 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); }
+.score-total { font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.score-total span { font-size: 14px; color: var(--muted); font-weight: 500; }
+.score-rows { flex: 1; display: grid; gap: 5px; min-width: 0; }
+.score-row { display: grid; grid-template-columns: 96px 110px 52px 1fr; gap: 10px; align-items: center; font-size: 12.5px; }
+.score-row.muted { opacity: .55; }
+.score-name { font-weight: 600; text-transform: capitalize; }
+.score-bar { height: 6px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
+.score-bar span { display: block; height: 100%; background: var(--accent); }
+.score-pts { font-variant-numeric: tabular-nums; color: var(--muted); }
+.churn { padding: 10px 12px; }
+.churn-row { display: flex; gap: 10px; font-size: 12.5px; margin-bottom: 4px; }
+.churn-label { width: 70px; flex-shrink: 0; font-weight: 600; }
+.churn-syms { font-family: var(--mono); font-size: 12px; word-break: break-word; }
+.k-add { color: var(--pass); } .k-mod { color: var(--warn); } .k-del { color: var(--fail); } .k-wire { color: var(--faint); }
+.card.clickable { cursor: pointer; }
+.card.clickable:hover { border-color: var(--accent); }
+.card.clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 720px) { .score-row { grid-template-columns: 90px 1fr 48px; } .score-row .meta { display: none; } }
+
 /* ---------- history ---------- */
 .hist-row {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 16px; border: 0;

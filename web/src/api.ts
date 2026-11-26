@@ -13,7 +13,15 @@ export type Problem = {
 export type ProblemDetail = Problem & { statement: string; langs: Lang[] }
 
 export type WsFile = { path: string; content: string; editable: boolean }
-export type Workspace = { root: string; entry: string; files: WsFile[] }
+export type CurveballInfo = { index: number; id: string; title: string; statement: string }
+export type Workspace = {
+  root: string
+  entry: string
+  files: WsFile[]
+  level: number
+  curveballs_total: number
+  curveballs: CurveballInfo[]
+}
 
 export type CaseResult = {
   name: string
@@ -30,7 +38,26 @@ export type CaseResult = {
 
 export type Suite = { name: string; passed: number; total: number; visible: boolean; cases: CaseResult[] }
 export type Diagnostic = { file: string; line: number; message: string }
-export type JudgeResult = { status: string; suites?: Suite[]; diagnostics?: Diagnostic[]; message?: string }
+export type ScoreComponent = { name: string; weight: number; points: number | null; detail: string }
+export type Churn = {
+  curveball: number
+  title: string
+  added?: string[]
+  extended?: string[]
+  modified?: string[]
+  deleted?: string[]
+  wiring?: string[]
+  extensibility: number
+  error?: string
+}
+export type JudgeResult = {
+  status: string
+  suites?: Suite[]
+  diagnostics?: Diagnostic[]
+  message?: string
+  score?: { total: number; components: ScoreComponent[] }
+  churn?: Churn[]
+}
 export type Mode = 'run' | 'submit'
 export type RunEntry = {
   id: string
@@ -138,10 +165,40 @@ export const api = {
   reset: (id: string, lang: Lang) => req<{ ok: true; backup: string | null }>('POST', `${ws(id, lang)}/reset`),
   judge: (id: string, lang: Lang, mode: Mode) => req<RunEntry>('POST', `${ws(id, lang)}/judge`, { mode }),
   history: (id: string, lang: Lang) => req<RunEntry[]>('GET', `${ws(id, lang)}/history`),
+  nextCurveball: (id: string, lang: Lang) => req<CurveballInfo>('POST', `${ws(id, lang)}/curveball`),
   analysis: (id: string, lang: Lang) => req<Analysis>('GET', `${ws(id, lang)}/analysis`),
   review: (id: string, lang: Lang, force = false) => req<ReviewResult>('POST', `${ws(id, lang)}/review`, { force }),
   latestReview: (id: string, lang: Lang) => req<ReviewResult>('GET', `${ws(id, lang)}/review`),
   coachStatus: () => req<CoachStatus>('GET', '/api/coach/status'),
+}
+
+const LANG_KEY = 'joinery.lang'
+
+/** Remembered language: per problem first, then the last one used anywhere. */
+export function preferredLang(problemId: string, started: Lang[] = []): Lang {
+  try {
+    const own = localStorage.getItem(`${LANG_KEY}.${problemId}`)
+    if (own === 'java' || own === 'python') return own
+  } catch {
+    /* storage unavailable */
+  }
+  if (started.length === 1) return started[0]
+  try {
+    const last = localStorage.getItem(LANG_KEY)
+    if (last === 'java' || last === 'python') return last
+  } catch {
+    /* storage unavailable */
+  }
+  return 'java'
+}
+
+export function rememberLang(problemId: string, lang: Lang) {
+  try {
+    localStorage.setItem(`${LANG_KEY}.${problemId}`, lang)
+    localStorage.setItem(LANG_KEY, lang)
+  } catch {
+    /* storage unavailable: just not remembered */
+  }
 }
 
 export const EXT: Record<Lang, string> = { java: '.java', python: '.py' }

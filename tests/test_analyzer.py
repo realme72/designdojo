@@ -29,7 +29,7 @@ def ids(a, level="warning"):
 def test_reference_has_no_warnings(lang):
     a = analyze(ROOT / f"problems/parking-lot/reference/{lang}", lang, concurrency=True, contract_types=CONTRACT)
     assert ids(a) == []
-    assert ids(a, "info") == ["SPECULATIVE_PATTERN", "SPECULATIVE_PATTERN"]  # single-impl Strategy interfaces
+    assert ids(a, "info") == ["SPECULATIVE_PATTERN"]  # SpotAllocator; PricingPolicy now has 2 impls (daily cap)
     assert "ParkingLotApi <|.. ParkingLot" in a["mermaid"]
     assert "SpotAllocator <|.. SmallestFitAllocator" in a["mermaid"]
 

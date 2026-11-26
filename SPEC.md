@@ -8,10 +8,10 @@ A personal LLD practice playground. Pick a problem, design and implement it in
 and a **coach** that points at specific lines and says *"this is where
 principle/pattern X would help, and here's why."*
 
-Status: v1 (2026-11-27). **M0–M3, M5 and M6 done**: 50 problems judged end-to-end in Java
+Status: v1 (2026-11-27). **M0–M6 done**: 50 problems judged end-to-end in Java
 and Python from the CLI or browser, with design signals, a class diagram and the LLM
 coach (Groq free tier; validated against fake responses, not yet run on a live key).
-M4 (curveballs) next.
+Curveballs exist for 7 problems so far; more can be added as data.
 
 M6 as built: every problem has a Python reference that passes all suites; Java references
 exist for Parking Lot, Pub-Sub and Rate Limiter (which together exercise every Java runner
@@ -381,6 +381,23 @@ back to the relevant decision point (`curveball_link`).
 
 ---
 
+### 8.1 As built (M4)
+- Package: `curveballs/NN-name/{statement.md, contract.patch.yaml, scenarios.yaml}`. Patches
+  deep-merge into the contract (maps merge, lists append), so curveballs are additive and every
+  earlier scenario keeps running. Lint checks each suite against the contract at its own level.
+- Unlock (`joinery curveball`, UI "Next curveball") requires a fully passing submit at the
+  current level, snapshots `solution/` to `.joinery-snapshots/<k>/`, regenerates the contract
+  and appends the curveball to PROBLEM.md. References implement the final level.
+- Churn compares symbols (methods/functions, and each class's / module's non-method body)
+  with comments and whitespace ignored. A changed symbol whose diff is only inserted lines
+  with no new branching (`if/elif/else/case/switch/match/default`, ternaries) is **extended**
+  (free: a new table row or enum entry). Anything else is **modified**. Edits to `create`
+  are **wiring** (free). `extensibility = (added + extended) / (added + extended + 2·modified
+  + 2·deleted)`, 1.0 if nothing existing changed. Verified: one table row → 1.0, one new
+  `elif` → 0.0.
+- The judge now copies `solution/` into each run's job dir: bind-mounting the workspace
+  could serve a stale, truncated file right after an in-place edit (OrbStack caching).
+
 ## 9. Scoring (submit / interview mode)
 
 | Component | Weight |
@@ -391,6 +408,9 @@ back to the relevant decision point (`curveball_link`).
 | Design review (coach `design_score`) | 25 |
 
 Coach mode shows comments but no total score, because the point there is learning.
+As built: concurrency is excluded for problems without a race suite, extensibility until a
+curveball is unlocked (mean over curveballs of pass-rate × churn extensibility), and design
+until an AI review exists (offline reviews don't score). Remaining weights are re-normalised.
 
 ---
 

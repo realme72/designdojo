@@ -1,5 +1,5 @@
 import Editor, { type OnMount } from '@monaco-editor/react'
-import { Lock, Play, Send, Sparkles, X } from 'lucide-react'
+import { Loader2, Lock, Play, Send, Sparkles, X, Zap } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import { Group, Panel, Separator } from 'react-resizable-panels'
@@ -8,6 +8,8 @@ import {
   api,
   EXT,
   LANG_LABEL,
+  rememberLang,
+  type CurveballInfo,
   type Analysis,
   type CoachStatus,
   type Lang,
@@ -70,6 +72,12 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
   const [bottomTab, setBottomTab] = useState<'tests' | 'review'>('tests')
   const [toast, setToast] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [curveballs, setCurveballs] = useState<{ level: number; total: number; list: CurveballInfo[] }>({
+    level: 0,
+    total: 0,
+    list: [],
+  })
+  const [unlocking, setUnlocking] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
@@ -90,6 +98,8 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
 
   const loadWorkspace = useCallback(async () => {
     const ws = await api.workspace(problemId, lang)
+    setCurveballs({ level: ws.level, total: ws.curveballs_total, list: ws.curveballs })
+    rememberLang(problemId, lang)
     const next: Files = {}
     for (const f of ws.files) next[f.path] = { content: f.content, saved: f.content, editable: f.editable }
     setFiles(next)
@@ -393,6 +403,23 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     setToast(r.backup ? `Started over. Previous code moved to ${r.backup}` : 'Started over')
   }
 
+  const unlockCurveball = async () => {
+    if (unlocking || running) return
+    setUnlocking(true)
+    try {
+      await flushAll()
+      const info = await api.nextCurveball(problemId, lang)
+      for (const m of monaco.editor.getModels()) if (m.uri.path.includes('contract')) m.dispose()
+      await loadWorkspace()
+      setLeftTab('problem')
+      setToast(`Curveball ${info.index} unlocked: ${info.title}. Your code was snapshotted to measure the change.`)
+    } catch (e) {
+      setToast((e as Error).message)
+    } finally {
+      setUnlocking(false)
+    }
+  }
+
   const switchLang = async (l: Lang) => {
     if (l === lang) return
     await flushAll()
@@ -431,13 +458,26 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
         <span className={`save-state ${saveError ? 'error' : dirty ? 'dirty' : ''}`} title={saveError ?? ''}>
           {saveLabel}
         </span>
-        <div className="segmented" role="tablist" aria-label="Language">
+        {curveballs.total > 0 && (
+          <span className="curveball-badge" title="Curveballs: follow-up requirements that test how well your design extends">
+            <Zap size={13} /> {curveballs.level}/{curveballs.total}
+            {curveballs.level < curveballs.total && (
+              <button className="btn small" onClick={unlockCurveball} disabled={unlocking || !!running}
+                      title="Needs every scenario passing; runs a full submit first">
+                {unlocking ? <Loader2 size={12} className="spin" /> : null}
+                Next curveball
+              </button>
+            )}
+          </span>
+        )}
+        <select className="lang-select" value={lang} onChange={(e) => switchLang(e.target.value as Lang)}
+                aria-label="Language">
           {problem.langs.map((l) => (
-            <button key={l} className={l === lang ? 'on' : ''} onClick={() => switchLang(l)}>
+            <option key={l} value={l}>
               {LANG_LABEL[l]}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
         {problem.time_limit_min && (
           <Timer problemId={problemId} limitMin={problem.time_limit_min} onChange={setTimerStart} />
         )}
@@ -465,6 +505,14 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                 {leftTab === 'problem' ? (
                   <div className="markdown">
                     <Markdown remarkPlugins={[remarkGfm]}>{problem.statement}</Markdown>
+                    {curveballs.list.map((c) => (
+                      <section key={c.id} className="curveball-section">
+                        <div className="curveball-label">
+                          <Zap size={13} /> Curveball {c.index}
+                        </div>
+                        <Markdown remarkPlugins={[remarkGfm]}>{c.statement}</Markdown>
+                      </section>
+                    ))}
                   </div>
                 ) : history.length === 0 ? (
                   <div className="coming">No runs yet.</div>

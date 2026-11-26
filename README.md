@@ -100,6 +100,30 @@ the coach, and a reference solution that passes every scenario (`uv run joinery 
 | News Feed (Twitter) | medium | yes |
 | Q&A Site (Stack Overflow) | medium | yes |
 
+## Curveballs (follow-up requirements)
+
+Once every scenario passes, unlock the next curveball, the "now support X" follow-up an
+interviewer asks next. Unlocking snapshots your code; each later submit measures how much
+**existing** code the change forced you to edit (added/extended code is free, modified or
+deleted code costs double, wiring in `create` is free), and folds it into the score:
+correctness 35 · concurrency 15 · extensibility 25 · design 25 (components that don't apply
+are left out and the rest re-weighted).
+
+```sh
+uv run joinery submit    work/parking-lot-java   # score + churn report
+uv run joinery curveball work/parking-lot-java   # unlock the next one (needs all passing)
+```
+
+8 curveballs across 7 problems so far:
+
+- **Elevator System**: Maintenance mode
+- **Logging Framework**: JSON sink
+- **Notification Service**: WhatsApp channel
+- **Parking Lot**: Motorbikes; Daily price cap
+- **Rate Limiter**: Sliding window counter
+- **Shopping Cart & Promotions**: Bundle pricing
+- **Splitwise**: Split by shares
+
 ## Web UI
 
 ```sh

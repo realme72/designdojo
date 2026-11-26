@@ -34,10 +34,14 @@ def _references():
 def test_reference_passes_everything(problem_id, lang):
     import json
 
-    ref = ROOT / "problems" / problem_id / "reference" / lang
-    (ref / ".joinery.json").write_text(json.dumps({"problem": problem_id, "lang": lang}) + "\n")
-    result = judge(Workspace.open(ref), list(SUITES))
-    assert failures(result) == {s: set() for s in SUITES}
+    from joinery.problems import get_problem, reference_meta
+
+    p = get_problem(problem_id)
+    ref = p.root / "reference" / lang
+    (ref / ".joinery.json").write_text(reference_meta(p, lang))  # references implement every curveball
+    suites = p.suites_at(len(p.curveballs))
+    result = judge(Workspace.open(ref), suites)
+    assert failures(result) == {s: set() for s in suites}
 
 
 @pytest.mark.parametrize("lang", LANGS)
@@ -76,9 +80,10 @@ def test_python_syntax_error_reported(workspace):
 
 
 def test_python_wrong_return_type_flagged(workspace):
-    src = (REF / "python" / "solution" / "lot.py").read_text().replace(
+    base = ROOT / "tests" / "fixtures" / "parking-lot" / "python" / "level0" / "solution"  # level-0 solution
+    src = (base / "lot.py").read_text().replace(
         "        return Receipt(ticket_id, fee)", "        return {'ticket_id': ticket_id, 'fee_cents': fee}")
-    files = {f"solution/{p.name}": p.read_text() for p in (REF / "python" / "solution").glob("*.py")}
+    files = {f"solution/{p.name}": p.read_text() for p in base.glob("*.py")}
     files["solution/lot.py"] = src
     result = judge(workspace("python", files), ["sample"])
     case = next(c for c in result["suites"][0]["cases"] if c["name"] == "car_parks_and_pays_one_hour")

@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, CircleMinus, EyeOff, Loader2, XCircle } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import type { CaseResult, Mode, RunEntry, Suite } from '../api'
+import type { CaseResult, Churn, JudgeResult, Mode, RunEntry, Suite } from '../api'
 
 const KIND_LABELS: Record<string, string> = {
   wrong_result: 'wrong result',
@@ -16,6 +16,9 @@ const KIND_LABELS: Record<string, string> = {
 
 const SUITE_BLURB: Record<string, string> = {
   sample: 'Visible examples from the statement',
+  'curveball-1': 'Follow-up requirement 1',
+  'curveball-2': 'Follow-up requirement 2',
+  'curveball-3': 'Follow-up requirement 3',
   hidden: 'Edge cases. Names and failure kinds only',
   concurrency: 'Parallel calls, repeated to surface races',
 }
@@ -43,6 +46,64 @@ function linkify(text: string, onJump: Jump): ReactNode[] {
 }
 
 const human = (name: string) => name.replaceAll('_', ' ')
+
+function ScoreCard({ r }: { r: JudgeResult }) {
+  if (!r.score) return null
+  return (
+    <div className="score-card">
+      <div className="score-total">
+        {r.score.total}
+        <span>/100</span>
+      </div>
+      <div className="score-rows">
+        {r.score.components.map((c) => (
+          <div key={c.name} className={`score-row ${c.weight ? '' : 'muted'}`}>
+            <span className="score-name">{c.name}</span>
+            <span className="score-bar">
+              <span style={{ width: c.weight && c.points !== null ? `${(c.points / c.weight) * 100}%` : '0%' }} />
+            </span>
+            <span className="score-pts">{c.points === null ? '—' : `${c.points}/${c.weight}`}</span>
+            <span className="meta">{c.detail}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ChurnView({ ch }: { ch: Churn }) {
+  const groups: [string, string[] | undefined, string][] = [
+    ['added', ch.added, 'k-add'],
+    ['extended', ch.extended, 'k-add'],
+    ['modified', ch.modified, 'k-mod'],
+    ['deleted', ch.deleted, 'k-del'],
+    ['wiring', ch.wiring, 'k-wire'],
+  ]
+  return (
+    <div className="suite">
+      <div className="suite-head">
+        Curveball {ch.curveball}: {ch.title}
+        <span className="spacer" />
+        <span className="hidden-note">extensibility {Math.round(ch.extensibility * 100)}%</span>
+      </div>
+      <div className="churn">
+        {ch.error && <div className="meta">{ch.error}</div>}
+        {groups
+          .filter(([, xs]) => xs && xs.length)
+          .map(([label, xs, cls]) => (
+            <div key={label} className="churn-row">
+              <span className={`churn-label ${cls}`}>{label}</span>
+              <span className="churn-syms">{xs!.join(', ')}</span>
+            </div>
+          ))}
+        <p className="note">
+          Added/extended code is free; modified or deleted existing code costs twice. Wiring changes in{' '}
+          <code>create</code> don't count: that's where new strategies are meant to be plugged in.
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function CaseView({ c, visible, onJump }: { c: CaseResult; visible: boolean; onJump: Jump }) {
   const [open, setOpen] = useState(true)
@@ -227,8 +288,12 @@ export default function ResultsPanel({ entry, running, elapsed, onJump, isLatest
           <CheckCircle2 size={16} /> Samples pass. Submit to face the hidden and concurrency suites.
         </div>
       )}
+      <ScoreCard r={r} />
       {r.suites?.map((s) => (
         <SuiteView key={s.name} s={s} onJump={onJump} />
+      ))}
+      {r.churn?.map((ch) => (
+        <ChurnView key={ch.curveball} ch={ch} />
       ))}
     </div>
   )

@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { api, LANG_LABEL, type Lang, type Problem } from '../api'
+import { api, LANG_LABEL, preferredLang, type Lang, type Problem } from '../api'
 import Brand from '../components/Brand'
 
 const LANGS: Lang[] = ['java', 'python']
@@ -101,7 +101,14 @@ export default function ProblemList() {
               {category} <span className="meta">{ps.length}</span>
             </h2>
             {ps.map((p) => (
-              <div className="card" key={p.id}>
+              <div
+                className="card clickable"
+                key={p.id}
+                role="link"
+                tabIndex={0}
+                onClick={() => (window.location.hash = `#/p/${p.id}/${preferredLang(p.id, p.started)}`)}
+                onKeyDown={(e) => e.key === 'Enter' && (window.location.hash = `#/p/${p.id}/${preferredLang(p.id, p.started)}`)}
+              >
                 <div>
                   <h3>{p.title}</h3>
                   <div className="tags">
@@ -116,7 +123,8 @@ export default function ProblemList() {
                 </div>
                 <div className="actions">
                   {LANGS.map((l) => (
-                    <a key={l} className="btn" href={`#/p/${p.id}/${l}`}>
+                    <a key={l} className="btn small" href={`#/p/${p.id}/${l}`} onClick={(e) => e.stopPropagation()}
+                       title={`Open in ${LANG_LABEL[l]}`}>
                       {p.started?.includes(l) && <span className="started-dot" title="In progress" />}
                       {LANG_LABEL[l]}
                     </a>
