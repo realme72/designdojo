@@ -1,0 +1,29 @@
+enums:
+  Move: [UP, DOWN, LEFT, RIGHT]
+
+dtos:
+  GameConfig:
+    rows: int
+    cols: int
+    food: "list[list[int]]"
+  MoveResult:
+    score: int
+    alive: bool
+
+interfaces:
+  SnakeGame:
+    move:
+      params: {direction: Move}
+      returns: MoveResult
+      raises: [GameOver]
+    body:
+      returns: "list[list[int]]"
+    score:
+      returns: int
+
+entrypoint:
+  name: create
+  params: {config: GameConfig}
+  returns: SnakeGame
+
+errors: [GameOver]

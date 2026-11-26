@@ -1,0 +1,15 @@
+config: {rows: 3, cols: 3, food: [[1, 2], [0, 1]]}
+scenarios:
+  - name: eat_and_grow
+    steps:
+      - {call: move, args: {direction: RIGHT}, expect: {score: 0, alive: true}}
+      - {call: move, args: {direction: DOWN}, expect: {score: 0, alive: true}}
+      - {call: move, args: {direction: RIGHT}, expect: {score: 1, alive: true}}
+      - {call: body, expect: [[1, 2], [1, 1]]}
+  - name: wall_kills
+    steps:
+      - {call: move, args: {direction: UP}, expect: {alive: false}}
+      - {call: move, args: {direction: DOWN}, expect_error: GameOver}
+  - name: score_tracks
+    steps:
+      - {call: score, expect: 0}
