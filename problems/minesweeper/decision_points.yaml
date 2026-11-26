@@ -1,0 +1,18 @@
+- id: flood_fill
+  keywords: [flood, fill, bfs, dfs, queue, stack, neighbors, zero]
+  question: How is the flood fill implemented?
+  good: Iterative BFS/DFS (no deep recursion) over neighbours, stopping at numbers and skipping flags.
+- id: cell_model
+  keywords: [cell, mine, count, adjacent, board]
+  question: How are cells and counts represented?
+  good: Adjacent counts precomputed once; a cell's state (hidden/flagged/revealed) is explicit.
+  smells: [STATE_FLAG]
+- id: game_state
+  keywords: [won, lost, playing, over, state]
+  question: How is win/loss tracked?
+  good: A revealed-safe-cells counter compared to the target, plus one game state value.
+- id: rendering
+  keywords: [view, render, string, display]
+  question: Is rendering separate from game logic?
+  good: The view is produced from state by a separate function/class.
+  principles: [SRP]

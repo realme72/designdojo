@@ -1,0 +1,30 @@
+enums:
+  GameState: [PLAYING, WON, LOST]
+
+dtos:
+  BoardConfig:
+    rows: int
+    cols: int
+    mines: "list[list[int]]"
+
+interfaces:
+  Minesweeper:
+    reveal:
+      params: {row: int, col: int}
+      returns: int
+      raises: [InvalidMove, GameOver]
+    toggle_flag:
+      params: {row: int, col: int}
+      returns: void
+      raises: [InvalidMove, GameOver]
+    state:
+      returns: GameState
+    view:
+      returns: "list[str]"
+
+entrypoint:
+  name: create
+  params: {config: BoardConfig}
+  returns: Minesweeper
+
+errors: [InvalidMove, GameOver]

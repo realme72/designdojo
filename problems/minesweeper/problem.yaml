@@ -1,0 +1,7 @@
+id: minesweeper
+title: Minesweeper
+difficulty: easy
+category: Games
+time_limit_min: 40
+statement: statement.md
+tags: [games, algorithms]

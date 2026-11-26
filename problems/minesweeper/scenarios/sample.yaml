@@ -1,0 +1,16 @@
+config: {rows: 3, cols: 3, mines: [[0, 0]]}
+scenarios:
+  - name: number_cell
+    steps:
+      - {call: reveal, args: {row: 1, col: 1}, expect: 1}
+      - {call: view, expect: ["###", "#1#", "###"]}
+  - name: flood_fill_wins
+    steps:
+      - {call: reveal, args: {row: 2, col: 2}, expect: 8}
+      - {call: state, expect: WON}
+      - {call: view, expect: ["#10", "110", "000"]}
+  - name: hit_mine
+    steps:
+      - {call: reveal, args: {row: 0, col: 0}}
+      - {call: state, expect: LOST}
+      - {call: view, expect: ["*##", "###", "###"]}
