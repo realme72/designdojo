@@ -1,0 +1,7 @@
+id: car-rental
+title: Car Rental (Zoomcar)
+difficulty: medium
+category: Booking & reservations
+time_limit_min: 50
+statement: statement.md
+tags: [state, strategy, concurrency]

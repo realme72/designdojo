@@ -1,0 +1,64 @@
+config: {late_multiplier: 2, free_km_per_day: 100, per_km: 10}
+scenarios:
+  - name: late_return_fee
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: HATCHBACK, daily_rate: 1000, odometer: 0}}
+      - {call: reserve, args: {customer: a, branch: b, category: HATCHBACK, pickup_day: 19675, return_day: 19676}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - advance_clock: 259200
+      - {call: return_car, args: {rental_id: $r.id, odometer: 50}, expect: {base: 1000, late_fee: 4000, total: 5000}}
+  - name: availability_by_overlap
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: reserve, args: {customer: a, branch: b, category: SEDAN, pickup_day: 19680, return_day: 19683}}
+      - {call: available, args: {branch: b, category: SEDAN, pickup_day: 19676, return_day: 19680}, expect: [c1]}
+      - {call: available, args: {branch: b, category: SEDAN, pickup_day: 19682, return_day: 19690}, expect: []}
+      - {call: available, args: {branch: b, category: SEDAN, pickup_day: 19683, return_day: 19690}, expect: [c1]}
+      - {call: available, args: {branch: x, category: SEDAN, pickup_day: 19683, return_day: 19690}, expect: []}
+  - name: late_car_blocks_next_rental
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: reserve, args: {customer: a, branch: b, category: SEDAN, pickup_day: 19675, return_day: 19676}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - advance_clock: 172800
+      - {call: available, args: {branch: b, category: SEDAN, pickup_day: 19677, return_day: 19678}, expect: []}
+      - {call: return_car, args: {rental_id: $r.id, odometer: 10}}
+      - {call: available, args: {branch: b, category: SEDAN, pickup_day: 19677, return_day: 19678}, expect: [c1]}
+  - name: invalid_dates
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: reserve, args: {customer: a, branch: b, category: SEDAN, pickup_day: 19674, return_day: 19676}, expect_error: InvalidDates}
+      - {call: reserve, args: {customer: a, branch: b, category: SEDAN, pickup_day: 19676, return_day: 19676}, expect_error: InvalidDates}
+      - {call: available, args: {branch: b, category: SEDAN, pickup_day: 19677, return_day: 19676}, expect_error: InvalidDates}
+  - name: pickup_rules
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: reserve, args: {customer: a, branch: b, category: SEDAN, pickup_day: 19676, return_day: 19677}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}, expect_error: InvalidState}
+      - {call: return_car, args: {rental_id: $r.id, odometer: 0}, expect_error: InvalidState}
+      - advance_clock: 86400
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - {call: pick_up, args: {rental_id: $r.id}, expect_error: InvalidState}
+      - {call: cancel, args: {rental_id: $r.id}, expect_error: InvalidState}
+  - name: odometer_rules
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 500}}
+      - {call: reserve, args: {customer: a, branch: b, category: SEDAN, pickup_day: 19675, return_day: 19676}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - {call: return_car, args: {rental_id: $r.id, odometer: 499}, expect_error: InvalidOdometer}
+      - {call: return_car, args: {rental_id: $r.id, odometer: 700}, expect: {mileage_fee: 1000}}
+      - {call: reserve, args: {customer: b, branch: b, category: SEDAN, pickup_day: 19675, return_day: 19676}, bind: r2}
+      - {call: pick_up, args: {rental_id: $r2.id}}
+      - {call: return_car, args: {rental_id: $r2.id, odometer: 750}, expect: {mileage_fee: 0}}
+  - name: cancel_frees_car
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: reserve, args: {customer: a, branch: b, category: SEDAN, pickup_day: 19680, return_day: 19681}, bind: r}
+      - {call: cancel, args: {rental_id: $r.id}, expect: {status: CANCELLED}}
+      - {call: reserve, args: {customer: c, branch: b, category: SEDAN, pickup_day: 19680, return_day: 19681}, expect: {car_id: c1}}
+      - {call: cancel, args: {rental_id: nope}, expect_error: UnknownRental}
+  - name: category_and_branch_matter
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: add_car, args: {car_id: c1, branch: x, category: SUV, daily_rate: 1, odometer: 0}, expect_error: DuplicateCar}
+      - {call: reserve, args: {customer: a, branch: b, category: SUV, pickup_day: 19680, return_day: 19681}, expect_error: NoCarAvailable}

@@ -1,0 +1,10 @@
+config: {late_multiplier: 2, free_km_per_day: 100, per_km: 10}
+scenarios:
+  - name: no_double_booking
+    repeat: 15
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: add_car, args: {car_id: c2, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - {call: add_car, args: {car_id: c3, branch: b, category: SEDAN, daily_rate: 1, odometer: 0}}
+      - parallel: {threads: 10, call: reserve, args: {customer: "u{i}", branch: b, category: SEDAN, pickup_day: 19680, return_day: 19682}, collect: r}
+      - assert: {of: r, ok_count: 3, error_count: {NoCarAvailable: 7}, unique: car_id}
