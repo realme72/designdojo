@@ -1,0 +1,84 @@
+scenarios:
+  - name: invalid_paths
+    steps:
+      - {call: mkdir, args: {path: relative}, expect_error: InvalidPath}
+      - {call: mkdir, args: {path: /a//b}, expect_error: InvalidPath}
+      - {call: mkdir, args: {path: /a/../b}, expect_error: InvalidPath}
+      - {call: mkdir, args: {path: /a/./b}, expect_error: InvalidPath}
+      - {call: mkdir, args: {path: /ok/}}
+      - {call: ls, args: {path: /}, expect: [ok]}
+  - name: file_in_the_way
+    steps:
+      - {call: write_file, args: {path: /f, content: x}}
+      - {call: mkdir, args: {path: /f/sub}, expect_error: NotADirectory}
+      - {call: write_file, args: {path: /f/g, content: y}, expect_error: NotADirectory}
+      - {call: read_file, args: {path: /f/g}, expect_error: NotADirectory}
+  - name: directory_vs_file_errors
+    steps:
+      - {call: mkdir, args: {path: /d}}
+      - {call: write_file, args: {path: /d, content: x}, expect_error: IsADirectory}
+      - {call: read_file, args: {path: /d}, expect_error: IsADirectory}
+      - {call: read_file, args: {path: /zz}, expect_error: NotFound}
+  - name: overwrite_and_ls_file
+    steps:
+      - {call: write_file, args: {path: /a.txt, content: one}}
+      - {call: write_file, args: {path: /a.txt, content: three}}
+      - {call: read_file, args: {path: /a.txt}, expect: three}
+      - {call: ls, args: {path: /a.txt}, expect: [a.txt]}
+      - {call: ls, args: {path: /missing}, expect_error: NotFound}
+  - name: ls_sorted
+    steps:
+      - {call: mkdir, args: {path: /b}}
+      - {call: write_file, args: {path: /a, content: ""}}
+      - {call: mkdir, args: {path: /C}}
+      - {call: ls, args: {path: /}, expect: [C, a, b]}
+  - name: rm_rules
+    steps:
+      - {call: mkdir, args: {path: /d/e}}
+      - {call: rm, args: {path: /d, recursive: false}, expect_error: DirectoryNotEmpty}
+      - {call: rm, args: {path: /d/e, recursive: false}}
+      - {call: rm, args: {path: /d, recursive: false}}
+      - {call: rm, args: {path: /d, recursive: false}, expect_error: NotFound}
+      - {call: rm, args: {path: /, recursive: true}, expect_error: InvalidPath}
+  - name: rm_recursive
+    steps:
+      - {call: mkdir, args: {path: /x/y/z}}
+      - {call: write_file, args: {path: /x/y/f, content: abc}}
+      - {call: rm, args: {path: /x, recursive: true}}
+      - {call: ls, args: {path: /}, expect: []}
+      - {call: size, args: {path: /}, expect: 0}
+  - name: move_file_and_dir
+    steps:
+      - {call: mkdir, args: {path: /src/inner}}
+      - {call: write_file, args: {path: /src/inner/f, content: hi}}
+      - {call: mkdir, args: {path: /dst}}
+      - {call: mv, args: {src: /src/inner, dst: /dst/renamed}}
+      - {call: read_file, args: {path: /dst/renamed/f}, expect: hi}
+      - {call: ls, args: {path: /src}, expect: []}
+      - {call: mv, args: {src: /dst/renamed/f, dst: /top.txt}}
+      - {call: read_file, args: {path: /top.txt}, expect: hi}
+  - name: move_errors
+    steps:
+      - {call: mkdir, args: {path: /a/b}}
+      - {call: mkdir, args: {path: /c}}
+      - {call: mv, args: {src: /a, dst: /a/b/a}, expect_error: InvalidPath}
+      - {call: mv, args: {src: /a, dst: /c}, expect_error: AlreadyExists}
+      - {call: mv, args: {src: /a, dst: /nope/a}, expect_error: NotFound}
+      - {call: mv, args: {src: /zz, dst: /q}, expect_error: NotFound}
+      - {call: mv, args: {src: /, dst: /q}, expect_error: InvalidPath}
+      - {call: mv, args: {src: /a, dst: /ab}}
+      - {call: ls, args: {path: /}, expect: [ab, c]}
+  - name: find_by_suffix
+    steps:
+      - {call: mkdir, args: {path: /p/q}}
+      - {call: write_file, args: {path: /p/a.py, content: ""}}
+      - {call: write_file, args: {path: /p/q/b.py, content: ""}}
+      - {call: write_file, args: {path: /p/q/c.txt, content: ""}}
+      - {call: mkdir, args: {path: /p/dir.py}}
+      - {call: find, args: {path: /p, suffix: .py}, expect: [/p/a.py, /p/q/b.py]}
+      - {call: find, args: {path: /p/q/b.py, suffix: .py}, expect: [/p/q/b.py]}
+      - {call: find, args: {path: /, suffix: .md}, expect: []}
+  - name: size_of_file_and_unicode
+    steps:
+      - {call: write_file, args: {path: /f, content: "héllo"}}
+      - {call: size, args: {path: /f}, expect: 5}

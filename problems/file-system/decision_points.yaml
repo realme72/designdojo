@@ -1,0 +1,21 @@
+- id: composite
+  keywords: [node, file, directory, dir, children, tree]
+  question: How are files and directories modelled?
+  good: A Node hierarchy (File, Directory) where operations like size and find recurse uniformly (Composite); callers rarely ask "is this a file?".
+  smells: [TYPE_SWITCH]
+  patterns: [Composite]
+  principles: [LSP]
+- id: path_resolution
+  keywords: [path, resolve, parse, split, normalize]
+  question: Where does path parsing and resolution live?
+  good: One resolver turns a path into components and walks the tree, raising the right error at the right component.
+  principles: [SRP]
+- id: move_safety
+  keywords: [move, mv, subtree, ancestor, cycle]
+  question: How is moving a directory into itself prevented?
+  good: Check whether dst lies under src by components before detaching anything.
+- id: extensibility
+  keywords: [permission, link, metadata]
+  question: Could permissions or symlinks be added without rewriting operations?
+  good: Node carries metadata; operations go through the resolver, so links/permissions slot in there.
+  principles: [OCP]

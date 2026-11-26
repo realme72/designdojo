@@ -1,0 +1,21 @@
+scenarios:
+  - name: insert_and_undo
+    steps:
+      - {call: insert, args: {text: hello}}
+      - {call: insert, args: {text: " world"}}
+      - {call: content, expect: hello world}
+      - {call: undo}
+      - {call: content, expect: hello}
+      - {call: cursor, expect: 5}
+  - name: backspace_and_redo
+    steps:
+      - {call: insert, args: {text: abcdef}}
+      - {call: backspace, args: {n: 2}, expect: ef}
+      - {call: undo}
+      - {call: content, expect: abcdef}
+      - {call: redo}
+      - {call: content, expect: abcd}
+      - {call: cursor, expect: 4}
+  - name: nothing_to_undo
+    steps:
+      - {call: undo, expect_error: NothingToUndo}

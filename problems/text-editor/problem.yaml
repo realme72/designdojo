@@ -1,0 +1,7 @@
+id: text-editor
+title: Text Editor with Undo/Redo
+difficulty: medium
+category: Data structures & caching
+time_limit_min: 45
+statement: statement.md
+tags: [command, memento]

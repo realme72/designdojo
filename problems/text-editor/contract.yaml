@@ -1,0 +1,35 @@
+interfaces:
+  Editor:
+    insert:
+      params: {text: str}
+      returns: void
+    backspace:
+      params: {n: int}
+      returns: str
+      raises: [InvalidArgument]
+    move_cursor:
+      params: {pos: int}
+      returns: void
+      raises: [InvalidPosition]
+    copy:
+      params: {start: int, end: int}
+      returns: void
+      raises: [InvalidPosition]
+    paste:
+      returns: void
+    undo:
+      returns: void
+      raises: [NothingToUndo]
+    redo:
+      returns: void
+      raises: [NothingToRedo]
+    content:
+      returns: str
+    cursor:
+      returns: int
+
+entrypoint:
+  name: create
+  returns: Editor
+
+errors: [InvalidArgument, InvalidPosition, NothingToUndo, NothingToRedo]

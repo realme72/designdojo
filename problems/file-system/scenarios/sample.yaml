@@ -1,0 +1,17 @@
+scenarios:
+  - name: mkdir_write_read_ls
+    steps:
+      - {call: mkdir, args: {path: /docs/notes}}
+      - {call: write_file, args: {path: /docs/notes/todo.txt, content: buy milk}}
+      - {call: read_file, args: {path: /docs/notes/todo.txt}, expect: buy milk}
+      - {call: ls, args: {path: /docs}, expect: [notes]}
+      - {call: ls, args: {path: /}, expect: [docs]}
+  - name: missing_parent
+    steps:
+      - {call: write_file, args: {path: /nope/a.txt, content: x}, expect_error: NotFound}
+  - name: size_is_recursive
+    steps:
+      - {call: mkdir, args: {path: /a/b}}
+      - {call: write_file, args: {path: /a/x, content: "12345"}}
+      - {call: write_file, args: {path: /a/b/y, content: "123"}}
+      - {call: size, args: {path: /a}, expect: 8}
