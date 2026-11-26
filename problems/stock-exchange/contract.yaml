@@ -1,0 +1,46 @@
+enums:
+  Side: [BUY, SELL]
+  OrderType: [LIMIT, MARKET]
+  OrderStatus: [OPEN, PARTIALLY_FILLED, FILLED, CANCELLED]
+
+dtos:
+  Trade:
+    buy_order: str
+    sell_order: str
+    price: long
+    qty: long
+  OrderResult:
+    order_id: str
+    status: OrderStatus
+    filled_qty: long
+    trades: "list[Trade]"
+  Level:
+    price: long
+    qty: long
+  BookView:
+    bids: "list[Level]"
+    asks: "list[Level]"
+
+interfaces:
+  Exchange:
+    place_order:
+      params: {trader: str, symbol: str, side: Side, type: OrderType, qty: long, price: long}
+      returns: OrderResult
+      raises: [InvalidOrder]
+    cancel:
+      params: {order_id: str}
+      returns: OrderResult
+      raises: [UnknownOrder, InvalidState]
+    order:
+      params: {order_id: str}
+      returns: OrderResult
+      raises: [UnknownOrder]
+    book:
+      params: {symbol: str}
+      returns: BookView
+
+entrypoint:
+  name: create
+  returns: Exchange
+
+errors: [InvalidOrder, UnknownOrder, InvalidState]
