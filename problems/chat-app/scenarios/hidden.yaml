@@ -1,0 +1,74 @@
+scenarios:
+  - name: late_joiner_sees_only_new_messages
+    steps:
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: send_group, args: {group_id: g, from_user: ann, text: before}}
+      - {call: add_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: send_group, args: {group_id: g, from_user: ann, text: after}}
+      - {call: messages, args: {user: bob, conversation: "group:g"}, expect: [{text: after}]}
+      - {call: unread, args: {user: bob}, expect: [{conversation: "group:g", count: 1}]}
+  - name: removed_member_keeps_old_not_new
+    steps:
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: add_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: send_group, args: {group_id: g, from_user: ann, text: one}}
+      - {call: remove_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: send_group, args: {group_id: g, from_user: ann, text: two}}
+      - {call: messages, args: {user: bob, conversation: "group:g"}, expect: [{text: one}]}
+      - {call: send_group, args: {group_id: g, from_user: bob, text: x}, expect_error: NotMember}
+      - {call: add_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: send_group, args: {group_id: g, from_user: ann, text: three}}
+      - {call: messages, args: {user: bob, conversation: "group:g"}, expect: [{text: one}, {text: three}]}
+  - name: admin_rules
+    steps:
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: add_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: promote, args: {group_id: g, by: bob, user: bob}, expect_error: Forbidden}
+      - {call: promote, args: {group_id: g, by: ann, user: bob}}
+      - {call: add_member, args: {group_id: g, by: bob, user: cat}}
+      - {call: remove_member, args: {group_id: g, by: bob, user: ann}}
+      - {call: remove_member, args: {group_id: g, by: bob, user: bob}, expect_error: Forbidden}
+      - {call: promote, args: {group_id: g, by: bob, user: zed}, expect_error: NotMember}
+      - {call: remove_member, args: {group_id: g, by: bob, user: zed}, expect_error: NotMember}
+  - name: unknown_and_duplicate_groups
+    steps:
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: create_group, args: {group_id: g, owner: bob}, expect_error: DuplicateGroup}
+      - {call: send_group, args: {group_id: q, from_user: ann, text: x}, expect_error: UnknownGroup}
+      - {call: add_member, args: {group_id: q, by: ann, user: bob}, expect_error: UnknownGroup}
+  - name: blocking
+    steps:
+      - {call: block, args: {user: bob, other: ann}}
+      - {call: send_direct, args: {from_user: ann, to_user: bob, text: hi}, expect_error: Blocked}
+      - {call: send_direct, args: {from_user: bob, to_user: ann, text: hi}}
+      - {call: unblock, args: {user: bob, other: ann}}
+      - {call: send_direct, args: {from_user: ann, to_user: bob, text: hi}}
+      - {call: messages, args: {user: ann, conversation: "dm:bob"}, expect: [{from_user: bob}, {from_user: ann}]}
+  - name: invalid_messages
+    steps:
+      - {call: send_direct, args: {from_user: ann, to_user: ann, text: hi}, expect_error: InvalidMessage}
+      - {call: send_direct, args: {from_user: ann, to_user: bob, text: ""}, expect_error: InvalidMessage}
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: send_group, args: {group_id: g, from_user: ann, text: ""}, expect_error: InvalidMessage}
+  - name: own_messages_not_unread_and_sorted
+    steps:
+      - {call: send_direct, args: {from_user: zed, to_user: ann, text: a}}
+      - {call: send_direct, args: {from_user: bob, to_user: ann, text: b}}
+      - {call: send_direct, args: {from_user: ann, to_user: bob, text: c}}
+      - {call: create_group, args: {group_id: g, owner: bob}}
+      - {call: add_member, args: {group_id: g, by: bob, user: ann}}
+      - {call: send_group, args: {group_id: g, from_user: bob, text: d}}
+      - {call: unread, args: {user: ann}, expect: [{conversation: "dm:bob", count: 1}, {conversation: "dm:zed", count: 1}, {conversation: "group:g", count: 1}]}
+      - {call: mark_read, args: {user: ann, conversation: "dm:bob"}}
+      - {call: send_direct, args: {from_user: bob, to_user: ann, text: e}}
+      - {call: unread, args: {user: ann}, expect: [{conversation: "dm:bob", count: 1}, {conversation: "dm:zed", count: 1}, {conversation: "group:g", count: 1}]}
+  - name: ids_unique_across_conversations
+    steps:
+      - {call: send_direct, args: {from_user: a, to_user: b, text: x}, bind: m1}
+      - {call: create_group, args: {group_id: g, owner: a}}
+      - {call: send_group, args: {group_id: g, from_user: a, text: y}, bind: m2}
+      - assert: {distinct: [$m1, $m2]}
+  - name: empty_conversation
+    steps:
+      - {call: messages, args: {user: a, conversation: "dm:nobody"}, expect: []}
+      - {call: messages, args: {user: a, conversation: "group:none"}, expect: []}

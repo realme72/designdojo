@@ -1,0 +1,7 @@
+id: chat-app
+title: Chat Application (WhatsApp)
+difficulty: medium
+category: Social & content
+time_limit_min: 60
+statement: statement.md
+tags: [modeling, observer, concurrency]

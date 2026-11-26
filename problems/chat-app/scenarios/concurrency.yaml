@@ -1,0 +1,17 @@
+scenarios:
+  - name: busy_group
+    repeat: 10
+    steps:
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: add_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: add_member, args: {group_id: g, by: ann, user: cat}}
+      - parallel: {threads: 100, call: send_group, args: {group_id: g, from_user: ann, text: "m{i}"}, collect: r}
+      - assert: {of: r, ok_count: 100, unique: "."}
+      - {call: unread, args: {user: bob}, expect: [{conversation: "group:g", count: 100}]}
+      - {call: unread, args: {user: ann}, expect: []}
+  - name: many_senders_one_inbox
+    repeat: 10
+    steps:
+      - parallel: {threads: 50, call: send_direct, args: {from_user: "u{i}", to_user: me, text: hi}, collect: r}
+      - assert: {of: r, ok_count: 50, unique: "."}
+      - {call: unread, args: {user: me}, bind: u}
