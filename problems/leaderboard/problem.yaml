@@ -1,0 +1,7 @@
+id: leaderboard
+title: Game Leaderboard
+difficulty: easy
+category: Data structures & caching
+time_limit_min: 40
+statement: statement.md
+tags: [data-structures, concurrency]

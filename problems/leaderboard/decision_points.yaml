@@ -1,0 +1,15 @@
+- id: structure
+  keywords: [sorted, order, rank, index, tree, bisect, skip]
+  question: How are ordered queries kept fast?
+  good: Totals in a map plus an ordered structure keyed by (-score, name) (sorted list / tree / skip list) updated on each change.
+- id: ranking_rule
+  keywords: [rank, tie, competition, dense]
+  question: Where does the ranking rule live?
+  good: One function turns an ordered sequence into ranks; dense vs competition ranking is a swap.
+  principles: [SRP]
+  patterns: [Strategy]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are concurrent score updates safe?
+  good: Read-modify-write of a total and its index entry happen atomically.
+  smells: [UNGUARDED_SHARED]

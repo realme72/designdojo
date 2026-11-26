@@ -1,0 +1,33 @@
+dtos:
+  Ranked:
+    player: str
+    score: long
+    rank: int
+
+interfaces:
+  Leaderboard:
+    add_score:
+      params: {player: str, points: long}
+      returns: long
+    top:
+      params: {k: int}
+      returns: "list[Ranked]"
+      raises: [InvalidArgument]
+    rank:
+      params: {player: str}
+      returns: int
+      raises: [UnknownPlayer]
+    around:
+      params: {player: str, radius: int}
+      returns: "list[Ranked]"
+      raises: [UnknownPlayer, InvalidArgument]
+    remove:
+      params: {player: str}
+      returns: void
+      raises: [UnknownPlayer]
+
+entrypoint:
+  name: create
+  returns: Leaderboard
+
+errors: [InvalidArgument, UnknownPlayer]

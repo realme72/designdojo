@@ -1,0 +1,25 @@
+- id: states
+  keywords: [state, closed, open, half, transition]
+  question: How are the three states and their transitions modelled?
+  good: State objects (or an enum + transition methods) where each state decides allow/success/failure handling; no if-chains on state in every method.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: trial_permits
+  keywords: [trial, permit, half, herd]
+  question: How is the half-open thundering herd prevented?
+  good: A bounded permit counter in HALF_OPEN, decremented atomically.
+- id: per_service
+  keywords: [service, registry, breaker, map]
+  question: How are breakers kept per service?
+  good: A registry creating one breaker per service on demand; each breaker guards its own state.
+  principles: [SRP]
+- id: time
+  keywords: [clock, now, opened, timeout]
+  question: How does OPEN time out?
+  good: Lazily on access using the injected clock; no timers.
+  smells: [DIRECT_TIME]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are transitions and permit grants atomic?
+  good: Each breaker serialises its state changes.
+  smells: [UNGUARDED_SHARED]

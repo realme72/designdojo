@@ -1,0 +1,50 @@
+scenarios:
+  - name: overtaking_changes_rank
+    steps:
+      - {call: add_score, args: {player: a, points: 50}}
+      - {call: add_score, args: {player: b, points: 40}}
+      - {call: rank, args: {player: b}, expect: 2}
+      - {call: add_score, args: {player: b, points: 20}}
+      - {call: rank, args: {player: b}, expect: 1}
+      - {call: top, args: {k: 1}, expect: [{player: b, score: 60, rank: 1}]}
+  - name: negative_points
+    steps:
+      - {call: add_score, args: {player: a, points: 10}}
+      - {call: add_score, args: {player: b, points: 5}}
+      - {call: add_score, args: {player: a, points: -8}, expect: 2}
+      - {call: top, args: {k: 2}, expect: [{player: b}, {player: a}]}
+  - name: k_larger_than_board
+    steps:
+      - {call: add_score, args: {player: a, points: 1}}
+      - {call: top, args: {k: 10}, expect: [{player: a, rank: 1}]}
+      - {call: top, args: {k: 0}, expect_error: InvalidArgument}
+  - name: around_clipped
+    steps:
+      - {call: add_score, args: {player: a, points: 50}}
+      - {call: add_score, args: {player: b, points: 40}}
+      - {call: add_score, args: {player: c, points: 30}}
+      - {call: add_score, args: {player: d, points: 20}}
+      - {call: around, args: {player: c, radius: 1}, expect: [{player: b, rank: 2}, {player: c, rank: 3}, {player: d, rank: 4}]}
+      - {call: around, args: {player: a, radius: 2}, expect: [{player: a}, {player: b}, {player: c}]}
+      - {call: around, args: {player: d, radius: 0}, expect: [{player: d, rank: 4}]}
+      - {call: around, args: {player: d, radius: -1}, expect_error: InvalidArgument}
+  - name: name_breaks_ties_rank_shared
+    steps:
+      - {call: add_score, args: {player: zoe, points: 7}}
+      - {call: add_score, args: {player: amy, points: 7}}
+      - {call: add_score, args: {player: max, points: 7}}
+      - {call: top, args: {k: 3}, expect: [{player: amy, rank: 1}, {player: max, rank: 1}, {player: zoe, rank: 1}]}
+      - {call: add_score, args: {player: bo, points: 1}}
+      - {call: rank, args: {player: bo}, expect: 4}
+  - name: remove_player
+    steps:
+      - {call: add_score, args: {player: a, points: 5}}
+      - {call: add_score, args: {player: b, points: 3}}
+      - {call: remove, args: {player: a}}
+      - {call: rank, args: {player: b}, expect: 1}
+      - {call: remove, args: {player: a}, expect_error: UnknownPlayer}
+      - {call: around, args: {player: a, radius: 1}, expect_error: UnknownPlayer}
+  - name: zero_total_still_listed
+    steps:
+      - {call: add_score, args: {player: a, points: 0}}
+      - {call: top, args: {k: 1}, expect: [{player: a, score: 0, rank: 1}]}
