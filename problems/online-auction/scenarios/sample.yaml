@@ -1,0 +1,20 @@
+config: {extension_window: 60, extension: 120}
+scenarios:
+  - name: bids_must_increase
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: sam, starting_price: 100, min_increment: 10, ends_at: 1700003600}}
+      - {call: bid, args: {auction_id: A, bidder: ann, amount: 100}, expect: {highest: 100, ends_at: 1700003600}}
+      - {call: bid, args: {auction_id: A, bidder: bob, amount: 105}, expect_error: BidTooLow}
+      - {call: bid, args: {auction_id: A, bidder: bob, amount: 110}}
+      - {call: highest, args: {auction_id: A}, expect: {bidder: bob, amount: 110}}
+  - name: close_after_end
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: sam, starting_price: 100, min_increment: 10, ends_at: 1700000100}}
+      - {call: bid, args: {auction_id: A, bidder: ann, amount: 150}}
+      - {call: close, args: {auction_id: A}, expect_error: AuctionOpen}
+      - advance_clock: 100
+      - {call: close, args: {auction_id: A}, expect: {winner: ann, price: 150}}
+  - name: seller_cannot_bid
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: sam, starting_price: 100, min_increment: 10, ends_at: 1700000100}}
+      - {call: bid, args: {auction_id: A, bidder: sam, amount: 500}, expect_error: SelfBid}

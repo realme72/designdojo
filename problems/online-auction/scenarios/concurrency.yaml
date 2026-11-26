@@ -1,0 +1,10 @@
+config: {extension_window: 1, extension: 1}
+scenarios:
+  - name: highest_bid_wins_race
+    repeat: 15
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 100, min_increment: 1, ends_at: 1700003600}}
+      - parallel: {threads: 50, call: bid, args: {auction_id: A, bidder: "b{i}", amount: "{i+100}"}, collect: r}
+      - {call: highest, args: {auction_id: A}, expect: {bidder: b49, amount: 149}}
+      - {call: history, args: {auction_id: A}, bind: h}
+      - assert: {distinct: $h}
