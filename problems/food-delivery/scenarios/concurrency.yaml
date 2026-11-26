@@ -1,0 +1,16 @@
+config: {delivery_fee: 0}
+scenarios:
+  - name: agent_never_double_assigned
+    repeat: 15
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: add_agent, args: {agent_id: a1}}
+      - {call: add_agent, args: {agent_id: a2}}
+      - {call: add_agent, args: {agent_id: a3}}
+      - parallel: {threads: 10, call: place_order, args: {customer: "c{i}", restaurant_id: r, lines: [{item_id: x, qty: 1}]}, collect: placed}
+      - assert: {of: placed, ok_count: 10, unique: id}
+      - parallel: {threads: 10, call: accept, args: {order_id: "$placed[{i}].ok.id"}, collect: acc}
+      - assert: {of: acc, ok_count: 10}
+      - {call: free_agents, expect: 0}
+      - {call: waiting_orders, expect: 7}

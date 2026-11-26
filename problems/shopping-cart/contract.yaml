@@ -1,0 +1,58 @@
+enums:
+  PromoKind: [PERCENT_OFF_SKU, BUY_X_GET_Y, FLAT_OFF_CART, PERCENT_OFF_CART]
+
+dtos:
+  Promotion:
+    code: str
+    kind: PromoKind
+    sku: str
+    threshold: long
+    value: long
+  BillLine:
+    sku: str
+    qty: int
+    unit_price: long
+    line_total: long
+  Bill:
+    subtotal: long
+    discount: long
+    total: long
+    lines: "list[BillLine]"
+
+interfaces:
+  Store:
+    add_product:
+      params: {sku: str, name: str, price: long}
+      returns: void
+      raises: [InvalidPrice]
+    add_to_cart:
+      params: {cart_id: str, sku: str, qty: int}
+      returns: void
+      raises: [UnknownProduct, InvalidQuantity]
+    remove_from_cart:
+      params: {cart_id: str, sku: str, qty: int}
+      returns: void
+      raises: [NotInCart, InvalidQuantity]
+    add_promotion:
+      params: {promo: Promotion}
+      returns: void
+      raises: [DuplicatePromotion, InvalidPromotion]
+    apply_coupon:
+      params: {cart_id: str, code: str}
+      returns: void
+      raises: [UnknownPromotion, InvalidCoupon]
+    bill:
+      params: {cart_id: str}
+      returns: Bill
+    checkout:
+      params: {cart_id: str}
+      returns: Bill
+
+entrypoint:
+  name: create
+  returns: Store
+
+errors: [InvalidPrice, UnknownProduct, InvalidQuantity, NotInCart, DuplicatePromotion, InvalidPromotion, UnknownPromotion, InvalidCoupon]
+
+docs:
+  Promotion: sku is ignored (use "") for cart-level kinds.

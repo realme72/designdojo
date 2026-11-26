@@ -1,0 +1,23 @@
+- id: promotions
+  keywords: [promo, promotion, discount, percent, buy, flat, kind]
+  question: How are promotion types implemented?
+  good: A Promotion interface (discount for a line / for a cart) with one class per kind, built by a small factory; the pricing engine never switches on kind.
+  smells: [TYPE_SWITCH, GOD_CLASS]
+  principles: [OCP]
+  patterns: [Strategy, Factory]
+- id: pricing_pipeline
+  keywords: [subtotal, total, order, apply, item, cart, pipeline]
+  question: Is the order of applying discounts explicit?
+  good: A pricing pipeline (item promos -> cart coupon -> floor at 0) in one place, separate from cart storage.
+  principles: [SRP]
+  patterns: [Chain of Responsibility]
+- id: cart_model
+  keywords: [cart, line, quantity, sku, remove]
+  question: Is the cart a simple container separate from pricing?
+  good: Cart stores SKU quantities and a coupon code; it doesn't compute prices.
+  principles: [SRP]
+- id: money
+  keywords: [cents, round, floor, money]
+  question: How is money represented and rounded?
+  good: Integer cents with explicit floor rounding at defined points.
+  smells: [PRIMITIVE_OBSESSION]

@@ -1,0 +1,7 @@
+id: shopping-cart
+title: Shopping Cart & Promotions
+difficulty: medium
+category: Commerce & payments
+time_limit_min: 60
+statement: statement.md
+tags: [strategy, open-closed]

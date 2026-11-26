@@ -1,0 +1,82 @@
+enums:
+  OrderStatus: [PLACED, ACCEPTED, REJECTED, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED]
+
+dtos:
+  DeliveryConfig:
+    delivery_fee: long
+  OrderLine:
+    item_id: str
+    qty: int
+  Order:
+    id: str
+    customer: str
+    restaurant: str
+    status: OrderStatus
+    total: long
+    agent: str
+
+interfaces:
+  FoodDelivery:
+    add_restaurant:
+      params: {restaurant_id: str}
+      returns: void
+    add_item:
+      params: {restaurant_id: str, item_id: str, price: long}
+      returns: void
+      raises: [UnknownRestaurant]
+    set_item_available:
+      params: {restaurant_id: str, item_id: str, available: bool}
+      returns: void
+      raises: [UnknownRestaurant, UnknownItem]
+    add_agent:
+      params: {agent_id: str}
+      returns: void
+    place_order:
+      params: {customer: str, restaurant_id: str, lines: "list[OrderLine]"}
+      returns: Order
+      raises: [UnknownRestaurant, UnknownItem, ItemUnavailable, InvalidOrder]
+    accept:
+      params: {order_id: str}
+      returns: Order
+      raises: [UnknownOrder, InvalidState]
+    reject:
+      params: {order_id: str}
+      returns: Order
+      raises: [UnknownOrder, InvalidState]
+    mark_ready:
+      params: {order_id: str}
+      returns: Order
+      raises: [UnknownOrder, InvalidState]
+    pick_up:
+      params: {order_id: str}
+      returns: Order
+      raises: [UnknownOrder, InvalidState]
+    deliver:
+      params: {order_id: str}
+      returns: Order
+      raises: [UnknownOrder, InvalidState]
+    cancel:
+      params: {order_id: str}
+      returns: Order
+      raises: [UnknownOrder, InvalidState]
+    order:
+      params: {order_id: str}
+      returns: Order
+      raises: [UnknownOrder]
+    notifications:
+      params: {customer: str}
+      returns: "list[str]"
+    free_agents:
+      returns: int
+    waiting_orders:
+      returns: int
+
+entrypoint:
+  name: create
+  params: {config: DeliveryConfig}
+  returns: FoodDelivery
+
+errors: [UnknownRestaurant, UnknownItem, ItemUnavailable, InvalidOrder, UnknownOrder, InvalidState]
+
+docs:
+  Order: agent is empty until one is assigned.

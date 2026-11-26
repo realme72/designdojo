@@ -1,0 +1,30 @@
+config: {delivery_fee: 40}
+scenarios:
+  - name: happy_path
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r1}}
+      - {call: add_item, args: {restaurant_id: r1, item_id: dosa, price: 120}}
+      - {call: add_item, args: {restaurant_id: r1, item_id: chai, price: 30}}
+      - {call: add_agent, args: {agent_id: a1}}
+      - call: place_order
+        args: {customer: c1, restaurant_id: r1, lines: [{item_id: dosa, qty: 2}, {item_id: chai, qty: 1}]}
+        expect: {status: PLACED, total: 310, agent: ""}
+        bind: o
+      - {call: accept, args: {order_id: $o.id}, expect: {status: ACCEPTED, agent: a1}}
+      - {call: mark_ready, args: {order_id: $o.id}}
+      - {call: pick_up, args: {order_id: $o.id}, expect: {status: OUT_FOR_DELIVERY}}
+      - {call: deliver, args: {order_id: $o.id}, expect: {status: DELIVERED}}
+      - {call: free_agents, expect: 1}
+  - name: notifications_in_order
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r1}}
+      - {call: add_item, args: {restaurant_id: r1, item_id: dosa, price: 120}}
+      - {call: place_order, args: {customer: c1, restaurant_id: r1, lines: [{item_id: dosa, qty: 1}]}, bind: o}
+      - {call: reject, args: {order_id: $o.id}}
+      - {call: notifications, args: {customer: c1}, expect: ["O1:PLACED", "O1:REJECTED"]}
+  - name: unavailable_item
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r1}}
+      - {call: add_item, args: {restaurant_id: r1, item_id: dosa, price: 120}}
+      - {call: set_item_available, args: {restaurant_id: r1, item_id: dosa, available: false}}
+      - {call: place_order, args: {customer: c1, restaurant_id: r1, lines: [{item_id: dosa, qty: 1}]}, expect_error: ItemUnavailable}
