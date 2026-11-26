@@ -1,0 +1,18 @@
+scenarios:
+  - name: one_off_runs_once
+    steps:
+      - {call: schedule_once, args: {job_id: report, run_at: 1700000010}}
+      - {call: tick, expect: []}
+      - advance_clock: 10
+      - {call: tick, expect: [report]}
+      - {call: tick, expect: []}
+  - name: recurring_job
+    steps:
+      - {call: schedule_every, args: {job_id: ping, start_at: 1700000000, interval_seconds: 5}}
+      - {call: tick, expect: [ping]}
+      - advance_clock: 5
+      - {call: tick, expect: [ping]}
+      - {call: pending, expect: [{id: ping, next_run: 1700000010}]}
+  - name: cannot_schedule_in_past
+    steps:
+      - {call: schedule_once, args: {job_id: j, run_at: 1699999999}, expect_error: InvalidTime}

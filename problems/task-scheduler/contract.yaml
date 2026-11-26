@@ -1,0 +1,44 @@
+dtos:
+  JobInfo:
+    id: str
+    next_run: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Scheduler:
+    schedule_once:
+      params: {job_id: str, run_at: long}
+      returns: void
+      raises: [DuplicateJob, InvalidTime]
+    schedule_every:
+      params: {job_id: str, start_at: long, interval_seconds: long}
+      returns: void
+      raises: [DuplicateJob, InvalidTime, InvalidInterval]
+    tick:
+      returns: "list[str]"
+      doc: Ids of jobs run, ordered by due time then id.
+    cancel:
+      params: {job_id: str}
+      returns: bool
+    pause:
+      params: {job_id: str}
+      returns: void
+      raises: [UnknownJob]
+    resume:
+      params: {job_id: str}
+      returns: void
+      raises: [UnknownJob]
+    pending:
+      returns: "list[JobInfo]"
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: Scheduler
+
+errors: [DuplicateJob, InvalidTime, InvalidInterval, UnknownJob]

@@ -1,0 +1,7 @@
+id: task-scheduler
+title: Task Scheduler (Cron-lite)
+difficulty: medium
+category: Scheduling & workflows
+time_limit_min: 45
+statement: statement.md
+tags: [scheduling, concurrency, data-structures]

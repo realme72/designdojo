@@ -1,0 +1,87 @@
+scenarios:
+  - name: due_order_by_time_then_id
+    steps:
+      - {call: schedule_once, args: {job_id: b, run_at: 1700000005}}
+      - {call: schedule_once, args: {job_id: c, run_at: 1700000003}}
+      - {call: schedule_once, args: {job_id: a, run_at: 1700000005}}
+      - advance_clock: 10
+      - {call: tick, expect: [c, a, b]}
+  - name: missed_intervals_run_once
+    steps:
+      - {call: schedule_every, args: {job_id: j, start_at: 1700000000, interval_seconds: 10}}
+      - advance_clock: 35
+      - {call: tick, expect: [j]}
+      - {call: pending, expect: [{id: j, next_run: 1700000040}]}
+  - name: next_run_strictly_after_now
+    steps:
+      - {call: schedule_every, args: {job_id: j, start_at: 1700000000, interval_seconds: 10}}
+      - advance_clock: 20
+      - {call: tick, expect: [j]}
+      - {call: pending, expect: [{id: j, next_run: 1700000030}]}
+  - name: cancel_and_reuse_id
+    steps:
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000005}}
+      - {call: cancel, args: {job_id: j}, expect: true}
+      - {call: cancel, args: {job_id: j}, expect: false}
+      - advance_clock: 10
+      - {call: tick, expect: []}
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000020}}
+      - {call: pending, expect: [{id: j, next_run: 1700000020}]}
+  - name: reused_id_does_not_inherit_old_time
+    steps:
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000005}}
+      - {call: cancel, args: {job_id: j}}
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000050}}
+      - advance_clock: 10
+      - {call: tick, expect: []}
+      - advance_clock: 40
+      - {call: tick, expect: [j]}
+  - name: duplicate_job
+    steps:
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000005}}
+      - {call: schedule_every, args: {job_id: j, start_at: 1700000005, interval_seconds: 1}, expect_error: DuplicateJob}
+  - name: finished_one_off_id_can_be_reused
+    steps:
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000000}}
+      - {call: tick, expect: [j]}
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000001}}
+  - name: invalid_interval
+    steps:
+      - {call: schedule_every, args: {job_id: j, start_at: 1700000000, interval_seconds: 0}, expect_error: InvalidInterval}
+  - name: pause_and_resume_recurring
+    steps:
+      - {call: schedule_every, args: {job_id: j, start_at: 1700000000, interval_seconds: 10}}
+      - {call: pause, args: {job_id: j}}
+      - {call: pending, expect: []}
+      - advance_clock: 25
+      - {call: tick, expect: []}
+      - {call: resume, args: {job_id: j}}
+      - {call: pending, expect: [{id: j, next_run: 1700000030}]}
+      - advance_clock: 5
+      - {call: tick, expect: [j]}
+  - name: resume_on_slot_boundary
+    steps:
+      - {call: schedule_every, args: {job_id: j, start_at: 1700000000, interval_seconds: 10}}
+      - {call: pause, args: {job_id: j}}
+      - advance_clock: 20
+      - {call: resume, args: {job_id: j}}
+      - {call: pending, expect: [{id: j, next_run: 1700000020}]}
+      - {call: tick, expect: [j]}
+  - name: resumed_one_off_runs_if_overdue
+    steps:
+      - {call: schedule_once, args: {job_id: j, run_at: 1700000005}}
+      - {call: pause, args: {job_id: j}}
+      - advance_clock: 10
+      - {call: tick, expect: []}
+      - {call: resume, args: {job_id: j}}
+      - {call: tick, expect: [j]}
+  - name: unknown_job
+    steps:
+      - {call: pause, args: {job_id: ghost}, expect_error: UnknownJob}
+      - {call: resume, args: {job_id: ghost}, expect_error: UnknownJob}
+  - name: pending_sorted
+    steps:
+      - {call: schedule_once, args: {job_id: z, run_at: 1700000001}}
+      - {call: schedule_every, args: {job_id: m, start_at: 1700000009, interval_seconds: 3}}
+      - {call: schedule_once, args: {job_id: a, run_at: 1700000009}}
+      - {call: pending, expect: [{id: z, next_run: 1700000001}, {id: a, next_run: 1700000009}, {id: m, next_run: 1700000009}]}
