@@ -1,0 +1,6 @@
+interfaces:
+  LoadBalancer:
+    acquire_for:
+      params: {client_id: str}
+      returns: str
+      raises: [NoHealthyServer]

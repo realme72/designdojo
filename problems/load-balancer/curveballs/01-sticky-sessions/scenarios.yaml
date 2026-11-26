@@ -1,0 +1,29 @@
+scenarios:
+  - name: sticks_until_unhealthy
+    steps:
+      - {call: add_server, args: {server_id: a, weight: 1}}
+      - {call: add_server, args: {server_id: b, weight: 1}}
+      - {call: add_server, args: {server_id: c, weight: 1}}
+      - {call: acquire_for, args: {client_id: u1}, expect: a}
+      - {call: acquire_for, args: {client_id: u2}, expect: b}
+      - {call: acquire_for, args: {client_id: u1}, expect: a}
+      - {call: set_healthy, args: {server_id: a, healthy: false}}
+      - {call: acquire_for, args: {client_id: u1}, expect: c}
+      - {call: set_healthy, args: {server_id: a, healthy: true}}
+      - {call: acquire_for, args: {client_id: u1}, expect: c}
+      - {call: active, args: {server_id: c}, expect: 2}
+      - {call: active, args: {server_id: a}, expect: 2}
+      - {call: remove_server, args: {server_id: c}}
+      - {call: acquire_for, args: {client_id: u1}, expect: a}
+  - name: works_with_least_connections
+    steps:
+      - {call: add_server, args: {server_id: a, weight: 1}}
+      - {call: add_server, args: {server_id: b, weight: 1}}
+      - {call: set_strategy, args: {strategy: LEAST_CONNECTIONS}}
+      - {call: acquire_for, args: {client_id: u1}, expect: a}
+      - {call: acquire_for, args: {client_id: u1}, expect: a}
+      - {call: acquire_for, args: {client_id: u2}, expect: b}
+      - {call: acquire, expect: b}
+      - {call: set_healthy, args: {server_id: a, healthy: false}}
+      - {call: set_healthy, args: {server_id: b, healthy: false}}
+      - {call: acquire_for, args: {client_id: u1}, expect_error: NoHealthyServer}

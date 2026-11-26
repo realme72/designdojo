@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from contract import KeyNotFound, KeyValueStore, NoTransaction
+from contract import InvalidValue, KeyNotFound, KeyValueStore, NoTransaction
 
 _MISSING = object()
 
@@ -50,6 +50,15 @@ class TransactionalStore(KeyValueStore):
             return False
         self._write(key, _MISSING)
         return True
+
+    def incr(self, key: str, by: int) -> int:
+        current = self._data.values.get(key, "0")
+        try:
+            n = int(current) + by
+        except ValueError:
+            raise InvalidValue(current) from None
+        self._write(key, str(n))
+        return n
 
     def count(self, value: str) -> int:
         return self._data.counts[value]

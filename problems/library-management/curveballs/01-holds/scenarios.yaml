@@ -1,0 +1,30 @@
+config: {max_loans: 2, loan_days: 14, fine_per_day: 50}
+scenarios:
+  - name: queue_in_order
+    steps:
+      - {call: add_book, args: {isbn: b1, title: Dune, author: Herbert, copies: 1}}
+      - {call: add_member, args: {member_id: m1}}
+      - {call: add_member, args: {member_id: m2}}
+      - {call: add_member, args: {member_id: m3}}
+      - {call: place_hold, args: {member_id: m2, isbn: b1}, expect_error: InvalidState}
+      - {call: checkout, args: {member_id: m1, isbn: b1}, bind: l1}
+      - {call: place_hold, args: {member_id: m2, isbn: b1}, expect: 1}
+      - {call: place_hold, args: {member_id: m3, isbn: b1}, expect: 2}
+      - {call: place_hold, args: {member_id: m2, isbn: b1}, expect_error: InvalidState}
+      - {call: return_book, args: {loan_id: $l1.id}}
+      - {call: available, args: {isbn: b1}, expect: 0}
+      - {call: checkout, args: {member_id: m3, isbn: b1}, expect_error: NotAvailable}
+      - {call: checkout, args: {member_id: m1, isbn: b1}, expect_error: NotAvailable}
+      - {call: checkout, args: {member_id: m2, isbn: b1}, bind: l2}
+      - {call: return_book, args: {loan_id: $l2.id}}
+      - {call: checkout, args: {member_id: m3, isbn: b1}}
+      - {call: available, args: {isbn: b1}, expect: 0}
+  - name: no_queue_returns_to_shelf
+    steps:
+      - {call: add_book, args: {isbn: b1, title: Dune, author: Herbert, copies: 1}}
+      - {call: add_member, args: {member_id: m1}}
+      - {call: checkout, args: {member_id: m1, isbn: b1}, bind: l1}
+      - {call: return_book, args: {loan_id: $l1.id}}
+      - {call: available, args: {isbn: b1}, expect: 1}
+      - {call: place_hold, args: {member_id: m9, isbn: b1}, expect_error: UnknownMember}
+      - {call: place_hold, args: {member_id: m1, isbn: zz}, expect_error: UnknownBook}

@@ -1,0 +1,22 @@
+scenarios:
+  - name: increments
+    steps:
+      - {call: set, args: {key: n, value: "5"}}
+      - {call: incr, args: {key: n, by: 3}, expect: 8}
+      - {call: get, args: {key: n}, expect: "8"}
+      - {call: incr, args: {key: m, by: -2}, expect: -2}
+      - {call: set, args: {key: s, value: abc}}
+      - {call: incr, args: {key: s, by: 1}, expect_error: InvalidValue}
+      - {call: get, args: {key: s}, expect: abc}
+  - name: transactional
+    steps:
+      - {call: set, args: {key: n, value: "8"}}
+      - {call: begin}
+      - {call: incr, args: {key: n, by: 10}, expect: 18}
+      - {call: incr, args: {key: fresh, by: 1}, expect: 1}
+      - {call: count, args: {value: "18"}, expect: 1}
+      - {call: rollback}
+      - {call: get, args: {key: n}, expect: "8"}
+      - {call: get, args: {key: fresh}, expect_error: KeyNotFound}
+      - {call: count, args: {value: "8"}, expect: 1}
+      - {call: count, args: {value: "18"}, expect: 0}

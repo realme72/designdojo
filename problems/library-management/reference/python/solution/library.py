@@ -4,7 +4,9 @@ import itertools
 import threading
 from dataclasses import dataclass, field
 
-from contract import (Clock, DuplicateMember, InvalidAmount, InvalidCopies, Library, LoanLimitReached, Loan, NotAvailable,
+from collections import deque
+
+from contract import (Clock, DuplicateMember, InvalidAmount, InvalidCopies, InvalidState, Library, LoanLimitReached, Loan, NotAvailable,
                       OutstandingFines, UnknownBook, UnknownLoan, UnknownMember)
 
 from .policy import DAY, FinePolicy
@@ -17,6 +19,11 @@ class Book:
     author: str
     copies: int
     on_loan: int = 0
+    holds: deque[str] = field(default_factory=deque)   # members waiting
+    set_aside: list[str] = field(default_factory=list)  # members a returned copy is kept for
+
+    def free(self) -> int:
+        return self.copies - self.on_loan - len(self.set_aside)
 
 
 @dataclass
@@ -73,7 +80,9 @@ class LendingLibrary(Library):
                 raise OutstandingFines(member.owed)
             if len(member.loans) >= self._max_loans:
                 raise LoanLimitReached(member_id)
-            if book.on_loan >= book.copies:
+            if member_id in book.set_aside:
+                book.set_aside.remove(member_id)
+            elif book.free() < 1:
                 raise NotAvailable(isbn)
             loan = Loan(f"L{next(self._ids)}", member_id, isbn, self._clock.now() + self._loan_seconds)
             book.on_loan += 1
@@ -88,7 +97,10 @@ class LendingLibrary(Library):
                 raise UnknownLoan(loan_id)
             member = self._members[loan.member_id]
             del member.loans[loan_id]
-            self._books[loan.isbn].on_loan -= 1
+            book = self._books[loan.isbn]
+            book.on_loan -= 1
+            if book.holds:
+                book.set_aside.append(book.holds.popleft())
             fine = self._fines.fine(loan.due_at, self._clock.now())
             member.owed += fine
             return fine
@@ -107,8 +119,18 @@ class LendingLibrary(Library):
 
     def available(self, isbn: str) -> int:
         with self._lock:
-            b = self._book(isbn)
-            return b.copies - b.on_loan
+            return self._book(isbn).free()
+
+    def place_hold(self, member_id: str, isbn: str) -> int:
+        with self._lock:
+            self._member(member_id)
+            book = self._book(isbn)
+            if book.free() > 0:
+                raise InvalidState("a copy is available: check it out")
+            if member_id in book.holds or member_id in book.set_aside:
+                raise InvalidState("already holding this book")
+            book.holds.append(member_id)
+            return len(book.holds)
 
     def loans(self, member_id: str) -> list[Loan]:
         with self._lock:

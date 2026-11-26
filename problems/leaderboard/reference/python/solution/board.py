@@ -3,7 +3,7 @@ from __future__ import annotations
 import bisect
 import threading
 
-from contract import InvalidArgument, Leaderboard, Ranked, UnknownPlayer
+from contract import InvalidArgument, Leaderboard, Ranked, RankingMode, UnknownPlayer
 
 
 class SortedBoard(Leaderboard):
@@ -13,9 +13,17 @@ class SortedBoard(Leaderboard):
         self._totals: dict[str, int] = {}
         self._order: list[tuple[int, str]] = []
         self._lock = threading.Lock()
+        self._mode = RankingMode.COMPETITION
+
+    def set_ranking_mode(self, mode: RankingMode) -> None:
+        with self._lock:
+            self._mode = mode
 
     def _rank_of_score(self, score: int) -> int:
-        return bisect.bisect_left(self._order, (-score, "")) + 1
+        higher = bisect.bisect_left(self._order, (-score, ""))
+        if self._mode is RankingMode.DENSE:
+            return len({neg for neg, _ in self._order[:higher]}) + 1
+        return higher + 1
 
     def _entry(self, i: int) -> Ranked:
         neg, name = self._order[i]

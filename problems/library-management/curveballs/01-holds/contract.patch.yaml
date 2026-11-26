@@ -1,0 +1,7 @@
+interfaces:
+  Library:
+    place_hold:
+      params: {member_id: str, isbn: str}
+      returns: int
+      raises: [UnknownMember, UnknownBook, InvalidState]
+errors: [InvalidState]

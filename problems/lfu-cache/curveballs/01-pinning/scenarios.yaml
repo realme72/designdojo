@@ -1,0 +1,25 @@
+config: {capacity: 2}
+scenarios:
+  - name: pinned_survives
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: pin, args: {key: a}}
+      - {call: get, args: {key: b}, expect: "2"}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: b}, expect_error: CacheMiss}
+      - {call: frequency, args: {key: a}, expect: 1}
+      - {call: pin, args: {key: x}, expect_error: CacheMiss}
+  - name: all_pinned
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: pin, args: {key: a}}
+      - {call: pin, args: {key: c}}
+      - {call: put, args: {key: d, value: "4"}, expect_error: CacheFull}
+      - {call: put, args: {key: c, value: "new"}}
+      - {call: get, args: {key: c}, expect: new}
+      - {call: unpin, args: {key: a}}
+      - {call: put, args: {key: d, value: "4"}}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+      - {call: size, expect: 2}

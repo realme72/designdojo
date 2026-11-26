@@ -1,0 +1,13 @@
+interfaces:
+  Cache:
+    put:
+      raises: [CacheFull]
+    pin:
+      params: {key: str}
+      returns: void
+      raises: [CacheMiss]
+    unpin:
+      params: {key: str}
+      returns: void
+      raises: [CacheMiss]
+errors: [CacheFull]

@@ -1,0 +1,7 @@
+enums:
+  RankingMode: [COMPETITION, DENSE]
+interfaces:
+  Leaderboard:
+    set_ranking_mode:
+      params: {mode: RankingMode}
+      returns: void

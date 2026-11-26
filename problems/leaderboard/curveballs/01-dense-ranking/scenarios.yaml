@@ -1,0 +1,16 @@
+scenarios:
+  - name: dense_and_back
+    steps:
+      - {call: add_score, args: {player: a, points: 100}}
+      - {call: add_score, args: {player: b, points: 100}}
+      - {call: add_score, args: {player: c, points: 90}}
+      - {call: add_score, args: {player: d, points: 80}}
+      - {call: rank, args: {player: c}, expect: 3}
+      - {call: set_ranking_mode, args: {mode: DENSE}}
+      - {call: rank, args: {player: c}, expect: 2}
+      - {call: top, args: {k: 4}, expect: [{player: a, rank: 1}, {player: b, rank: 1}, {player: c, rank: 2}, {player: d, rank: 3}]}
+      - {call: around, args: {player: d, radius: 1}, expect: [{player: c, rank: 2}, {player: d, rank: 3}]}
+      - {call: add_score, args: {player: c, points: 10}}
+      - {call: rank, args: {player: d}, expect: 2}
+      - {call: set_ranking_mode, args: {mode: COMPETITION}}
+      - {call: rank, args: {player: d}, expect: 4}

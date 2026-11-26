@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from collections import OrderedDict, defaultdict
 
-from contract import Cache, CacheMiss
+from contract import Cache, CacheFull, CacheMiss
 
 
 class LFUCache(Cache):
@@ -14,6 +14,7 @@ class LFUCache(Cache):
         self._entries: dict[str, list] = {}  # key -> [value, freq]
         self._buckets: defaultdict[int, OrderedDict[str, None]] = defaultdict(OrderedDict)
         self._min = 0
+        self._pinned: set[str] = set()
         self._lock = threading.Lock()
 
     def _touch(self, key: str) -> None:
@@ -41,13 +42,34 @@ class LFUCache(Cache):
                 self._touch(key)
                 return
             if len(self._entries) >= self._capacity:
-                victim, _ = self._buckets[self._min].popitem(last=False)
-                if not self._buckets[self._min]:
-                    del self._buckets[self._min]
-                del self._entries[victim]
+                self._evict()
             self._entries[key] = [value, 1]
             self._buckets[1][key] = None
             self._min = 1
+
+    def _evict(self) -> None:
+        """Least frequent, then least recent, skipping pinned keys (fast path: min bucket)."""
+        for f in [self._min] + sorted(k for k in self._buckets if k != self._min):
+            victim = next((k for k in self._buckets.get(f, ()) if k not in self._pinned), None)
+            if victim is not None:
+                del self._buckets[f][victim]
+                if not self._buckets[f]:
+                    del self._buckets[f]
+                del self._entries[victim]
+                return
+        raise CacheFull()
+
+    def pin(self, key: str) -> None:
+        with self._lock:
+            if key not in self._entries:
+                raise CacheMiss(key)
+            self._pinned.add(key)
+
+    def unpin(self, key: str) -> None:
+        with self._lock:
+            if key not in self._entries:
+                raise CacheMiss(key)
+            self._pinned.discard(key)
 
     def frequency(self, key: str) -> int:
         with self._lock:

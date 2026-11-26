@@ -12,6 +12,7 @@ class Balancer(LoadBalancer):
     def __init__(self):
         self._servers: dict[str, Server] = {}
         self._strategy = RoundRobin()
+        self._sticky: dict[str, str] = {}  # client -> server
         self._lock = threading.Lock()
 
     def _server(self, sid: str) -> Server:
@@ -47,6 +48,18 @@ class Balancer(LoadBalancer):
             if not healthy:
                 raise NoHealthyServer()
             s = self._strategy.pick(healthy)
+            s.active += 1
+            return s.id
+
+    def acquire_for(self, client_id: str) -> str:
+        with self._lock:
+            s = self._servers.get(self._sticky.get(client_id, ""))
+            if s is None or not s.healthy:
+                healthy = sorted((s for s in self._servers.values() if s.healthy), key=lambda s: s.id)
+                if not healthy:
+                    raise NoHealthyServer()
+                s = self._strategy.pick(healthy)
+                self._sticky[client_id] = s.id
             s.active += 1
             return s.id
 

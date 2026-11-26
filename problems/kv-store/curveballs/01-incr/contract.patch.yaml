@@ -1,0 +1,7 @@
+interfaces:
+  KeyValueStore:
+    incr:
+      params: {key: str, by: long}
+      returns: long
+      raises: [InvalidValue]
+errors: [InvalidValue]
