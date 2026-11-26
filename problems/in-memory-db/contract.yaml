@@ -1,0 +1,32 @@
+interfaces:
+  Database:
+    create_table:
+      params: {name: str, columns: "list[str]", primary_key: str}
+      returns: void
+      raises: [DuplicateTable, InvalidSchema]
+    insert:
+      params: {table: str, row: "map[str, str]"}
+      returns: void
+      raises: [UnknownTable, InvalidRow, DuplicateKey]
+    select:
+      params: {table: str, where: "map[str, str]", order_by: str, limit: int}
+      returns: "list[map[str, str]]"
+      raises: [UnknownTable, UnknownColumn, InvalidQuery]
+    update:
+      params: {table: str, where: "map[str, str]", values: "map[str, str]"}
+      returns: int
+      raises: [UnknownTable, UnknownColumn, DuplicateKey]
+    delete:
+      params: {table: str, where: "map[str, str]"}
+      returns: int
+      raises: [UnknownTable, UnknownColumn]
+    create_index:
+      params: {table: str, column: str}
+      returns: void
+      raises: [UnknownTable, UnknownColumn]
+
+entrypoint:
+  name: create
+  returns: Database
+
+errors: [DuplicateTable, InvalidSchema, UnknownTable, InvalidRow, DuplicateKey, UnknownColumn, InvalidQuery]

@@ -1,0 +1,21 @@
+scenarios:
+  - name: insert_and_select
+    steps:
+      - {call: create_table, args: {name: users, columns: [id, name, city], primary_key: id}}
+      - {call: insert, args: {table: users, row: {id: "2", name: bob, city: pune}}}
+      - {call: insert, args: {table: users, row: {id: "1", name: ann, city: blr}}}
+      - {call: select, args: {table: users, where: {}, order_by: "", limit: 0}, expect: [{id: "1", name: ann}, {id: "2", name: bob}]}
+      - {call: select, args: {table: users, where: {city: pune}, order_by: "", limit: 0}, expect: [{name: bob}]}
+  - name: update_and_delete
+    steps:
+      - {call: create_table, args: {name: t, columns: [k, v], primary_key: k}}
+      - {call: insert, args: {table: t, row: {k: a, v: "1"}}}
+      - {call: insert, args: {table: t, row: {k: b, v: "1"}}}
+      - {call: update, args: {table: t, where: {v: "1"}, values: {v: "2"}}, expect: 2}
+      - {call: delete, args: {table: t, where: {k: a}}, expect: 1}
+      - {call: select, args: {table: t, where: {}, order_by: "", limit: 0}, expect: [{k: b, v: "2"}]}
+  - name: duplicate_key
+    steps:
+      - {call: create_table, args: {name: t, columns: [k], primary_key: k}}
+      - {call: insert, args: {table: t, row: {k: a}}}
+      - {call: insert, args: {table: t, row: {k: a}}, expect_error: DuplicateKey}
