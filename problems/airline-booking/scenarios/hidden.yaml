@@ -1,0 +1,58 @@
+scenarios:
+  - name: fare_steps_by_quarter
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700100000, seats: {ECONOMY: 4, BUSINESS: 0}, fares: {ECONOMY: 1000, BUSINESS: 1}}}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 1}, expect: {total: 1000}}
+      - {call: book, args: {passenger: b, flight_id: F, seat_class: ECONOMY, count: 1}, expect: {total: 1100}}
+      - {call: book, args: {passenger: c, flight_id: F, seat_class: ECONOMY, count: 2}, expect: {total: 2400}}
+  - name: fare_rounds_down
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700100000, seats: {ECONOMY: 3, BUSINESS: 0}, fares: {ECONOMY: 999, BUSINESS: 1}}}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 1}}
+      - {call: book, args: {passenger: b, flight_id: F, seat_class: ECONOMY, count: 1}, expect: {total: 1098}}
+  - name: business_independent
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700100000, seats: {ECONOMY: 2, BUSINESS: 2}, fares: {ECONOMY: 100, BUSINESS: 900}}}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 2}}
+      - {call: book, args: {passenger: b, flight_id: F, seat_class: BUSINESS, count: 1}, expect: {seats: [B1], total: 900}}
+      - {call: search, args: {origin: A, destination: B, seat_class: ECONOMY, count: 1, start: 0, end: 1800000000}, expect: []}
+      - {call: search, args: {origin: A, destination: B, seat_class: BUSINESS, count: 1, start: 0, end: 1800000000}, expect: [F]}
+  - name: cancel_refund_and_reuse_seats
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700100000, seats: {ECONOMY: 4, BUSINESS: 0}, fares: {ECONOMY: 1000, BUSINESS: 1}}}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 2}, bind: x}
+      - {call: book, args: {passenger: b, flight_id: F, seat_class: ECONOMY, count: 1}}
+      - {call: cancel, args: {pnr: $x.pnr}, expect: 2000}
+      - {call: book, args: {passenger: c, flight_id: F, seat_class: ECONOMY, count: 1}, expect: {seats: [E1], total: 1100}}
+      - {call: cancel, args: {pnr: $x.pnr}, expect_error: InvalidState}
+      - {call: cancel, args: {pnr: nope}, expect_error: UnknownBooking}
+  - name: late_cancel_half_refund
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700050000, seats: {ECONOMY: 4, BUSINESS: 0}, fares: {ECONOMY: 1001, BUSINESS: 1}}}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 1}, bind: x}
+      - {call: cancel, args: {pnr: $x.pnr}, expect: 500}
+  - name: refund_boundary_24h
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700086400, seats: {ECONOMY: 4, BUSINESS: 0}, fares: {ECONOMY: 1000, BUSINESS: 1}}}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 1}, bind: x}
+      - {call: cancel, args: {pnr: $x.pnr}, expect: 1000}
+  - name: departed_flights
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700000100, seats: {ECONOMY: 4, BUSINESS: 0}, fares: {ECONOMY: 1, BUSINESS: 1}}}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 1}, bind: x}
+      - advance_clock: 100
+      - {call: book, args: {passenger: b, flight_id: F, seat_class: ECONOMY, count: 1}, expect_error: FlightDeparted}
+      - {call: cancel, args: {pnr: $x.pnr}, expect_error: InvalidState}
+      - {call: search, args: {origin: A, destination: B, seat_class: ECONOMY, count: 1, start: 0, end: 1800000000}, expect: []}
+  - name: check_order_and_errors
+    steps:
+      - {call: book, args: {passenger: a, flight_id: X, seat_class: ECONOMY, count: 0}, expect_error: UnknownFlight}
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700000100, seats: {ECONOMY: 1, BUSINESS: 0}, fares: {ECONOMY: 1, BUSINESS: 1}}}
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700000100, seats: {ECONOMY: 1, BUSINESS: 0}, fares: {ECONOMY: 1, BUSINESS: 1}}, expect_error: DuplicateFlight}
+      - {call: book, args: {passenger: a, flight_id: F, seat_class: ECONOMY, count: 0}, expect_error: InvalidRequest}
+  - name: search_window_and_count
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700100000, seats: {ECONOMY: 2, BUSINESS: 0}, fares: {ECONOMY: 1, BUSINESS: 1}}}
+      - {call: search, args: {origin: A, destination: B, seat_class: ECONOMY, count: 3, start: 0, end: 1800000000}, expect: []}
+      - {call: search, args: {origin: A, destination: B, seat_class: ECONOMY, count: 2, start: 1700100000, end: 1700100001}, expect: [F]}
+      - {call: search, args: {origin: A, destination: B, seat_class: ECONOMY, count: 2, start: 0, end: 1700100000}, expect: []}

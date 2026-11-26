@@ -1,0 +1,7 @@
+scenarios:
+  - name: never_oversold
+    repeat: 15
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700100000, seats: {ECONOMY: 20, BUSINESS: 0}, fares: {ECONOMY: 100, BUSINESS: 1}}}
+      - parallel: {threads: 50, call: book, args: {passenger: "p{i}", flight_id: F, seat_class: ECONOMY, count: 1}, collect: r}
+      - assert: {of: r, ok_count: 20, error_count: {NotEnoughSeats: 30}, unique: seats}

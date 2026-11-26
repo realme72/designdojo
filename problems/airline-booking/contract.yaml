@@ -1,0 +1,40 @@
+enums:
+  SeatClass: [ECONOMY, BUSINESS]
+
+dtos:
+  Booking:
+    pnr: str
+    flight_id: str
+    seats: "list[str]"
+    total: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Airline:
+    add_flight:
+      params: {flight_id: str, origin: str, destination: str, departs_at: long, seats: "map[SeatClass, int]", fares: "map[SeatClass, long]"}
+      returns: void
+      raises: [DuplicateFlight]
+    search:
+      params: {origin: str, destination: str, seat_class: SeatClass, count: int, start: long, end: long}
+      returns: "list[str]"
+    book:
+      params: {passenger: str, flight_id: str, seat_class: SeatClass, count: int}
+      returns: Booking
+      raises: [UnknownFlight, InvalidRequest, FlightDeparted, NotEnoughSeats]
+    cancel:
+      params: {pnr: str}
+      returns: long
+      raises: [UnknownBooking, InvalidState]
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: Airline
+
+errors: [DuplicateFlight, UnknownFlight, InvalidRequest, FlightDeparted, NotEnoughSeats, UnknownBooking, InvalidState]

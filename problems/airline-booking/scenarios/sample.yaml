@@ -1,0 +1,16 @@
+scenarios:
+  - name: book_lowest_seats
+    steps:
+      - {call: add_flight, args: {flight_id: AI1, origin: BLR, destination: DEL, departs_at: 1700100000, seats: {ECONOMY: 8, BUSINESS: 2}, fares: {ECONOMY: 5000, BUSINESS: 20000}}}
+      - {call: book, args: {passenger: ann, flight_id: AI1, seat_class: ECONOMY, count: 2}, expect: {flight_id: AI1, seats: [E1, E2], total: 10000}}
+      - {call: book, args: {passenger: bob, flight_id: AI1, seat_class: ECONOMY, count: 1}, expect: {seats: [E3], total: 5500}}
+  - name: search
+    steps:
+      - {call: add_flight, args: {flight_id: F2, origin: BLR, destination: DEL, departs_at: 1700200000, seats: {ECONOMY: 5, BUSINESS: 0}, fares: {ECONOMY: 1, BUSINESS: 1}}}
+      - {call: add_flight, args: {flight_id: F1, origin: BLR, destination: DEL, departs_at: 1700100000, seats: {ECONOMY: 5, BUSINESS: 0}, fares: {ECONOMY: 1, BUSINESS: 1}}}
+      - {call: add_flight, args: {flight_id: F3, origin: BLR, destination: BOM, departs_at: 1700100000, seats: {ECONOMY: 5, BUSINESS: 0}, fares: {ECONOMY: 1, BUSINESS: 1}}}
+      - {call: search, args: {origin: BLR, destination: DEL, seat_class: ECONOMY, count: 1, start: 1700000000, end: 1700300000}, expect: [F1, F2]}
+  - name: not_enough_seats
+    steps:
+      - {call: add_flight, args: {flight_id: F, origin: A, destination: B, departs_at: 1700100000, seats: {ECONOMY: 1, BUSINESS: 1}, fares: {ECONOMY: 1, BUSINESS: 1}}}
+      - {call: book, args: {passenger: p, flight_id: F, seat_class: ECONOMY, count: 2}, expect_error: NotEnoughSeats}

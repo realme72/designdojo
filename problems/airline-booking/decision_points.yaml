@@ -1,0 +1,21 @@
+- id: fare_strategy
+  keywords: [fare, price, dynamic, surge, base, sold]
+  question: Where does fare calculation live?
+  good: A fare strategy computes the price from base fare and load; swapping to early-bird or loyalty pricing is a new strategy.
+  principles: [OCP]
+  patterns: [Strategy]
+- id: seat_inventory
+  keywords: [seat, cabin, class, inventory, assign, lowest]
+  question: How is seat inventory organised?
+  good: A cabin per (flight, class) owning free seats (sorted) and sold count; booking asks the cabin for seats.
+  principles: [SRP]
+- id: refund_policy
+  keywords: [refund, cancel, hours, policy]
+  question: Where does the refund rule live?
+  good: A cancellation policy object/function, separate from booking bookkeeping.
+  patterns: [Strategy]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents overselling?
+  good: Checking availability, taking seats and pricing happen atomically per flight cabin.
+  smells: [UNGUARDED_SHARED]
