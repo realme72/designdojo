@@ -1,0 +1,40 @@
+enums:
+  EnrollmentStatus: [ENROLLED, WAITLISTED]
+
+dtos:
+  RegistrationConfig:
+    max_courses: int
+
+interfaces:
+  Registrar:
+    add_course:
+      params: {course_id: str, capacity: int, prerequisites: "list[str]"}
+      returns: void
+      raises: [DuplicateCourse, UnknownCourse, InvalidCapacity]
+    complete:
+      params: {student: str, course_id: str}
+      returns: void
+      raises: [UnknownCourse]
+    enroll:
+      params: {student: str, course_id: str}
+      returns: EnrollmentStatus
+      raises: [UnknownCourse, AlreadyCompleted, AlreadyRegistered, MissingPrerequisite, TooManyCourses]
+    drop:
+      params: {student: str, course_id: str}
+      returns: void
+      raises: [UnknownCourse, NotRegistered]
+    roster:
+      params: {course_id: str}
+      returns: "list[str]"
+      raises: [UnknownCourse]
+    waitlist:
+      params: {course_id: str}
+      returns: "list[str]"
+      raises: [UnknownCourse]
+
+entrypoint:
+  name: create
+  params: {config: RegistrationConfig}
+  returns: Registrar
+
+errors: [DuplicateCourse, UnknownCourse, InvalidCapacity, AlreadyCompleted, AlreadyRegistered, MissingPrerequisite, TooManyCourses, NotRegistered]

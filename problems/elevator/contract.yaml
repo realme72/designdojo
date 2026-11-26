@@ -1,0 +1,42 @@
+enums:
+  Direction: [UP, DOWN, IDLE]
+
+dtos:
+  BuildingConfig:
+    floors: int
+    elevators: int
+  ElevatorStatus:
+    id: int
+    floor: int
+    direction: Direction
+    stops: list[int]
+
+interfaces:
+  ElevatorSystem:
+    call:
+      params: {floor: int, direction: Direction}
+      returns: int
+      raises: [InvalidFloor, InvalidRequest]
+      doc: Hall call. Returns the id of the elevator assigned.
+    press:
+      params: {elevator_id: int, floor: int}
+      returns: void
+      raises: [InvalidFloor, UnknownElevator]
+      doc: Car call from inside elevator_id.
+    step:
+      returns: void
+      doc: Advance every elevator by one tick.
+    status:
+      params: {elevator_id: int}
+      returns: ElevatorStatus
+      raises: [UnknownElevator]
+
+entrypoint:
+  name: create
+  params: {config: BuildingConfig}
+  returns: ElevatorSystem
+
+errors: [InvalidFloor, InvalidRequest, UnknownElevator]
+
+docs:
+  ElevatorStatus: stops are ascending.

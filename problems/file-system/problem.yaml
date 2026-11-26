@@ -1,0 +1,7 @@
+id: file-system
+title: In-memory File System
+difficulty: medium
+category: Data structures & caching
+time_limit_min: 50
+statement: statement.md
+tags: [composite, trees]

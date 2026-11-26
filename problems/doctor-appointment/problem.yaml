@@ -1,0 +1,7 @@
+id: doctor-appointment
+title: Doctor Appointment Booking (Practo)
+difficulty: medium
+category: Booking & reservations
+time_limit_min: 50
+statement: statement.md
+tags: [scheduling, concurrency]

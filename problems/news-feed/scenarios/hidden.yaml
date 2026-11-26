@@ -1,0 +1,55 @@
+scenarios:
+  - name: limit_and_order_across_many
+    steps:
+      - {call: follow, args: {follower: me, followee: x}}
+      - {call: follow, args: {follower: me, followee: y}}
+      - {call: post, args: {user: x, post_id: x1}}
+      - {call: post, args: {user: y, post_id: y1}}
+      - {call: post, args: {user: me, post_id: m1}}
+      - {call: post, args: {user: x, post_id: x2}}
+      - {call: post, args: {user: z, post_id: z1}}
+      - {call: post, args: {user: y, post_id: y2}}
+      - {call: feed, args: {user: me, limit: 4}, expect: [y2, x2, m1, y1]}
+      - {call: feed, args: {user: me, limit: 1}, expect: [y2]}
+  - name: follow_is_retroactive
+    steps:
+      - {call: post, args: {user: bob, post_id: old}}
+      - {call: follow, args: {follower: ann, followee: bob}}
+      - {call: feed, args: {user: ann, limit: 5}, expect: [old]}
+  - name: follow_rules
+    steps:
+      - {call: follow, args: {follower: ann, followee: ann}, expect_error: InvalidFollow}
+      - {call: follow, args: {follower: ann, followee: bob}}
+      - {call: follow, args: {follower: ann, followee: bob}}
+      - {call: unfollow, args: {follower: ann, followee: bob}}
+      - {call: unfollow, args: {follower: ann, followee: bob}, expect_error: NotFollowing}
+  - name: delete_rules
+    steps:
+      - {call: post, args: {user: ann, post_id: a1}}
+      - {call: post, args: {user: ann, post_id: a2}}
+      - {call: delete, args: {user: bob, post_id: a1}, expect_error: NotAuthor}
+      - {call: delete, args: {user: ann, post_id: a1}}
+      - {call: feed, args: {user: ann, limit: 5}, expect: [a2]}
+      - {call: delete, args: {user: ann, post_id: a1}, expect_error: UnknownPost}
+      - {call: like, args: {user: bob, post_id: a1}, expect_error: UnknownPost}
+      - {call: likes, args: {post_id: a1}, expect_error: UnknownPost}
+  - name: deleted_posts_do_not_eat_the_limit
+    steps:
+      - {call: post, args: {user: ann, post_id: p1}}
+      - {call: post, args: {user: ann, post_id: p2}}
+      - {call: post, args: {user: ann, post_id: p3}}
+      - {call: delete, args: {user: ann, post_id: p3}}
+      - {call: feed, args: {user: ann, limit: 2}, expect: [p2, p1]}
+  - name: duplicate_post_and_bad_limit
+    steps:
+      - {call: post, args: {user: ann, post_id: p}}
+      - {call: post, args: {user: bob, post_id: p}, expect_error: DuplicatePost}
+      - {call: feed, args: {user: ann, limit: 0}, expect_error: InvalidArgument}
+      - {call: feed, args: {user: nobody, limit: 3}, expect: []}
+  - name: likes_counted_per_user
+    steps:
+      - {call: post, args: {user: ann, post_id: p}}
+      - {call: like, args: {user: a, post_id: p}}
+      - {call: like, args: {user: b, post_id: p}}
+      - {call: like, args: {user: ann, post_id: p}, expect: true}
+      - {call: likes, args: {post_id: p}, expect: 3}

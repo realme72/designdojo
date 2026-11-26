@@ -1,0 +1,28 @@
+dtos:
+  CacheConfig:
+    capacity: int
+
+interfaces:
+  Cache:
+    get:
+      params: {key: str}
+      returns: str
+      raises: [CacheMiss]
+    put:
+      params: {key: str, value: str}
+      returns: void
+    delete:
+      params: {key: str}
+      returns: bool
+    size:
+      returns: int
+    keys:
+      returns: "list[str]"
+      doc: Most recently used first.
+
+entrypoint:
+  name: create
+  params: {config: CacheConfig}
+  returns: Cache
+
+errors: [CacheMiss]

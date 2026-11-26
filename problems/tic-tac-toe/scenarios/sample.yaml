@@ -1,0 +1,26 @@
+config: {size: 3}
+scenarios:
+  - name: x_wins_top_row
+    steps:
+      - {call: move, args: {row: 0, col: 0}, expect: {mark: X, state: IN_PROGRESS}}
+      - {call: move, args: {row: 1, col: 0}, expect: {mark: O}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 0, col: 2}, expect: {mark: X, state: X_WON}}
+      - {call: board, expect: [XXX, OO., ...]}
+  - name: occupied_cell
+    steps:
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 1, col: 1}, expect_error: InvalidMove}
+      - {call: current, expect: O}
+  - name: draw
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 1, col: 2}}
+      - {call: move, args: {row: 2, col: 1}}
+      - {call: move, args: {row: 2, col: 0}}
+      - {call: move, args: {row: 2, col: 2}, expect: {state: DRAW}}

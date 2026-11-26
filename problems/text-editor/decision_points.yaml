@@ -1,0 +1,15 @@
+- id: commands
+  keywords: [command, execute, undo, redo, stack, history]
+  question: How are undoable edits represented?
+  good: Each edit is a Command with do/undo (storing just what it needs); two stacks hold history; new commands clear redo.
+  smells: [TYPE_SWITCH]
+  patterns: [Command]
+- id: buffer
+  keywords: [buffer, text, rope, gap, string, document]
+  question: Is the text buffer separate from editing commands?
+  good: A buffer abstraction (insert/delete at position) that commands call; its implementation (string, gap buffer, rope) can change.
+  principles: [SRP, DIP]
+- id: cursor
+  keywords: [cursor, position, move]
+  question: How is the cursor restored on undo/redo?
+  good: Commands record cursor before/after; cursor moves aren't commands.

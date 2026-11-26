@@ -1,0 +1,14 @@
+config: {max_courses: 3}
+scenarios:
+  - name: registration_rush
+    repeat: 15
+    steps:
+      - {call: add_course, args: {course_id: HOT, capacity: 10, prerequisites: []}}
+      - parallel: {threads: 50, call: enroll, args: {student: "s{i}", course_id: HOT}, collect: r}
+      - assert: {of: r, ok_count: 50, value_count: {"\"ENROLLED\"": 10, "\"WAITLISTED\"": 40}}
+  - name: student_limit_across_courses
+    repeat: 15
+    steps:
+      - parallel: {threads: 10, call: add_course, args: {course_id: "C{i}", capacity: 5, prerequisites: []}, collect: c}
+      - parallel: {threads: 10, call: enroll, args: {student: me, course_id: "C{i}"}, collect: r}
+      - assert: {of: r, ok_count: 3, error_count: {TooManyCourses: 7}}

@@ -8,7 +8,7 @@ from contract import (AlreadyParked, Clock, InvalidTicket, LotFull, ParkingLotAp
                       VehicleType)
 
 from .allocation import Spot, SpotAllocator
-from .pricing import PricingPolicy
+from .pricing import DailyCapPricing
 
 
 @dataclass(frozen=True)
@@ -21,7 +21,7 @@ class ParkingLot(ParkingLotApi):
     """Coordinates the gates: plate uniqueness, spot claim, ticket lifecycle.
     Policies (allocation, pricing, time) are injected, so this class doesn't change when they do."""
 
-    def __init__(self, allocator: SpotAllocator, pricing: PricingPolicy, clock: Clock):
+    def __init__(self, allocator: SpotAllocator, pricing: DailyCapPricing, clock: Clock):
         self._allocator = allocator
         self._pricing = pricing
         self._clock = clock
@@ -57,3 +57,6 @@ class ParkingLot(ParkingLotApi):
 
     def available(self, size: SpotSize) -> int:
         return self._allocator.free(size)
+
+    def set_daily_cap(self, size: SpotSize, cap_cents: int) -> None:
+        self._pricing.set_cap(size, cap_cents)

@@ -1,0 +1,7 @@
+id: digital-wallet
+title: Digital Wallet (Paytm / PhonePe)
+difficulty: medium
+category: Commerce & payments
+time_limit_min: 60
+statement: statement.md
+tags: [concurrency, idempotency, ledger]

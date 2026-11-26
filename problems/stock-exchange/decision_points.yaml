@@ -1,0 +1,21 @@
+- id: book_structure
+  keywords: [heap, sorted, level, queue, fifo, book, bids, asks]
+  question: How is each side of the book stored?
+  good: Price levels in a sorted structure (heap/tree) with a FIFO queue per level; best price in O(log n) and time priority within a level.
+- id: order_types
+  keywords: [market, limit, type, rest, remainder]
+  question: How do market vs limit orders differ in code?
+  good: Order type decides (a) the price limit for matching and (b) what happens to the remainder, via a small strategy/polymorphism, not branches scattered through matching.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: symmetry
+  keywords: [buy, sell, side, opposite, symmetric]
+  question: Is buy/sell matching written once?
+  good: One matching routine parameterised by side (comparator, opposite book), not two copy-pasted versions.
+  principles: [DRY]
+- id: per_symbol
+  keywords: [symbol, engine, lock, book]
+  question: How is concurrency scoped?
+  good: One book (and lock or sequencer) per symbol; different symbols never contend.
+  smells: [UNGUARDED_SHARED, GOD_CLASS]

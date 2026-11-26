@@ -1,0 +1,40 @@
+dtos:
+  OptionResult:
+    option: str
+    votes: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Polls:
+    create_poll:
+      params: {poll_id: str, options: "list[str]", closes_at: long, multi_choice: bool}
+      returns: void
+      raises: [DuplicatePoll, InvalidPoll]
+    vote:
+      params: {poll_id: str, user: str, choices: "list[str]"}
+      returns: void
+      raises: [UnknownPoll, PollClosed, AlreadyVoted, InvalidChoice]
+    retract:
+      params: {poll_id: str, user: str}
+      returns: void
+      raises: [UnknownPoll, PollClosed, NotVoted]
+    results:
+      params: {poll_id: str}
+      returns: "list[OptionResult]"
+      raises: [UnknownPoll]
+    winners:
+      params: {poll_id: str}
+      returns: "list[str]"
+      raises: [UnknownPoll, PollOpen]
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: Polls
+
+errors: [DuplicatePoll, InvalidPoll, UnknownPoll, PollClosed, AlreadyVoted, InvalidChoice, NotVoted, PollOpen]

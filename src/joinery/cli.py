@@ -10,7 +10,7 @@ from pathlib import Path
 from . import codegen, report
 from .results import public_view
 from .judge import JudgeError, Workspace, ensure_image, judge, scaffold
-from .problems import SUITES, ProblemError, get_problem, list_problems
+from .problems import ProblemError, get_problem, list_problems, reference_meta
 
 
 def cmd_list(_args) -> int:
@@ -32,23 +32,60 @@ def cmd_scaffold(args) -> int:
     return 0
 
 
-def _judge(args, suites: list[str]) -> int:
+def _latest_design_score(ws: Workspace) -> int | None:
+    from .coach import latest
+
+    rev = latest(ws)
+    if rev and rev.get("meta", {}).get("source") == "ai" and rev.get("review"):
+        return rev["review"].get("design_score")
+    return None
+
+
+def _judge(args, full: bool) -> int:
+    from .curveballs import evaluate
+
     ws = Workspace.open(Path(args.dir))
-    result = judge(ws, suites)
+    result = judge(ws, ws.suites if full else ["sample"])
+    view = evaluate(ws, result, _latest_design_score(ws)) if full else public_view(result)
     if args.json:
-        print(json.dumps(public_view(result), indent=2))
+        print(json.dumps(view, indent=2))
     else:
-        print(report.render(result, ws.problem.title, ws.lang))
+        title = ws.problem.title + (f" · curveball {ws.level}/{len(ws.problem.curveballs)}" if ws.level else "")
+        print(report.render(result, title, ws.lang))
+        if full:
+            print(report.render_extras(view, ws))
     passed, total = report.totals(result)
     return 0 if result.get("status") == "ok" and passed == total else 1
 
 
 def cmd_run(args) -> int:
-    return _judge(args, ["sample"])
+    return _judge(args, full=False)
 
 
 def cmd_submit(args) -> int:
-    return _judge(args, list(SUITES))
+    return _judge(args, full=True)
+
+
+def cmd_curveball(args) -> int:
+    from .curveballs import CurveballLocked, unlock_next
+
+    ws = Workspace.open(Path(args.dir))
+    total = len(ws.problem.curveballs)
+    if args.status:
+        print(f"{ws.problem.title}: curveball {ws.level}/{total} unlocked")
+        for i in range(1, ws.level + 1):
+            print(f"  {i}. {ws.problem.curveball_info(i)['title']}")
+        return 0
+    try:
+        info = unlock_next(ws)
+    except CurveballLocked as e:
+        print(f"curveball: {e}", file=sys.stderr)
+        return 1
+    print(report.bold(f"Curveball {info['index']}/{total}: {info['title']}\n"))
+    print(info["statement"])
+    print(report.dim(f"\nThe contract in {ws.root}/contract was updated; your code was snapshotted so"
+                     " `joinery submit` can measure how much existing code this change forces you to edit."))
+    return 0
 
 
 def cmd_analyze(args) -> int:
@@ -113,6 +150,70 @@ def cmd_review(args) -> int:
     return 0
 
 
+def _check_stub_compiles(problem, lang: str) -> str | None:
+    """No reference in this language: make sure the generated contract + stub compile/import."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory(dir=Path.home() / ".cache") as tmp:
+        ws_dir = Path(tmp) / "ws"
+        scaffold(problem, lang, ws_dir, level=len(problem.curveballs))  # fullest contract must compile
+        result = judge(Workspace.open(ws_dir), ["sample"])
+    if result.get("status") == "compile_error":
+        return "; ".join(f"{d['file']}:{d['line']} {d['message']}" for d in result["diagnostics"])[:400]
+    if result.get("status") != "ok":
+        return result.get("status", "?")
+    return None
+
+
+def cmd_validate(args) -> int:
+    from .problems import lint_problem
+
+    problems = [get_problem(p) for p in args.problems] if args.problems else list_problems()
+    bad = 0
+    for p in problems:
+        issues = lint_problem(p)
+        line = f"{p.id:<24}"
+        if issues:
+            bad += 1
+            print(report.red(f"{line} lint: {len(issues)} issue(s)"))
+            for i in issues:
+                print(f"    {i}")
+            continue
+        if args.lint_only:
+            print(report.green(f"{line} lint ok"))
+            continue
+        parts = []
+        for lang in codegen.LANGS:
+            ref = p.root / "reference" / lang
+            if not (ref / "solution").is_dir():
+                problem_msg = _check_stub_compiles(p, lang)
+                parts.append(report.red(f"{lang} stub: {problem_msg}") if problem_msg else report.dim(f"{lang} stub ok"))
+                bad += bool(problem_msg)
+                continue
+            meta = ref / ".joinery.json"
+            want = reference_meta(p, lang)
+            if not meta.exists() or meta.read_text() != want:
+                meta.write_text(want)
+            result = judge(Workspace.open(ref), p.suites_at(len(p.curveballs)))
+            passed, total = report.totals(result)
+            ok = result.get("status") == "ok" and passed == total
+            parts.append((report.green if ok else report.red)(f"{lang} {passed}/{total}"))
+            if not ok:
+                bad += 1
+                if args.verbose or result.get("status") != "ok":
+                    print(report.render(result, p.title, lang))
+                else:
+                    for s in result["suites"]:
+                        for case in s["cases"]:
+                            if case["status"] != "pass":
+                                parts.append(f"\n    ✗ {s['name']}/{case['name']}: {case.get('message', '')} "
+                                             f"{json.dumps(case.get('expected')) if 'expected' in case else ''} "
+                                             f"{json.dumps(case.get('actual')) if 'actual' in case else ''}")
+        print(f"{line} " + "  ".join(parts))
+    print(f"\n{len(problems) - bad}/{len(problems)} problems valid")
+    return 1 if bad else 0
+
+
 def cmd_build_images(args) -> int:
     for lang in codegen.LANGS:
         tag = ensure_image(lang, force=args.force, quiet=False)
@@ -168,6 +269,17 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--force", action="store_true", help="ignore the cache")
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_review)
+
+    s = sub.add_parser("validate", help="lint problems and run their reference solutions (authoring)")
+    s.add_argument("problems", nargs="*")
+    s.add_argument("--lint-only", action="store_true")
+    s.add_argument("-v", "--verbose", action="store_true")
+    s.set_defaults(fn=cmd_validate)
+
+    s = sub.add_parser("curveball", help="unlock the next curveball (requires a fully passing submit)")
+    s.add_argument("dir", help="workspace dir")
+    s.add_argument("--status", action="store_true", help="show unlocked curveballs instead")
+    s.set_defaults(fn=cmd_curveball)
 
     s = sub.add_parser("serve", help="start the web UI")
     s.add_argument("--host", default="127.0.0.1")

@@ -1,0 +1,21 @@
+scenarios:
+  - name: basic_set_get_delete
+    steps:
+      - {call: set, args: {key: a, value: "10"}}
+      - {call: get, args: {key: a}, expect: "10"}
+      - {call: delete, args: {key: a}, expect: true}
+      - {call: get, args: {key: a}, expect_error: KeyNotFound}
+  - name: rollback_discards
+    steps:
+      - {call: set, args: {key: a, value: "10"}}
+      - {call: begin}
+      - {call: set, args: {key: a, value: "20"}}
+      - {call: get, args: {key: a}, expect: "20"}
+      - {call: rollback}
+      - {call: get, args: {key: a}, expect: "10"}
+  - name: count_values
+    steps:
+      - {call: set, args: {key: a, value: x}}
+      - {call: set, args: {key: b, value: x}}
+      - {call: set, args: {key: c, value: y}}
+      - {call: count, args: {value: x}, expect: 2}

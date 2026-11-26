@@ -1,0 +1,6 @@
+interfaces:
+  Logging:
+    add_json_sink:
+      params: {name: str, min_level: Level}
+      returns: void
+      raises: [DuplicateSink]

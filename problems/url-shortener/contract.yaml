@@ -1,0 +1,31 @@
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Shortener:
+    shorten:
+      params: {long_url: str, alias: str, ttl_seconds: long}
+      returns: str
+      raises: [InvalidUrl, InvalidAlias, AliasTaken]
+    resolve:
+      params: {code: str}
+      returns: str
+      raises: [UnknownCode, Expired]
+    clicks:
+      params: {code: str}
+      returns: long
+      raises: [UnknownCode]
+    delete:
+      params: {code: str}
+      returns: void
+      raises: [UnknownCode]
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: Shortener
+
+errors: [InvalidUrl, InvalidAlias, AliasTaken, UnknownCode, Expired]

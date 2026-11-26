@@ -1,0 +1,21 @@
+config:
+  size: 30
+  snakes: {17: 4, 27: 1}
+  ladders: {3: 22, 5: 8}
+scenarios:
+  - name: players_take_turns
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: add_player, args: {name: bob}}
+      - {call: move, args: {player: ann, roll: 2}, expect: {player: ann, from_pos: 0, to_pos: 2, won: false, next_player: bob}}
+      - {call: move, args: {player: bob, roll: 4}, expect: {to_pos: 4, next_player: ann}}
+  - name: ladder_and_snake
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: move, args: {player: ann, roll: 3}, expect: {to_pos: 22}}
+      - {call: move, args: {player: ann, roll: 5}, expect: {from_pos: 22, to_pos: 1}}
+  - name: not_your_turn
+    steps:
+      - {call: add_player, args: {name: ann}}
+      - {call: add_player, args: {name: bob}}
+      - {call: move, args: {player: bob, roll: 2}, expect_error: NotYourTurn}

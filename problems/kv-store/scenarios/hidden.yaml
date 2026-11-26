@@ -1,0 +1,98 @@
+scenarios:
+  - name: nested_rollback_only_innermost
+    steps:
+      - {call: begin}
+      - {call: set, args: {key: a, value: "1"}}
+      - {call: begin}
+      - {call: set, args: {key: a, value: "2"}}
+      - {call: set, args: {key: b, value: "2"}}
+      - {call: rollback}
+      - {call: get, args: {key: a}, expect: "1"}
+      - {call: get, args: {key: b}, expect_error: KeyNotFound}
+      - {call: rollback}
+      - {call: get, args: {key: a}, expect_error: KeyNotFound}
+  - name: inner_commit_then_outer_rollback
+    steps:
+      - {call: set, args: {key: a, value: "0"}}
+      - {call: begin}
+      - {call: begin}
+      - {call: set, args: {key: a, value: "2"}}
+      - {call: commit}
+      - {call: get, args: {key: a}, expect: "2"}
+      - {call: rollback}
+      - {call: get, args: {key: a}, expect: "0"}
+  - name: commit_outermost_persists
+    steps:
+      - {call: begin}
+      - {call: set, args: {key: a, value: "1"}}
+      - {call: commit}
+      - {call: rollback, expect_error: NoTransaction}
+      - {call: get, args: {key: a}, expect: "1"}
+  - name: no_transaction_errors
+    steps:
+      - {call: commit, expect_error: NoTransaction}
+      - {call: rollback, expect_error: NoTransaction}
+  - name: delete_in_transaction_rolled_back
+    steps:
+      - {call: set, args: {key: a, value: v}}
+      - {call: begin}
+      - {call: delete, args: {key: a}, expect: true}
+      - {call: delete, args: {key: a}, expect: false}
+      - {call: count, args: {value: v}, expect: 0}
+      - {call: rollback}
+      - {call: get, args: {key: a}, expect: v}
+      - {call: count, args: {value: v}, expect: 1}
+  - name: count_follows_overwrites_and_rollback
+    steps:
+      - {call: set, args: {key: a, value: x}}
+      - {call: begin}
+      - {call: set, args: {key: a, value: y}}
+      - {call: set, args: {key: b, value: x}}
+      - {call: count, args: {value: x}, expect: 1}
+      - {call: count, args: {value: y}, expect: 1}
+      - {call: rollback}
+      - {call: count, args: {value: x}, expect: 1}
+      - {call: count, args: {value: y}, expect: 0}
+  - name: repeated_writes_in_one_transaction
+    steps:
+      - {call: set, args: {key: a, value: "1"}}
+      - {call: begin}
+      - {call: set, args: {key: a, value: "2"}}
+      - {call: set, args: {key: a, value: "3"}}
+      - {call: delete, args: {key: a}}
+      - {call: set, args: {key: a, value: "4"}}
+      - {call: rollback}
+      - {call: get, args: {key: a}, expect: "1"}
+      - {call: count, args: {value: "1"}, expect: 1}
+      - {call: count, args: {value: "4"}, expect: 0}
+  - name: keys_with_prefix
+    steps:
+      - {call: set, args: {key: user:2, value: b}}
+      - {call: set, args: {key: user:1, value: a}}
+      - {call: set, args: {key: order:1, value: c}}
+      - {call: keys, args: {prefix: "user:"}, expect: ["user:1", "user:2"]}
+      - {call: begin}
+      - {call: delete, args: {key: user:1}}
+      - {call: set, args: {key: user:3, value: d}}
+      - {call: keys, args: {prefix: "user:"}, expect: ["user:2", "user:3"]}
+      - {call: rollback}
+      - {call: keys, args: {prefix: ""}, expect: ["order:1", "user:1", "user:2"]}
+  - name: three_levels
+    steps:
+      - {call: set, args: {key: k, value: "0"}}
+      - {call: begin}
+      - {call: set, args: {key: k, value: "1"}}
+      - {call: begin}
+      - {call: set, args: {key: k, value: "2"}}
+      - {call: begin}
+      - {call: set, args: {key: k, value: "3"}}
+      - {call: commit}
+      - {call: get, args: {key: k}, expect: "3"}
+      - {call: rollback}
+      - {call: get, args: {key: k}, expect: "1"}
+      - {call: commit}
+      - {call: get, args: {key: k}, expect: "1"}
+  - name: delete_missing_outside_transaction
+    steps:
+      - {call: delete, args: {key: nope}, expect: false}
+      - {call: count, args: {value: anything}, expect: 0}

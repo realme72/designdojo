@@ -1,0 +1,9 @@
+enums:
+  Channel: [WHATSAPP]
+  Status: [SKIPPED]
+interfaces:
+  Notifier:
+    approve_template:
+      params: {template_id: str}
+      returns: void
+      raises: [UnknownTemplate]

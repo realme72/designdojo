@@ -1,0 +1,14 @@
+scenarios:
+  - name: concurrent_ticks_run_each_job_once
+    repeat: 15
+    steps:
+      - parallel: {threads: 50, call: schedule_once, args: {job_id: "j{i}", run_at: 1700000001}, collect: s}
+      - advance_clock: 1
+      - parallel: {threads: 10, call: tick, collect: r}
+      - assert: {of: r, ok_count: 10, flat_count: 50, flat_unique: "."}
+  - name: concurrent_ticks_recurring_once_per_slot
+    repeat: 15
+    steps:
+      - parallel: {threads: 20, call: schedule_every, args: {job_id: "j{i}", start_at: 1700000000, interval_seconds: 60}, collect: s}
+      - parallel: {threads: 10, call: tick, collect: r}
+      - assert: {of: r, flat_count: 20, flat_unique: "."}

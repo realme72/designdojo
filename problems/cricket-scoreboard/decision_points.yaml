@@ -1,0 +1,18 @@
+- id: extras_rules
+  keywords: [extra, wide, no, ball, bye, leg, legal]
+  question: Where do delivery-type rules live?
+  good: A rule per delivery type (team runs, batter runs, ball faced, legal?) in a table or small classes; bowl() applies the rule instead of branching per type.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: event_log
+  keywords: [ball, event, log, delivery, history]
+  question: Are deliveries recorded as events?
+  good: Each ball is an event; score, batter stats and overs derive from (or are updated from) the event stream, which also feeds commentary.
+  patterns: [Observer]
+- id: innings_state
+  keywords: [over, strike, rotate, complete, wicket, state]
+  question: Is innings state (strike, over, bowler) managed coherently?
+  good: One Innings object owns strike rotation, over completion and completion checks.
+  smells: [GOD_CLASS, STATE_FLAG]
+  principles: [SRP]

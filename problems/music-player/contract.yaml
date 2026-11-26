@@ -1,0 +1,42 @@
+enums:
+  RepeatMode: [NONE, ALL]
+
+interfaces:
+  MusicPlayer:
+    add_song:
+      params: {song_id: str}
+      returns: void
+    create_playlist:
+      params: {name: str}
+      returns: void
+      raises: [DuplicatePlaylist]
+    add_to_playlist:
+      params: {name: str, song_id: str}
+      returns: void
+      raises: [UnknownPlaylist, UnknownSong]
+    play:
+      params: {name: str}
+      returns: str
+      raises: [UnknownPlaylist, EmptyPlaylist]
+    enqueue:
+      params: {song_id: str}
+      returns: void
+      raises: [UnknownSong, NothingPlaying]
+    next:
+      returns: str
+      raises: [NothingPlaying]
+    previous:
+      returns: str
+      raises: [NoHistory]
+    set_repeat:
+      params: {mode: RepeatMode}
+      returns: void
+    current:
+      returns: str
+      raises: [NothingPlaying]
+
+entrypoint:
+  name: create
+  returns: MusicPlayer
+
+errors: [DuplicatePlaylist, UnknownPlaylist, UnknownSong, EmptyPlaylist, NothingPlaying, NoHistory]

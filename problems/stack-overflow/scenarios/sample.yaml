@@ -1,0 +1,20 @@
+config: {close_threshold: 50}
+scenarios:
+  - name: upvotes_give_reputation
+    steps:
+      - {call: ask, args: {user: ann, question_id: q1, title: "How?", tags: [java]}}
+      - {call: answer, args: {user: bob, question_id: q1, answer_id: a1}}
+      - {call: vote, args: {user: cat, post_id: q1, up: true}}
+      - {call: vote, args: {user: cat, post_id: a1, up: true}}
+      - {call: reputation, args: {user: ann}, expect: 6}
+      - {call: reputation, args: {user: bob}, expect: 11}
+  - name: accept_answer
+    steps:
+      - {call: ask, args: {user: ann, question_id: q1, title: "How?", tags: [java]}}
+      - {call: answer, args: {user: bob, question_id: q1, answer_id: a1}}
+      - {call: accept, args: {user: ann, answer_id: a1}}
+      - {call: reputation, args: {user: bob}, expect: 16}
+  - name: no_self_votes
+    steps:
+      - {call: ask, args: {user: ann, question_id: q1, title: "How?", tags: [java]}}
+      - {call: vote, args: {user: ann, post_id: q1, up: true}, expect_error: SelfVote}

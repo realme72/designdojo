@@ -1,0 +1,20 @@
+scenarios:
+  - name: own_and_followed_posts
+    steps:
+      - {call: post, args: {user: ann, post_id: a1}}
+      - {call: post, args: {user: bob, post_id: b1}}
+      - {call: follow, args: {follower: ann, followee: bob}}
+      - {call: post, args: {user: ann, post_id: a2}}
+      - {call: feed, args: {user: ann, limit: 10}, expect: [a2, b1, a1]}
+  - name: unfollow_hides_posts
+    steps:
+      - {call: follow, args: {follower: ann, followee: bob}}
+      - {call: post, args: {user: bob, post_id: b1}}
+      - {call: unfollow, args: {follower: ann, followee: bob}}
+      - {call: feed, args: {user: ann, limit: 10}, expect: []}
+  - name: likes
+    steps:
+      - {call: post, args: {user: ann, post_id: a1}}
+      - {call: like, args: {user: bob, post_id: a1}, expect: true}
+      - {call: like, args: {user: bob, post_id: a1}, expect: false}
+      - {call: likes, args: {post_id: a1}, expect: 1}

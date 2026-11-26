@@ -1,0 +1,27 @@
+- id: machine_state
+  keywords: [state, idle, session, balance, has, money]
+  question: How are the machine's states and legal actions modelled?
+  good: Explicit states (idle / has money / dispensing) with transitions in one place, rather than flags checked in every method.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: change_making
+  keywords: [change, coins, greedy, fewest, combination]
+  question: Is change-making correct when coins are limited, and isolated?
+  good: A separate change-making component (strategy) that finds exact change with fewest coins given the inventory; the machine just calls it.
+  principles: [SRP]
+  patterns: [Strategy]
+- id: inventory
+  keywords: [stock, quantity, product, inventory, restock]
+  question: Are product inventory and coin inventory separate concerns?
+  good: Product stock and the coin box are separate objects with their own invariants.
+  smells: [GOD_CLASS]
+  principles: [SRP]
+- id: atomicity
+  keywords: [fail, rollback, keep, balance, nothing]
+  question: Does a failed select leave the machine untouched?
+  good: All checks (including change feasibility) run before any state changes.
+- id: money_types
+  keywords: [coin, value, enum, denomination]
+  question: How are coin values represented?
+  good: Coin carries its value (enum with value) rather than switch statements mapping coins to numbers.
+  smells: [TYPE_SWITCH]

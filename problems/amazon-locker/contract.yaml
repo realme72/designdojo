@@ -1,0 +1,39 @@
+enums:
+  Size: [SMALL, MEDIUM, LARGE]
+
+dtos:
+  LockerConfig:
+    hold_seconds: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  LockerStation:
+    add_locker:
+      params: {locker_id: str, size: Size}
+      returns: void
+      raises: [DuplicateLocker]
+    deposit:
+      params: {package_id: str, size: Size, code: str}
+      returns: str
+      raises: [NoLockerAvailable, DuplicatePackage, DuplicateCode]
+    pickup:
+      params: {code: str}
+      returns: str
+      raises: [InvalidCode, Expired]
+    reclaim_expired:
+      returns: "list[str]"
+    free_count:
+      params: {size: Size}
+      returns: int
+
+entrypoint:
+  name: create
+  params: {config: LockerConfig, clock: Clock}
+  returns: LockerStation
+
+errors: [DuplicateLocker, NoLockerAvailable, DuplicatePackage, DuplicateCode, InvalidCode, Expired]

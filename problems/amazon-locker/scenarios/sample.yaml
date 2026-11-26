@@ -1,0 +1,18 @@
+config: {hold_seconds: 259200}
+scenarios:
+  - name: deposit_and_pickup
+    steps:
+      - {call: add_locker, args: {locker_id: L1, size: MEDIUM}}
+      - {call: deposit, args: {package_id: p1, size: SMALL, code: "123456"}, expect: L1}
+      - {call: free_count, args: {size: MEDIUM}, expect: 0}
+      - {call: pickup, args: {code: "123456"}, expect: p1}
+      - {call: free_count, args: {size: MEDIUM}, expect: 1}
+  - name: smallest_fitting_locker
+    steps:
+      - {call: add_locker, args: {locker_id: big, size: LARGE}}
+      - {call: add_locker, args: {locker_id: mid, size: MEDIUM}}
+      - {call: deposit, args: {package_id: p1, size: MEDIUM, code: a}, expect: mid}
+      - {call: deposit, args: {package_id: p2, size: SMALL, code: b}, expect: big}
+  - name: wrong_code
+    steps:
+      - {call: pickup, args: {code: "000000"}, expect_error: InvalidCode}

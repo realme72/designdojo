@@ -1,0 +1,17 @@
+config: {failure_threshold: 5, open_seconds: 10, trial_requests: 3}
+scenarios:
+  - name: half_open_grants_exact_permits
+    repeat: 15
+    steps:
+      - parallel: {threads: 5, call: record_failure, args: {service: s}, collect: f}
+      - {call: state, args: {service: s}, expect: OPEN}
+      - advance_clock: 10
+      - parallel: {threads: 50, call: allow_request, args: {service: s}, collect: r}
+      - assert: {of: r, ok_count: 50, value_count: {"true": 3, "false": 47}}
+  - name: concurrent_failures_open_once
+    repeat: 15
+    steps:
+      - parallel: {threads: 50, call: record_failure, args: {service: s}, collect: f}
+      - {call: state, args: {service: s}, expect: OPEN}
+      - advance_clock: 9
+      - {call: allow_request, args: {service: s}, expect: false}

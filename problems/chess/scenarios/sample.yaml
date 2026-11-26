@@ -1,0 +1,19 @@
+config: {setup: [], to_move: WHITE}
+scenarios:
+  - name: opening_move
+    steps:
+      - {call: move, args: {from_sq: e2, to_sq: e4, promotion: ""}, expect: {captured: "", status: IN_PROGRESS}}
+      - {call: turn, expect: BLACK}
+      - {call: board, expect: [rnbqkbnr, pppppppp, "........", "........", "....P...", "........", PPPP.PPP, RNBQKBNR]}
+  - name: illegal_moves
+    steps:
+      - {call: move, args: {from_sq: e2, to_sq: e5, promotion: ""}, expect_error: IllegalMove}
+      - {call: move, args: {from_sq: e7, to_sq: e5, promotion: ""}, expect_error: IllegalMove}
+      - {call: move, args: {from_sq: e3, to_sq: e4, promotion: ""}, expect_error: IllegalMove}
+  - name: fools_mate
+    steps:
+      - {call: move, args: {from_sq: f2, to_sq: f3, promotion: ""}}
+      - {call: move, args: {from_sq: e7, to_sq: e5, promotion: ""}}
+      - {call: move, args: {from_sq: g2, to_sq: g4, promotion: ""}}
+      - {call: move, args: {from_sq: d8, to_sq: h4, promotion: ""}, expect: {status: CHECKMATE}}
+      - {call: move, args: {from_sq: a2, to_sq: a3, promotion: ""}, expect_error: GameOver}

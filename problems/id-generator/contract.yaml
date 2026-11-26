@@ -1,0 +1,31 @@
+dtos:
+  GeneratorConfig:
+    epoch: long
+    worker_id: int
+    sequence_bits: int
+  IdParts:
+    timestamp: long
+    worker: int
+    sequence: int
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  IdGenerator:
+    next_id:
+      returns: long
+      raises: [SequenceExhausted, ClockMovedBackwards]
+    parse:
+      params: {id: long}
+      returns: IdParts
+
+entrypoint:
+  name: create
+  params: {config: GeneratorConfig, clock: Clock}
+  returns: IdGenerator
+
+errors: [SequenceExhausted, ClockMovedBackwards]

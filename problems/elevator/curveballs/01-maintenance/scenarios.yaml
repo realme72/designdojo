@@ -1,0 +1,29 @@
+config: {floors: 10, elevators: 2}
+scenarios:
+  - name: maintenance_clears_and_freezes
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 5}}
+      - {call: step}
+      - {call: set_maintenance, args: {elevator_id: 1, enabled: true}}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 2, direction: MAINTENANCE, stops: []}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 2, direction: MAINTENANCE}}
+      - {call: press, args: {elevator_id: 1, floor: 3}, expect_error: InvalidRequest}
+  - name: dispatch_skips_maintenance
+    steps:
+      - {call: set_maintenance, args: {elevator_id: 1, enabled: true}}
+      - {call: call, args: {floor: 4, direction: UP}, expect: 2}
+  - name: all_in_maintenance
+    steps:
+      - {call: set_maintenance, args: {elevator_id: 1, enabled: true}}
+      - {call: set_maintenance, args: {elevator_id: 2, enabled: true}}
+      - {call: call, args: {floor: 4, direction: UP}, expect_error: NoElevatorAvailable}
+  - name: back_in_service
+    steps:
+      - {call: set_maintenance, args: {elevator_id: 1, enabled: true}}
+      - {call: set_maintenance, args: {elevator_id: 1, enabled: false}}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 1, direction: IDLE, stops: []}}
+      - {call: call, args: {floor: 3, direction: UP}, expect: 1}
+  - name: unknown_elevator_maintenance
+    steps:
+      - {call: set_maintenance, args: {elevator_id: 9, enabled: true}, expect_error: UnknownElevator}

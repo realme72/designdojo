@@ -1,0 +1,16 @@
+- id: phase_machine
+  keywords: [phase, state, next, cycle, transition]
+  question: How are phases and transitions represented?
+  good: A table or State objects defining each phase's next phase, duration and per-direction colours; no switch blocks spread across methods.
+  smells: [TYPE_SWITCH, STATE_FLAG]
+  patterns: [State]
+- id: timing
+  keywords: [clock, now, remaining, elapsed, duration]
+  question: How is time handled?
+  good: Phase start time + durations; the current phase is derived lazily from the injected clock.
+  smells: [DIRECT_TIME]
+- id: overrides
+  keywords: [emergency, flashing, mode, override]
+  question: Where do overrides (emergency, flashing) live?
+  good: As explicit transitions/modes on the machine, not special cases inside light().
+  principles: [OCP]

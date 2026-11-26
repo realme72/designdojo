@@ -1,0 +1,7 @@
+id: airline-booking
+title: Airline Reservation System
+difficulty: medium
+category: Booking & reservations
+time_limit_min: 60
+statement: statement.md
+tags: [strategy, concurrency, pricing]

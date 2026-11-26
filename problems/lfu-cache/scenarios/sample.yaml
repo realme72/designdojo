@@ -1,0 +1,23 @@
+config: {capacity: 2}
+scenarios:
+  - name: evicts_least_frequent
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: get, args: {key: a}, expect: "1"}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: b}, expect_error: CacheMiss}
+      - {call: get, args: {key: c}, expect: "3"}
+  - name: ties_break_by_recency
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+      - {call: size, expect: 2}
+  - name: frequency_counts
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: get, args: {key: a}}
+      - {call: get, args: {key: a}}
+      - {call: frequency, args: {key: a}, expect: 3}

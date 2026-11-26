@@ -1,0 +1,43 @@
+dtos:
+  SiteConfig:
+    close_threshold: long
+
+interfaces:
+  QaSite:
+    ask:
+      params: {user: str, question_id: str, title: str, tags: "list[str]"}
+      returns: void
+      raises: [InvalidQuestion, DuplicatePost]
+    answer:
+      params: {user: str, question_id: str, answer_id: str}
+      returns: void
+      raises: [UnknownPost, QuestionClosed, DuplicatePost]
+    vote:
+      params: {user: str, post_id: str, up: bool}
+      returns: void
+      raises: [UnknownPost, SelfVote]
+    accept:
+      params: {user: str, answer_id: str}
+      returns: void
+      raises: [UnknownPost, Forbidden]
+    close:
+      params: {user: str, question_id: str}
+      returns: void
+      raises: [UnknownPost, Forbidden]
+    score:
+      params: {post_id: str}
+      returns: long
+      raises: [UnknownPost]
+    reputation:
+      params: {user: str}
+      returns: long
+    search:
+      params: {tag: str}
+      returns: "list[str]"
+
+entrypoint:
+  name: create
+  params: {config: SiteConfig}
+  returns: QaSite
+
+errors: [InvalidQuestion, DuplicatePost, UnknownPost, QuestionClosed, SelfVote, Forbidden]

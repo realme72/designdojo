@@ -1,0 +1,7 @@
+id: bowling
+title: Bowling Scorer
+difficulty: easy
+category: Games
+time_limit_min: 30
+statement: statement.md
+tags: [games, modeling]

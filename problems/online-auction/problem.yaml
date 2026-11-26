@@ -1,0 +1,7 @@
+id: online-auction
+title: Online Auction (eBay)
+difficulty: medium
+category: Commerce & payments
+time_limit_min: 45
+statement: statement.md
+tags: [rules, concurrency, timing]

@@ -1,0 +1,73 @@
+config: {overs: 2, batters: [a, b, c, d]}
+scenarios:
+  - name: over_ends_and_strike_rotates
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}, expect: {overs: "1.0"}}
+      - {call: striker, expect: b}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}, expect_error: SameBowler}
+      - {call: bowl, args: {bowler: y, runs: 0, extra: NONE, wicket: false}, expect: {overs: "1.1"}}
+  - name: single_off_last_ball_keeps_strike
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 1, extra: NONE, wicket: false}}
+      - {call: striker, expect: a}
+  - name: no_ball_runs_to_batter
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 4, extra: NO_BALL, wicket: false}, expect: {runs: 5, overs: "0.0"}}
+      - {call: batter, args: {name: a}, expect: {runs: 4, balls: 1}}
+  - name: byes_to_team_and_rotate
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 1, extra: LEG_BYE, wicket: false}, expect: {runs: 1, overs: "0.1"}}
+      - {call: batter, args: {name: a}, expect: {runs: 0, balls: 1}}
+      - {call: striker, expect: b}
+      - {call: bowl, args: {bowler: x, runs: 3, extra: BYE, wicket: false}, expect: {runs: 4}}
+      - {call: striker, expect: a}
+  - name: wide_with_runs_rotates
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 1, extra: WIDE, wicket: false}, expect: {runs: 2}}
+      - {call: striker, expect: b}
+  - name: bowler_change_mid_over
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: y, runs: 0, extra: NONE, wicket: false}, expect_error: BowlerChange}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: WIDE, wicket: false}}
+  - name: invalid_balls
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 7, extra: NONE, wicket: false}, expect_error: InvalidBall}
+      - {call: bowl, args: {bowler: x, runs: -1, extra: NONE, wicket: false}, expect_error: InvalidBall}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: WIDE, wicket: true}, expect_error: InvalidBall}
+      - {call: bowl, args: {bowler: x, runs: 1, extra: NONE, wicket: true}, expect_error: InvalidBall}
+      - {call: score, expect: {runs: 0, wickets: 0, overs: "0.0"}}
+  - name: all_out
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: true}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: true}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: true}, expect: {wickets: 3, complete: true}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}, expect_error: InningsOver}
+      - {call: striker, expect: ""}
+      - {call: batter, args: {name: d}, expect: {runs: 0, balls: 1, out: true}}
+      - {call: batter, args: {name: b}, expect: {runs: 0, balls: 0, out: false}}
+  - name: overs_complete
+    config: {overs: 1, batters: [a, b, c]}
+    steps:
+      - {call: bowl, args: {bowler: x, runs: 6, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: WIDE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 2, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 0, extra: NONE, wicket: false}}
+      - {call: bowl, args: {bowler: x, runs: 1, extra: NONE, wicket: false}, expect: {runs: 10, overs: "1.0", complete: true}}
+      - {call: bowl, args: {bowler: y, runs: 0, extra: NONE, wicket: false}, expect_error: InningsOver}
+  - name: unknown_batter
+    steps:
+      - {call: batter, args: {name: zz}, expect_error: UnknownBatter}
+      - {call: non_striker, expect: b}

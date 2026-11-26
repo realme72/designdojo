@@ -1,0 +1,21 @@
+- id: eligibility_rules
+  keywords: [rule, prerequisite, eligible, check, limit, validate]
+  question: How are enrolment rules organised?
+  good: Each rule (completed, registered, prerequisites, limit) is a separate check in an ordered chain; adding a rule doesn't change enroll().
+  principles: [OCP, SRP]
+  patterns: [Chain of Responsibility, Specification]
+- id: waitlist
+  keywords: [waitlist, queue, promote, fifo]
+  question: How does promotion from the waitlist work?
+  good: The course owns a FIFO waitlist; on a freed seat it promotes the first eligible student (and could notify observers).
+  patterns: [Observer]
+- id: model
+  keywords: [course, student, transcript, enrollment]
+  question: Are courses, students and transcripts separate?
+  good: Course (capacity, roster, waitlist), Student (enrolments, transcript) as separate objects.
+  smells: [GOD_CLASS]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What keeps capacity and per-student limits consistent?
+  good: Seat assignment and the student's enrolment count update atomically.
+  smells: [UNGUARDED_SHARED]

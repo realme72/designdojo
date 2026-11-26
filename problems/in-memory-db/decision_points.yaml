@@ -1,0 +1,25 @@
+- id: storage
+  keywords: [table, rows, primary, key, store, map]
+  question: How are rows stored?
+  good: Rows in a map keyed by primary key; schema validated once per operation.
+- id: indexes
+  keywords: [index, lookup, column, maintain, consistent]
+  question: How are secondary indexes maintained?
+  good: column -> value -> set(pk); every insert/update/delete updates indexes in the same step; the query planner picks an index when a filter column has one.
+  principles: [SRP]
+  patterns: [Strategy]
+- id: query_pipeline
+  keywords: [where, filter, order, limit, query, plan]
+  question: Is query execution structured?
+  good: Plan (pick candidate rows via index or scan) -> filter -> sort -> limit, each a small step.
+  smells: [GOD_CLASS]
+  patterns: [Chain of Responsibility]
+- id: atomic_update
+  keywords: [update, duplicate, rollback, atomic, validate]
+  question: How is an all-or-nothing update guaranteed?
+  good: Compute all new rows and check key uniqueness before mutating anything.
+- id: concurrency
+  keywords: [lock, synchronized, thread, rwlock]
+  question: What lock protects a table?
+  good: A per-table lock (or reader-writer lock) around each operation.
+  smells: [UNGUARDED_SHARED]

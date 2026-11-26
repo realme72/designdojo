@@ -1,0 +1,7 @@
+id: food-delivery
+title: Food Delivery (Swiggy / Zomato)
+difficulty: hard
+category: Commerce & payments
+time_limit_min: 60
+statement: statement.md
+tags: [state, observer, concurrency]

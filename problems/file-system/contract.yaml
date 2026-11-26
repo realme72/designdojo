@@ -1,0 +1,40 @@
+interfaces:
+  FileSystem:
+    mkdir:
+      params: {path: str}
+      returns: void
+      raises: [InvalidPath, NotADirectory]
+    write_file:
+      params: {path: str, content: str}
+      returns: void
+      raises: [InvalidPath, NotFound, NotADirectory, IsADirectory]
+    read_file:
+      params: {path: str}
+      returns: str
+      raises: [InvalidPath, NotFound, NotADirectory, IsADirectory]
+    ls:
+      params: {path: str}
+      returns: "list[str]"
+      raises: [InvalidPath, NotFound, NotADirectory]
+    rm:
+      params: {path: str, recursive: bool}
+      returns: void
+      raises: [InvalidPath, NotFound, NotADirectory, DirectoryNotEmpty]
+    mv:
+      params: {src: str, dst: str}
+      returns: void
+      raises: [InvalidPath, NotFound, NotADirectory, AlreadyExists]
+    size:
+      params: {path: str}
+      returns: long
+      raises: [InvalidPath, NotFound, NotADirectory]
+    find:
+      params: {path: str, suffix: str}
+      returns: "list[str]"
+      raises: [InvalidPath, NotFound, NotADirectory]
+
+entrypoint:
+  name: create
+  returns: FileSystem
+
+errors: [InvalidPath, NotFound, NotADirectory, IsADirectory, DirectoryNotEmpty, AlreadyExists]

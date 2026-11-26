@@ -1,0 +1,7 @@
+id: meeting-scheduler
+title: Meeting Room Scheduler
+difficulty: medium
+category: Scheduling & workflows
+time_limit_min: 45
+statement: statement.md
+tags: [intervals, strategy, concurrency]

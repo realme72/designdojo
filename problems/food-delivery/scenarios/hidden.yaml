@@ -1,0 +1,102 @@
+config: {delivery_fee: 40}
+scenarios:
+  - name: waiting_order_gets_next_free_agent
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: add_agent, args: {agent_id: a1}}
+      - {call: place_order, args: {customer: c1, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o1}
+      - {call: place_order, args: {customer: c2, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o2}
+      - {call: place_order, args: {customer: c3, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o3}
+      - {call: accept, args: {order_id: $o1.id}, expect: {agent: a1}}
+      - {call: accept, args: {order_id: $o3.id}, expect: {agent: ""}}
+      - {call: accept, args: {order_id: $o2.id}, expect: {agent: ""}}
+      - {call: waiting_orders, expect: 2}
+      - {call: mark_ready, args: {order_id: $o1.id}}
+      - {call: pick_up, args: {order_id: $o1.id}}
+      - {call: deliver, args: {order_id: $o1.id}}
+      - {call: order, args: {order_id: $o3.id}, expect: {agent: a1}}
+      - {call: order, args: {order_id: $o2.id}, expect: {agent: ""}}
+      - {call: waiting_orders, expect: 1}
+  - name: lowest_free_agent_id
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: add_agent, args: {agent_id: b}}
+      - {call: add_agent, args: {agent_id: a}}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o}
+      - {call: accept, args: {order_id: $o.id}, expect: {agent: a}}
+  - name: cancel_frees_agent_for_waiting_order
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: add_agent, args: {agent_id: a1}}
+      - {call: place_order, args: {customer: c1, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o1}
+      - {call: place_order, args: {customer: c2, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o2}
+      - {call: accept, args: {order_id: $o1.id}}
+      - {call: accept, args: {order_id: $o2.id}}
+      - {call: cancel, args: {order_id: $o1.id}, expect: {status: CANCELLED}}
+      - {call: order, args: {order_id: $o2.id}, expect: {agent: a1}}
+  - name: ready_order_waits_for_agent
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o}
+      - {call: accept, args: {order_id: $o.id}}
+      - {call: mark_ready, args: {order_id: $o.id}}
+      - {call: pick_up, args: {order_id: $o.id}, expect_error: InvalidState}
+      - {call: add_agent, args: {agent_id: late}}
+      - {call: order, args: {order_id: $o.id}, expect: {agent: late}}
+      - {call: pick_up, args: {order_id: $o.id}, expect: {status: OUT_FOR_DELIVERY}}
+  - name: illegal_transitions
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: add_agent, args: {agent_id: a}}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o}
+      - {call: mark_ready, args: {order_id: $o.id}, expect_error: InvalidState}
+      - {call: deliver, args: {order_id: $o.id}, expect_error: InvalidState}
+      - {call: accept, args: {order_id: $o.id}}
+      - {call: accept, args: {order_id: $o.id}, expect_error: InvalidState}
+      - {call: reject, args: {order_id: $o.id}, expect_error: InvalidState}
+      - {call: mark_ready, args: {order_id: $o.id}}
+      - {call: cancel, args: {order_id: $o.id}, expect_error: InvalidState}
+  - name: invalid_orders
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: []}, expect_error: InvalidOrder}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: [{item_id: x, qty: 0}]}, expect_error: InvalidOrder}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: [{item_id: y, qty: 1}]}, expect_error: UnknownItem}
+      - {call: place_order, args: {customer: c, restaurant_id: zz, lines: [{item_id: x, qty: 1}]}, expect_error: UnknownRestaurant}
+      - {call: add_item, args: {restaurant_id: zz, item_id: x, price: 1}, expect_error: UnknownRestaurant}
+      - {call: set_item_available, args: {restaurant_id: r, item_id: nope, available: true}, expect_error: UnknownItem}
+      - {call: order, args: {order_id: nope}, expect_error: UnknownOrder}
+  - name: price_snapshot_at_order_time
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: [{item_id: x, qty: 3}]}, bind: o}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 999}}
+      - {call: order, args: {order_id: $o.id}, expect: {total: 340}}
+  - name: full_notification_trail
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: add_agent, args: {agent_id: a}}
+      - {call: place_order, args: {customer: c, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o}
+      - {call: accept, args: {order_id: $o.id}}
+      - {call: mark_ready, args: {order_id: $o.id}}
+      - {call: pick_up, args: {order_id: $o.id}}
+      - {call: deliver, args: {order_id: $o.id}}
+      - {call: notifications, args: {customer: c}, expect: ["O1:PLACED", "O1:ACCEPTED", "O1:READY", "O1:OUT_FOR_DELIVERY", "O1:DELIVERED"]}
+      - {call: notifications, args: {customer: nobody}, expect: []}
+  - name: notifications_per_customer
+    steps:
+      - {call: add_restaurant, args: {restaurant_id: r}}
+      - {call: add_item, args: {restaurant_id: r, item_id: x, price: 100}}
+      - {call: place_order, args: {customer: c1, restaurant_id: r, lines: [{item_id: x, qty: 1}]}}
+      - {call: place_order, args: {customer: c2, restaurant_id: r, lines: [{item_id: x, qty: 1}]}, bind: o2}
+      - {call: cancel, args: {order_id: $o2.id}}
+      - {call: notifications, args: {customer: c2}, expect: ["O2:PLACED", "O2:CANCELLED"]}
+      - {call: notifications, args: {customer: c1}, expect: ["O1:PLACED"]}

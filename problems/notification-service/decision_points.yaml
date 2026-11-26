@@ -1,0 +1,22 @@
+- id: channels
+  keywords: [channel, email, sms, push, provider, sender]
+  question: How are channels implemented?
+  good: A Channel/Sender interface with one implementation per channel in a registry; send() iterates the user's channels without switching on type.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy, Factory]
+- id: cross_cutting
+  keywords: [rate, limit, decorator, chain, retry, priority]
+  question: Where do rate limiting and priority bypass live?
+  good: As a wrapper/decorator or a step in a delivery pipeline, not inside each channel.
+  patterns: [Decorator, Chain of Responsibility]
+- id: templates
+  keywords: [template, render, placeholder, variable]
+  question: Is templating separate from delivery?
+  good: A template renderer validates and fills placeholders before any channel is touched.
+  principles: [SRP]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are rate-limit checks and recording atomic?
+  good: Check-and-record per (user, channel) under a lock.
+  smells: [UNGUARDED_SHARED]

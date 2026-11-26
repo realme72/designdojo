@@ -1,0 +1,57 @@
+enums:
+  RoomType: [SINGLE, DOUBLE, SUITE]
+  ReservationStatus: [CONFIRMED, CANCELLED, CHECKED_IN, CHECKED_OUT]
+
+dtos:
+  Reservation:
+    id: str
+    guest: str
+    room: str
+    check_in: str
+    check_out: str
+    total: long
+    status: ReservationStatus
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Hotel:
+    add_room:
+      params: {number: str, type: RoomType, nightly_rate: long}
+      returns: void
+      raises: [DuplicateRoom, InvalidRate]
+    search:
+      params: {type: RoomType, check_in: str, check_out: str}
+      returns: "list[str]"
+      raises: [InvalidDates]
+    book:
+      params: {guest: str, type: RoomType, check_in: str, check_out: str}
+      returns: Reservation
+      raises: [InvalidDates, NoAvailability]
+    cancel:
+      params: {reservation_id: str}
+      returns: long
+      raises: [UnknownReservation, InvalidState]
+      doc: Returns the refund.
+    check_in:
+      params: {reservation_id: str}
+      returns: Reservation
+      raises: [UnknownReservation, InvalidState]
+    check_out:
+      params: {reservation_id: str}
+      returns: Reservation
+      raises: [UnknownReservation, InvalidState]
+    reservations:
+      params: {guest: str}
+      returns: "list[Reservation]"
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: Hotel
+
+errors: [DuplicateRoom, InvalidRate, InvalidDates, NoAvailability, UnknownReservation, InvalidState]

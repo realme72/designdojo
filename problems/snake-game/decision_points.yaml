@@ -1,0 +1,13 @@
+- id: structures
+  keywords: [deque, queue, set, body, occupied]
+  question: How do moves and collision checks stay O(1)?
+  good: A deque of cells for the body plus a set of occupied cells.
+- id: tail_rule
+  keywords: [tail, leave, free, collision]
+  question: Is the tail-vacates-first rule handled cleanly?
+  good: Remove the tail from the occupied set before checking collision (unless eating).
+- id: directions
+  keywords: [direction, delta, up, down, left, right]
+  question: How are directions mapped to movement?
+  good: A direction -> (dr, dc) table, not an if-chain.
+  smells: [TYPE_SWITCH]

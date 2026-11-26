@@ -1,0 +1,18 @@
+scenarios:
+  - name: reserve_and_commit
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 10}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 4}]}, expect: [{sku: pen, warehouse: blr, qty: 4}]}
+      - {call: available, args: {sku: pen}, expect: 6}
+      - {call: commit, args: {order_id: o1}}
+      - {call: available, args: {sku: pen}, expect: 6}
+  - name: release_returns_stock
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 10}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 10}]}}
+      - {call: release, args: {order_id: o1}}
+      - {call: available, args: {sku: pen}, expect: 10}
+  - name: out_of_stock
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 3}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 4}]}, expect_error: OutOfStock}

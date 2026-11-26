@@ -73,9 +73,10 @@ def outline(src: str) -> str:
     return "\n".join(out)
 
 
-def requirements(statement: str, limit: int = 1800) -> str:
-    """The statement minus the headings and the boilerplate contract section."""
-    text = statement.split("## The contract")[0]
+def requirements(statement: str, limit: int = 2600) -> str:
+    """The statement minus the headings and the boilerplate contract section (curveballs kept)."""
+    curveballs = re.findall(r"## Curveball \d+.*?(?=\n---\n|\Z)", statement, flags=re.S)
+    text = statement.split("## The contract")[0] + "".join("\n\n" + c for c in curveballs)
     text = re.sub(r"^#+\s*", "", text, flags=re.M)
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     return text[:limit]

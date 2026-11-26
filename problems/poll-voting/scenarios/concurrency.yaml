@@ -1,0 +1,14 @@
+scenarios:
+  - name: no_lost_votes
+    repeat: 15
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000100, multi_choice: false}}
+      - parallel: {threads: 100, call: vote, args: {poll_id: p, user: "u{i}", choices: [x]}, collect: r}
+      - {call: results, args: {poll_id: p}, expect: [{option: x, votes: 100}, {option: y, votes: 0}]}
+  - name: double_vote_race
+    repeat: 15
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000100, multi_choice: false}}
+      - parallel: {threads: 20, call: vote, args: {poll_id: p, user: same, choices: [y]}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {AlreadyVoted: 19}}
+      - {call: results, args: {poll_id: p}, expect: [{option: x, votes: 0}, {option: y, votes: 1}]}

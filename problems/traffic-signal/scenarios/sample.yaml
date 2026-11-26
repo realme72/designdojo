@@ -1,0 +1,22 @@
+config: {green: 30, yellow: 5, all_red: 2}
+scenarios:
+  - name: starts_ns_green
+    steps:
+      - {call: phase, expect: NS_GREEN}
+      - {call: light, args: {direction: NS}, expect: GREEN}
+      - {call: light, args: {direction: EW}, expect: RED}
+      - {call: remaining, expect: 30}
+  - name: cycles_through_phases
+    steps:
+      - advance_clock: 30
+      - {call: phase, expect: NS_YELLOW}
+      - advance_clock: 5
+      - {call: phase, expect: ALL_RED_TO_EW}
+      - advance_clock: 2
+      - {call: phase, expect: EW_GREEN}
+      - {call: light, args: {direction: EW}, expect: GREEN}
+  - name: flashing_mode
+    steps:
+      - {call: set_mode, args: {mode: FLASHING}}
+      - {call: light, args: {direction: NS}, expect: YELLOW}
+      - {call: phase, expect: FLASHING}

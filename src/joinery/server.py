@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from . import codegen
 from .judge import JudgeError, Workspace, judge, scaffold
-from .problems import REPO_ROOT, SUITES, ProblemError, get_problem, list_problems
+from .problems import REPO_ROOT, ProblemError, get_problem, list_problems
 from .results import public_view, totals
 
 WORK_DIR = Path(os.environ.get("JOINERY_WORK_DIR", REPO_ROOT / "work"))
@@ -29,7 +29,7 @@ WEB_DIST = REPO_ROOT / "web" / "dist"
 HISTORY_FILE = ".joinery-history.jsonl"
 EXTENSIONS = {"java": ".java", "python": ".py"}
 MAX_FILE_BYTES = 200_000
-MODES = {"run": ["sample"], "submit": list(SUITES)}
+MODES = ("run", "submit")
 
 from .coach.provider import load_env  # noqa: E402
 
@@ -101,6 +101,7 @@ def problems():
             "id": p.id,
             "title": p.title,
             "difficulty": p.meta.get("difficulty"),
+            "category": p.meta.get("category", "Other"),
             "time_limit_min": p.meta.get("time_limit_min"),
             "tags": p.meta.get("tags", []),
             "started": [lang for lang in codegen.LANGS if (WORK_DIR / f"{p.id}-{lang}" / ".joinery.json").exists()],
@@ -144,7 +145,29 @@ class PathBody(BaseModel):
 def workspace(problem_id: str, lang: str):
     ws = _workspace(problem_id, lang)
     entry = "solution/Solution.java" if lang == "java" else "solution/__init__.py"
-    return {"root": str(ws.root), "entry": entry, "files": _files(ws)}
+    return {
+        "root": str(ws.root), "entry": entry, "files": _files(ws),
+        "level": ws.level, "curveballs_total": len(ws.problem.curveballs),
+        "curveballs": [ws.problem.curveball_info(i) for i in range(1, ws.level + 1)],
+    }
+
+
+@app.post("/api/ws/{problem_id}/{lang}/curveball")
+def next_curveball(problem_id: str, lang: str):
+    from .curveballs import CurveballLocked, unlock_next
+
+    ws = _workspace(problem_id, lang)
+    lock = _lock(ws)
+    if not lock.acquire(blocking=False):
+        raise HTTPException(409, "a run is already in progress for this workspace")
+    try:
+        return unlock_next(ws)
+    except CurveballLocked as e:
+        raise HTTPException(409, str(e)) from None
+    except JudgeError as e:
+        raise HTTPException(500, str(e)) from None
+    finally:
+        lock.release()
 
 
 @app.put("/api/ws/{problem_id}/{lang}/file")
@@ -223,13 +246,22 @@ def run_judge(problem_id: str, lang: str, body: JudgeBody):
         raise HTTPException(409, "a run is already in progress for this workspace")
     try:
         t0 = time.monotonic()
-        raw = judge(ws, MODES[body.mode])
+        raw = judge(ws, ws.suites if body.mode == "submit" else ["sample"])
         elapsed = round(time.monotonic() - t0, 2)
     except JudgeError as e:
         raise HTTPException(500, str(e)) from None
     finally:
         lock.release()
-    result = public_view(raw)
+    if body.mode == "submit":
+        from .coach import latest
+        from .curveballs import evaluate
+
+        rev = latest(ws)
+        design = rev["review"].get("design_score") if rev and rev.get("meta", {}).get("source") == "ai" \
+            and rev.get("review") else None
+        result = evaluate(ws, raw, design)
+    else:
+        result = public_view(raw)
     passed, total = totals(result)
     entry = {
         "id": uuid.uuid4().hex[:10],

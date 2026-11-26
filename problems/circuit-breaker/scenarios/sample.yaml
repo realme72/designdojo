@@ -1,0 +1,30 @@
+config: {failure_threshold: 3, open_seconds: 30, trial_requests: 2}
+scenarios:
+  - name: opens_after_threshold
+    steps:
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: allow_request, args: {service: pay}, expect: true}
+      - {call: record_failure, args: {service: pay}}
+      - {call: state, args: {service: pay}, expect: OPEN}
+      - {call: allow_request, args: {service: pay}, expect: false}
+  - name: half_open_after_timeout_then_closes
+    steps:
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - advance_clock: 30
+      - {call: state, args: {service: pay}, expect: HALF_OPEN}
+      - {call: allow_request, args: {service: pay}, expect: true}
+      - {call: record_success, args: {service: pay}}
+      - {call: allow_request, args: {service: pay}, expect: true}
+      - {call: record_success, args: {service: pay}}
+      - {call: state, args: {service: pay}, expect: CLOSED}
+  - name: success_resets_consecutive_failures
+    steps:
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_success, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: state, args: {service: pay}, expect: CLOSED}

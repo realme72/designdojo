@@ -1,0 +1,7 @@
+id: traffic-signal
+title: Traffic Signal Controller
+difficulty: medium
+category: Infrastructure & control
+time_limit_min: 40
+statement: statement.md
+tags: [state, timing]

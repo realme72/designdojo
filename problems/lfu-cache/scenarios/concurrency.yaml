@@ -1,0 +1,15 @@
+config: {capacity: 50}
+scenarios:
+  - name: never_exceeds_capacity
+    repeat: 15
+    steps:
+      - parallel: {threads: 100, call: put, args: {key: "k{i}", value: "v"}, collect: r}
+      - assert: {of: r, ok_count: 100}
+      - {call: size, expect: 50}
+  - name: concurrent_hits_all_counted
+    repeat: 15
+    steps:
+      - {call: put, args: {key: hot, value: x}}
+      - parallel: {threads: 50, call: get, args: {key: hot}, collect: r}
+      - assert: {of: r, ok_count: 50}
+      - {call: frequency, args: {key: hot}, expect: 51}

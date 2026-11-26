@@ -1,0 +1,101 @@
+scenarios:
+  - name: buy_x_get_y_groups
+    steps:
+      - {call: add_product, args: {sku: bread, name: Bread, price: 250}}
+      - {call: add_promotion, args: {promo: {code: B2G1, kind: BUY_X_GET_Y, sku: bread, threshold: 2, value: 1}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: bread, qty: 5}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 250}}
+      - {call: add_to_cart, args: {cart_id: c, sku: bread, qty: 1}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 500, total: 1000}}
+  - name: best_item_promo_wins
+    steps:
+      - {call: add_product, args: {sku: apple, name: Apple, price: 100}}
+      - {call: add_promotion, args: {promo: {code: P10, kind: PERCENT_OFF_SKU, sku: apple, threshold: 0, value: 10}}}
+      - {call: add_promotion, args: {promo: {code: BOGO, kind: BUY_X_GET_Y, sku: apple, threshold: 1, value: 1}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: apple, qty: 2}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 100}}
+      - {call: remove_from_cart, args: {cart_id: c, sku: apple, qty: 1}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 10, total: 90}}
+  - name: flat_coupon_after_item_discounts
+    steps:
+      - {call: add_product, args: {sku: tv, name: TV, price: 600}}
+      - {call: add_promotion, args: {promo: {code: TV20, kind: PERCENT_OFF_SKU, sku: tv, threshold: 0, value: 20}}}
+      - {call: add_promotion, args: {promo: {code: SAVE50, kind: FLAT_OFF_CART, sku: "", threshold: 500, value: 50}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: tv, qty: 1}}
+      - {call: apply_coupon, args: {cart_id: c, code: SAVE50}}
+      - {call: bill, args: {cart_id: c}, expect: {subtotal: 600, discount: 120, total: 480}}
+      - {call: add_to_cart, args: {cart_id: c, sku: tv, qty: 1}}
+      - {call: bill, args: {cart_id: c}, expect: {subtotal: 1200, discount: 290, total: 910}}
+  - name: percent_cart_coupon_rounds_down
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 1005}}
+      - {call: add_promotion, args: {promo: {code: TEN, kind: PERCENT_OFF_CART, sku: "", threshold: 1000, value: 10}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 1}}
+      - {call: apply_coupon, args: {cart_id: c, code: TEN}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 100, total: 905}}
+  - name: coupon_replaced_not_stacked
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 1000}}
+      - {call: add_promotion, args: {promo: {code: A, kind: FLAT_OFF_CART, sku: "", threshold: 1, value: 100}}}
+      - {call: add_promotion, args: {promo: {code: B, kind: FLAT_OFF_CART, sku: "", threshold: 1, value: 30}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 1}}
+      - {call: apply_coupon, args: {cart_id: c, code: A}}
+      - {call: apply_coupon, args: {cart_id: c, code: B}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 30}}
+  - name: total_never_negative
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 10}}
+      - {call: add_promotion, args: {promo: {code: BIG, kind: FLAT_OFF_CART, sku: "", threshold: 1, value: 500}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 1}}
+      - {call: apply_coupon, args: {cart_id: c, code: BIG}}
+      - {call: bill, args: {cart_id: c}, expect: {subtotal: 10, discount: 10, total: 0}}
+  - name: coupon_errors
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 10}}
+      - {call: add_promotion, args: {promo: {code: P, kind: PERCENT_OFF_SKU, sku: x, threshold: 0, value: 5}}}
+      - {call: apply_coupon, args: {cart_id: c, code: P}, expect_error: InvalidCoupon}
+      - {call: apply_coupon, args: {cart_id: c, code: NOPE}, expect_error: UnknownPromotion}
+  - name: invalid_promotions
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 10}}
+      - {call: add_promotion, args: {promo: {code: A, kind: PERCENT_OFF_SKU, sku: x, threshold: 0, value: 0}}, expect_error: InvalidPromotion}
+      - {call: add_promotion, args: {promo: {code: B, kind: PERCENT_OFF_CART, sku: "", threshold: 0, value: 101}}, expect_error: InvalidPromotion}
+      - {call: add_promotion, args: {promo: {code: C, kind: BUY_X_GET_Y, sku: x, threshold: 0, value: 1}}, expect_error: InvalidPromotion}
+      - {call: add_promotion, args: {promo: {code: D, kind: PERCENT_OFF_SKU, sku: ghost, threshold: 0, value: 5}}, expect_error: InvalidPromotion}
+      - {call: add_promotion, args: {promo: {code: E, kind: FLAT_OFF_CART, sku: "", threshold: 0, value: 0}}, expect_error: InvalidPromotion}
+      - {call: add_promotion, args: {promo: {code: F, kind: FLAT_OFF_CART, sku: "", threshold: 0, value: 5}}}
+      - {call: add_promotion, args: {promo: {code: F, kind: FLAT_OFF_CART, sku: "", threshold: 0, value: 5}}, expect_error: DuplicatePromotion}
+  - name: cart_errors
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 10}}
+      - {call: add_to_cart, args: {cart_id: c, sku: ghost, qty: 1}, expect_error: UnknownProduct}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 0}, expect_error: InvalidQuantity}
+      - {call: remove_from_cart, args: {cart_id: c, sku: x, qty: 1}, expect_error: NotInCart}
+      - {call: add_product, args: {sku: y, name: Y, price: 0}, expect_error: InvalidPrice}
+  - name: remove_more_than_present
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 10}}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 2}}
+      - {call: remove_from_cart, args: {cart_id: c, sku: x, qty: 5}}
+      - {call: bill, args: {cart_id: c}, expect: {subtotal: 0, lines: []}}
+  - name: current_prices_used
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 10}}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 2}}
+      - {call: add_product, args: {sku: x, name: X2, price: 15}}
+      - {call: bill, args: {cart_id: c}, expect: {subtotal: 30, lines: [{sku: x, unit_price: 15}]}}
+  - name: checkout_empties_cart_and_coupon
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 100}}
+      - {call: add_promotion, args: {promo: {code: F, kind: FLAT_OFF_CART, sku: "", threshold: 1, value: 10}}}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 1}}
+      - {call: apply_coupon, args: {cart_id: c, code: F}}
+      - {call: checkout, args: {cart_id: c}, expect: {total: 90}}
+      - {call: bill, args: {cart_id: c}, expect: {subtotal: 0, discount: 0, total: 0}}
+      - {call: add_to_cart, args: {cart_id: c, sku: x, qty: 1}}
+      - {call: bill, args: {cart_id: c}, expect: {discount: 0}}
+  - name: carts_are_independent
+    steps:
+      - {call: add_product, args: {sku: x, name: X, price: 100}}
+      - {call: add_to_cart, args: {cart_id: a, sku: x, qty: 1}}
+      - {call: bill, args: {cart_id: b}, expect: {subtotal: 0, lines: []}}

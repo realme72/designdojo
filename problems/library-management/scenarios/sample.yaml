@@ -1,0 +1,25 @@
+config: {max_loans: 2, loan_days: 14, fine_per_day: 50}
+scenarios:
+  - name: borrow_and_return_on_time
+    steps:
+      - {call: add_book, args: {isbn: "111", title: Dune, author: Herbert, copies: 1}}
+      - {call: add_member, args: {member_id: m1}}
+      - {call: checkout, args: {member_id: m1, isbn: "111"}, expect: {member_id: m1, isbn: "111", due_at: 1701209600}, bind: l}
+      - {call: available, args: {isbn: "111"}, expect: 0}
+      - {call: return_book, args: {loan_id: $l.id}, expect: 0}
+      - {call: available, args: {isbn: "111"}, expect: 1}
+  - name: late_return_fine
+    steps:
+      - {call: add_book, args: {isbn: "111", title: Dune, author: Herbert, copies: 1}}
+      - {call: add_member, args: {member_id: m1}}
+      - {call: checkout, args: {member_id: m1, isbn: "111"}, bind: l}
+      - advance_clock: 1382400
+      - {call: return_book, args: {loan_id: $l.id}, expect: 100}
+      - {call: fines, args: {member_id: m1}, expect: 100}
+  - name: no_copies_left
+    steps:
+      - {call: add_book, args: {isbn: "111", title: Dune, author: Herbert, copies: 1}}
+      - {call: add_member, args: {member_id: m1}}
+      - {call: add_member, args: {member_id: m2}}
+      - {call: checkout, args: {member_id: m1, isbn: "111"}}
+      - {call: checkout, args: {member_id: m2, isbn: "111"}, expect_error: NotAvailable}

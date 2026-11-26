@@ -1,0 +1,62 @@
+scenarios:
+  - name: split_across_warehouses_in_name_order
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: mum, qty: 5}}
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 3}}
+      - {call: receive, args: {sku: pen, warehouse: del, qty: 4}}
+      - call: reserve
+        args: {order_id: o1, lines: [{sku: pen, qty: 9}]}
+        expect: [{sku: pen, warehouse: blr, qty: 3}, {sku: pen, warehouse: del, qty: 4}, {sku: pen, warehouse: mum, qty: 2}]
+      - {call: available_at, args: {sku: pen, warehouse: mum}, expect: 3}
+  - name: all_or_nothing_across_lines
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 5}}
+      - {call: receive, args: {sku: ink, warehouse: blr, qty: 1}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 2}, {sku: ink, qty: 2}]}, expect_error: OutOfStock}
+      - {call: available, args: {sku: pen}, expect: 5}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 2}, {sku: ink, qty: 1}]}}
+  - name: same_sku_twice_in_order
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 5}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 3}, {sku: pen, qty: 3}]}, expect_error: OutOfStock}
+      - {call: reserve, args: {order_id: o2, lines: [{sku: pen, qty: 3}, {sku: pen, qty: 2}]}}
+      - {call: available, args: {sku: pen}, expect: 0}
+  - name: commit_reduces_on_hand
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 5}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 5}]}}
+      - {call: commit, args: {order_id: o1}}
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 1}}
+      - {call: available, args: {sku: pen}, expect: 1}
+  - name: order_lifecycle_errors
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 5}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 1}]}}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 1}]}, expect_error: DuplicateOrder}
+      - {call: commit, args: {order_id: o1}}
+      - {call: commit, args: {order_id: o1}, expect_error: UnknownOrder}
+      - {call: release, args: {order_id: o1}, expect_error: UnknownOrder}
+      - {call: release, args: {order_id: nope}, expect_error: UnknownOrder}
+  - name: invalid_inputs
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 0}, expect_error: InvalidQuantity}
+      - {call: available, args: {sku: pen}, expect_error: UnknownSku}
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 2}}
+      - {call: reserve, args: {order_id: o1, lines: []}, expect_error: InvalidQuantity}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 0}]}, expect_error: InvalidQuantity}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: ghost, qty: 1}]}, expect_error: UnknownSku}
+      - {call: available_at, args: {sku: pen, warehouse: nowhere}, expect: 0}
+      - {call: set_threshold, args: {sku: ghost, threshold: 1}, expect_error: UnknownSku}
+  - name: low_stock_alerts
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: blr, qty: 10}}
+      - {call: receive, args: {sku: ink, warehouse: blr, qty: 2}}
+      - {call: receive, args: {sku: cap, warehouse: blr, qty: 5}}
+      - {call: set_threshold, args: {sku: pen, threshold: 5}}
+      - {call: set_threshold, args: {sku: ink, threshold: 5}}
+      - {call: set_threshold, args: {sku: cap, threshold: 5}}
+      - {call: low_stock, expect: [ink]}
+      - {call: reserve, args: {order_id: o1, lines: [{sku: pen, qty: 6}]}}
+      - {call: low_stock, expect: [ink, pen]}
+      - {call: release, args: {order_id: o1}}
+      - {call: low_stock, expect: [ink]}

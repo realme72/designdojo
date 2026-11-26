@@ -8,10 +8,17 @@ A personal LLD practice playground. Pick a problem, design and implement it in
 and a **coach** that points at specific lines and says *"this is where
 principle/pattern X would help, and here's why."*
 
-Status: v1 (2026-11-26). **M0–M3 and M5 done**: Parking Lot judged end-to-end in Java
+Status: v1 (2026-11-27). **M0–M6 done**: 50 problems judged end-to-end in Java
 and Python from the CLI or browser, with design signals, a class diagram and the LLM
 coach (Groq free tier; validated against fake responses, not yet run on a live key).
-M4 (curveballs) and M6 (more problems) next. Single user (self-prep). May go public later.
+Curveballs exist for 7 problems so far; more can be added as data.
+
+M6 as built: every problem has a Python reference that passes all suites; Java references
+exist for Parking Lot, Pub-Sub and Rate Limiter (which together exercise every Java runner
+assertion path), and every other problem's generated Java contract + stub is compiled in
+the test suite. `joinery validate` lints contracts (reserved words), scenarios (unknown
+methods/args/errors, values vs contract types, YAML surprises like `OFF` → false), decision
+points, categories, and forbids `parallel` steps in problems not tagged `concurrency`. Single user (self-prep). May go public later.
 
 ---
 
@@ -154,7 +161,8 @@ Tests are written once as YAML and run by a small runner in each language.
 
 Step types: `call` (+ `args`, `expect` (subset match), `expect_error`, `bind`),
 `advance_clock`, `parallel`, `assert`. References like `$t.id` or `$a[{i}].ok.id`
-work in args and expectations; `{i}` is the thread index in `parallel`. A file-level
+work in args and expectations; `{i}` (or `{i+N}`) is the thread index in `parallel`,
+and numeric strings are accepted for int/long parameters. A file-level
 `config` is the default for every scenario in it. Every scenario gets a fresh system
 and a judge clock starting at 1700000000.
 
@@ -170,7 +178,11 @@ and a judge clock starting at 1700000000.
         collect: results
     - assert: {of: results, ok_count: 10, error_count: {LotFull: 40}, unique: spot_id}
 ```
-Other assertion: `assert: {distinct: [$a.id, $b.id]}`.
+Other assertions: `assert: {distinct: [$a.id, $b.id]}`, and
+`value_count: {"true": 10}` (how many successful calls returned that value, written as
+canonical JSON: sorted keys, no spaces, identical in both runners),
+`unique: "."` (successful scalar results all differ), and for list-returning calls
+`flat_count: N` / `flat_unique: <field or ".">` over all items of all results.
 
 - **Java**: real threads spinning at a start line (not parked on a latch) so they
   hit the solution at the same instant; container gets 4 CPUs. Scenario `repeat: N`.
@@ -369,6 +381,23 @@ back to the relevant decision point (`curveball_link`).
 
 ---
 
+### 8.1 As built (M4)
+- Package: `curveballs/NN-name/{statement.md, contract.patch.yaml, scenarios.yaml}`. Patches
+  deep-merge into the contract (maps merge, lists append), so curveballs are additive and every
+  earlier scenario keeps running. Lint checks each suite against the contract at its own level.
+- Unlock (`joinery curveball`, UI "Next curveball") requires a fully passing submit at the
+  current level, snapshots `solution/` to `.joinery-snapshots/<k>/`, regenerates the contract
+  and appends the curveball to PROBLEM.md. References implement the final level.
+- Churn compares symbols (methods/functions, and each class's / module's non-method body)
+  with comments and whitespace ignored. A changed symbol whose diff is only inserted lines
+  with no new branching (`if/elif/else/case/switch/match/default`, ternaries) is **extended**
+  (free: a new table row or enum entry). Anything else is **modified**. Edits to `create`
+  are **wiring** (free). `extensibility = (added + extended) / (added + extended + 2·modified
+  + 2·deleted)`, 1.0 if nothing existing changed. Verified: one table row → 1.0, one new
+  `elif` → 0.0.
+- The judge now copies `solution/` into each run's job dir: bind-mounting the workspace
+  could serve a stale, truncated file right after an in-place edit (OrbStack caching).
+
 ## 9. Scoring (submit / interview mode)
 
 | Component | Weight |
@@ -379,6 +408,9 @@ back to the relevant decision point (`curveball_link`).
 | Design review (coach `design_score`) | 25 |
 
 Coach mode shows comments but no total score, because the point there is learning.
+As built: concurrency is excluded for problems without a race suite, extensibility until a
+curveball is unlocked (mean over curveballs of pass-rate × churn extensibility), and design
+until an AI review exists (offline reviews don't score). Remaining weights are re-normalised.
 
 ---
 

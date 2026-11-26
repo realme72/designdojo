@@ -1,0 +1,49 @@
+dtos:
+  AuctionConfig:
+    extension_window: long
+    extension: long
+  Bid:
+    bidder: str
+    amount: long
+  BidResult:
+    highest: long
+    ends_at: long
+  AuctionResult:
+    winner: str
+    price: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  AuctionHouse:
+    create_auction:
+      params: {auction_id: str, seller: str, starting_price: long, min_increment: long, ends_at: long}
+      returns: void
+      raises: [DuplicateAuction, InvalidAuction]
+    bid:
+      params: {auction_id: str, bidder: str, amount: long}
+      returns: BidResult
+      raises: [UnknownAuction, AuctionClosed, SelfBid, BidTooLow]
+    highest:
+      params: {auction_id: str}
+      returns: Bid
+      raises: [UnknownAuction, NoBids]
+    history:
+      params: {auction_id: str}
+      returns: "list[Bid]"
+      raises: [UnknownAuction]
+    close:
+      params: {auction_id: str}
+      returns: AuctionResult
+      raises: [UnknownAuction, AuctionOpen]
+
+entrypoint:
+  name: create
+  params: {config: AuctionConfig, clock: Clock}
+  returns: AuctionHouse
+
+errors: [DuplicateAuction, InvalidAuction, UnknownAuction, AuctionClosed, SelfBid, BidTooLow, NoBids, AuctionOpen]

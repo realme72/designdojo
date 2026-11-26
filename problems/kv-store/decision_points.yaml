@@ -1,0 +1,16 @@
+- id: transactions
+  keywords: [transaction, undo, log, stack, snapshot, begin, rollback, commit]
+  question: How are nested transactions implemented?
+  good: A stack of undo logs (record the previous value on first write per key per level) or of change sets; commit merges into the parent, rollback replays the log.
+  patterns: [Command, Memento]
+- id: value_index
+  keywords: [count, index, value, counter]
+  question: How is count(value) kept fast and correct?
+  good: A value -> count index updated on every set/delete, including when undoing.
+  principles: [SRP]
+- id: separation
+  keywords: [store, data, map]
+  question: Is the storage separate from transaction bookkeeping?
+  good: One component applies writes (and maintains indexes); the transaction manager only records and replays them.
+  smells: [GOD_CLASS]
+  principles: [SRP]

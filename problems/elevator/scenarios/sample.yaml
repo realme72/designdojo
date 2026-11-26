@@ -1,0 +1,22 @@
+config: {floors: 10, elevators: 1}
+scenarios:
+  - name: hall_call_brings_elevator
+    steps:
+      - {call: call, args: {floor: 5, direction: DOWN}, expect: 1}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {id: 1, floor: 5, direction: IDLE, stops: []}}
+  - name: car_call_ride
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 3}}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 1, direction: IDLE, stops: [3]}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 2, direction: UP, stops: [3]}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 3, direction: IDLE, stops: []}}
+  - name: floor_out_of_range
+    steps:
+      - {call: call, args: {floor: 11, direction: UP}, expect_error: InvalidFloor}
+      - {call: press, args: {elevator_id: 1, floor: 0}, expect_error: InvalidFloor}

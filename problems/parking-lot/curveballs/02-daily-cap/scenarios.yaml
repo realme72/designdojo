@@ -1,0 +1,36 @@
+config:
+  floors: [{small: 2, medium: 2, large: 1}]
+  hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+scenarios:
+  - name: cap_limits_full_days_and_remainder
+    steps:
+      - {call: set_daily_cap, args: {size: MEDIUM, cap_cents: 30000}}
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - advance_clock: 108000
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 42000}}
+  - name: remainder_is_capped_too
+    steps:
+      - {call: set_daily_cap, args: {size: MEDIUM, cap_cents: 10000}}
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - advance_clock: 36000
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 10000}}
+  - name: other_sizes_unaffected
+    steps:
+      - {call: set_daily_cap, args: {size: MEDIUM, cap_cents: 100}}
+      - {call: park, args: {plate: T1, vehicle_type: TRUCK}, bind: t}
+      - advance_clock: 7200
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 10000}}
+  - name: cap_set_after_parking_applies
+    steps:
+      - {call: park, args: {plate: C1, vehicle_type: CAR}, bind: t}
+      - advance_clock: 86400
+      - {call: set_daily_cap, args: {size: MEDIUM, cap_cents: 20000}}
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 20000}}
+  - name: invalid_cap
+    steps:
+      - {call: set_daily_cap, args: {size: SMALL, cap_cents: 0}, expect_error: InvalidCap}
+  - name: short_stay_below_cap
+    steps:
+      - {call: set_daily_cap, args: {size: SMALL, cap_cents: 50000}}
+      - {call: park, args: {plate: B1, vehicle_type: BIKE}, bind: t}
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 1000}}

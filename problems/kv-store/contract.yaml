@@ -1,0 +1,32 @@
+interfaces:
+  KeyValueStore:
+    set:
+      params: {key: str, value: str}
+      returns: void
+    get:
+      params: {key: str}
+      returns: str
+      raises: [KeyNotFound]
+    delete:
+      params: {key: str}
+      returns: bool
+    count:
+      params: {value: str}
+      returns: int
+    keys:
+      params: {prefix: str}
+      returns: "list[str]"
+    begin:
+      returns: void
+    commit:
+      returns: void
+      raises: [NoTransaction]
+    rollback:
+      returns: void
+      raises: [NoTransaction]
+
+entrypoint:
+  name: create
+  returns: KeyValueStore
+
+errors: [KeyNotFound, NoTransaction]

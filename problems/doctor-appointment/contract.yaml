@@ -1,0 +1,47 @@
+dtos:
+  OpenSlot:
+    doctor_id: str
+    start: long
+  Appointment:
+    id: str
+    doctor_id: str
+    start: long
+    end: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Clinic:
+    add_doctor:
+      params: {doctor_id: str, specialty: str, slot_minutes: int}
+      returns: void
+      raises: [DuplicateDoctor]
+    add_availability:
+      params: {doctor_id: str, start: long, end: long}
+      returns: void
+      raises: [UnknownDoctor, InvalidWindow]
+    available_slots:
+      params: {specialty: str, start: long, end: long}
+      returns: "list[OpenSlot]"
+    book:
+      params: {patient: str, doctor_id: str, start: long}
+      returns: str
+      raises: [UnknownDoctor, SlotUnavailable, PatientConflict]
+    cancel:
+      params: {appointment_id: str}
+      returns: void
+      raises: [UnknownAppointment, InvalidState]
+    appointments:
+      params: {patient: str}
+      returns: "list[Appointment]"
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: Clinic
+
+errors: [DuplicateDoctor, UnknownDoctor, InvalidWindow, SlotUnavailable, PatientConflict, UnknownAppointment, InvalidState]

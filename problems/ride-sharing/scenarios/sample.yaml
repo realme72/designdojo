@@ -1,0 +1,24 @@
+config:
+  max_radius: 10
+  base_fare: {MINI: 500, SEDAN: 800, SUV: 1200}
+  per_unit: {MINI: 100, SEDAN: 150, SUV: 200}
+scenarios:
+  - name: nearest_driver_assigned
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: SEDAN, x: 5, y: 5}}
+      - {call: add_driver, args: {driver_id: d2, vehicle: SEDAN, x: 1, y: 1}}
+      - call: request_ride
+        args: {rider: r1, vehicle: SEDAN, x: 0, y: 0, dest_x: 3, dest_y: 4}
+        expect: {rider: r1, driver: d2, vehicle: SEDAN, status: ASSIGNED, fare: 0}
+      - {call: driver_status, args: {driver_id: d2}, expect: ON_TRIP}
+  - name: full_trip_fare
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: MINI, x: 0, y: 0, dest_x: 3, dest_y: -4}, bind: t}
+      - {call: start_trip, args: {trip_id: $t.id}, expect: {status: STARTED}}
+      - {call: end_trip, args: {trip_id: $t.id}, expect: {status: COMPLETED, fare: 1200}}
+      - {call: driver_status, args: {driver_id: d1}, expect: AVAILABLE}
+  - name: no_driver_of_class
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: MINI, x: 0, y: 0}}
+      - {call: request_ride, args: {rider: r1, vehicle: SUV, x: 0, y: 0, dest_x: 1, dest_y: 1}, expect_error: NoDriverAvailable}

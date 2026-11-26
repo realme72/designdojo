@@ -1,0 +1,58 @@
+enums:
+  Category: [HATCHBACK, SEDAN, SUV]
+  RentalStatus: [RESERVED, ACTIVE, RETURNED, CANCELLED]
+
+dtos:
+  RentalConfig:
+    late_multiplier: int
+    free_km_per_day: long
+    per_km: long
+  Rental:
+    id: str
+    car_id: str
+    status: RentalStatus
+  Bill:
+    base: long
+    late_fee: long
+    mileage_fee: long
+    total: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  CarRental:
+    add_car:
+      params: {car_id: str, branch: str, category: Category, daily_rate: long, odometer: long}
+      returns: void
+      raises: [DuplicateCar]
+    available:
+      params: {branch: str, category: Category, pickup_day: long, return_day: long}
+      returns: "list[str]"
+      raises: [InvalidDates]
+    reserve:
+      params: {customer: str, branch: str, category: Category, pickup_day: long, return_day: long}
+      returns: Rental
+      raises: [InvalidDates, NoCarAvailable]
+    pick_up:
+      params: {rental_id: str}
+      returns: Rental
+      raises: [UnknownRental, InvalidState]
+    return_car:
+      params: {rental_id: str, odometer: long}
+      returns: Bill
+      raises: [UnknownRental, InvalidState, InvalidOdometer]
+    cancel:
+      params: {rental_id: str}
+      returns: Rental
+      raises: [UnknownRental, InvalidState]
+
+entrypoint:
+  name: create
+  params: {config: RentalConfig, clock: Clock}
+  returns: CarRental
+
+errors: [DuplicateCar, InvalidDates, NoCarAvailable, UnknownRental, InvalidState, InvalidOdometer]

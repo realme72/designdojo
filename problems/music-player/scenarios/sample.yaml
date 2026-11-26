@@ -1,0 +1,32 @@
+scenarios:
+  - name: plays_in_order
+    steps:
+      - {call: add_song, args: {song_id: s1}}
+      - {call: add_song, args: {song_id: s2}}
+      - {call: create_playlist, args: {name: mix}}
+      - {call: add_to_playlist, args: {name: mix, song_id: s1}}
+      - {call: add_to_playlist, args: {name: mix, song_id: s2}}
+      - {call: play, args: {name: mix}, expect: s1}
+      - {call: next, expect: s2}
+      - {call: next, expect: ""}
+      - {call: current, expect_error: NothingPlaying}
+  - name: queue_plays_first
+    steps:
+      - {call: add_song, args: {song_id: s1}}
+      - {call: add_song, args: {song_id: s2}}
+      - {call: add_song, args: {song_id: q}}
+      - {call: create_playlist, args: {name: mix}}
+      - {call: add_to_playlist, args: {name: mix, song_id: s1}}
+      - {call: add_to_playlist, args: {name: mix, song_id: s2}}
+      - {call: play, args: {name: mix}}
+      - {call: enqueue, args: {song_id: q}}
+      - {call: next, expect: q}
+      - {call: next, expect: s2}
+  - name: repeat_all_wraps
+    steps:
+      - {call: add_song, args: {song_id: s1}}
+      - {call: create_playlist, args: {name: mix}}
+      - {call: add_to_playlist, args: {name: mix, song_id: s1}}
+      - {call: set_repeat, args: {mode: ALL}}
+      - {call: play, args: {name: mix}}
+      - {call: next, expect: s1}

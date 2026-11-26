@@ -1,0 +1,76 @@
+config: {failure_threshold: 2, open_seconds: 10, trial_requests: 2}
+scenarios:
+  - name: still_open_before_timeout
+    steps:
+      - {call: record_failure, args: {service: s}}
+      - {call: record_failure, args: {service: s}}
+      - advance_clock: 9
+      - {call: allow_request, args: {service: s}, expect: false}
+      - {call: state, args: {service: s}, expect: OPEN}
+  - name: half_open_failure_reopens_and_restarts_timer
+    steps:
+      - {call: record_failure, args: {service: s}}
+      - {call: record_failure, args: {service: s}}
+      - advance_clock: 10
+      - {call: allow_request, args: {service: s}, expect: true}
+      - {call: record_failure, args: {service: s}}
+      - {call: state, args: {service: s}, expect: OPEN}
+      - advance_clock: 9
+      - {call: allow_request, args: {service: s}, expect: false}
+      - advance_clock: 1
+      - {call: allow_request, args: {service: s}, expect: true}
+  - name: trial_permits_are_limited
+    steps:
+      - {call: record_failure, args: {service: s}}
+      - {call: record_failure, args: {service: s}}
+      - advance_clock: 10
+      - {call: allow_request, args: {service: s}, expect: true}
+      - {call: allow_request, args: {service: s}, expect: true}
+      - {call: allow_request, args: {service: s}, expect: false}
+      - {call: record_success, args: {service: s}}
+      - {call: state, args: {service: s}, expect: HALF_OPEN}
+      - {call: record_success, args: {service: s}}
+      - {call: state, args: {service: s}, expect: CLOSED}
+  - name: closed_after_half_open_resets_failures
+    steps:
+      - {call: record_failure, args: {service: s}}
+      - {call: record_failure, args: {service: s}}
+      - advance_clock: 10
+      - {call: allow_request, args: {service: s}}
+      - {call: record_success, args: {service: s}}
+      - {call: allow_request, args: {service: s}}
+      - {call: record_success, args: {service: s}}
+      - {call: record_failure, args: {service: s}}
+      - {call: state, args: {service: s}, expect: CLOSED}
+      - {call: record_failure, args: {service: s}}
+      - {call: state, args: {service: s}, expect: OPEN}
+  - name: results_ignored_while_open
+    steps:
+      - {call: record_failure, args: {service: s}}
+      - {call: record_failure, args: {service: s}}
+      - {call: record_success, args: {service: s}}
+      - {call: record_success, args: {service: s}}
+      - {call: state, args: {service: s}, expect: OPEN}
+      - advance_clock: 5
+      - {call: record_failure, args: {service: s}}
+      - advance_clock: 5
+      - {call: state, args: {service: s}, expect: HALF_OPEN}
+  - name: services_are_independent
+    steps:
+      - {call: record_failure, args: {service: a}}
+      - {call: record_failure, args: {service: a}}
+      - {call: state, args: {service: a}, expect: OPEN}
+      - {call: state, args: {service: b}, expect: CLOSED}
+      - {call: allow_request, args: {service: b}, expect: true}
+  - name: new_permits_after_reopen
+    steps:
+      - {call: record_failure, args: {service: s}}
+      - {call: record_failure, args: {service: s}}
+      - advance_clock: 10
+      - {call: allow_request, args: {service: s}, expect: true}
+      - {call: allow_request, args: {service: s}, expect: true}
+      - {call: record_failure, args: {service: s}}
+      - advance_clock: 10
+      - {call: allow_request, args: {service: s}, expect: true}
+      - {call: allow_request, args: {service: s}, expect: true}
+      - {call: allow_request, args: {service: s}, expect: false}

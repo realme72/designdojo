@@ -1,0 +1,26 @@
+- id: board_model
+  keywords: [snake, ladder, jump, board, square, cell]
+  question: How are snakes and ladders modelled?
+  good: One "jump" concept (start -> end) on the board, or a polymorphic square; the move logic doesn't branch on snake vs ladder.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+- id: turns
+  keywords: [turn, next, player, order, six, extra]
+  question: Where do turn order and the extra-turn rule live?
+  good: A small turn manager (queue/index) separate from board movement; rules like "6 gives another turn" are in one place.
+  principles: [SRP]
+- id: game_state
+  keywords: [over, won, winner, started, state]
+  question: How are game phases (waiting, playing, over) handled?
+  good: Explicit phase/state checked once per operation, not booleans sprinkled around.
+  smells: [STATE_FLAG]
+  patterns: [State]
+- id: dice
+  keywords: [dice, roll, random]
+  question: How does randomness enter the engine?
+  good: Rolls are inputs (or an injected Dice), so the engine is deterministic and testable.
+  principles: [DIP]
+- id: overengineering
+  question: Is anything abstracted without a reason to vary?
+  good: No factories/singletons for a single board type.
+  smells: [SPECULATIVE_PATTERN]

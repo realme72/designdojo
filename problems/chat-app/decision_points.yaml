@@ -1,0 +1,18 @@
+- id: storage_model
+  keywords: [inbox, log, conversation, fanout, pointer, read]
+  question: Where are messages stored and how is "unread" computed?
+  good: One log per conversation plus per-user read pointers (or per-user inboxes); a deliberate fan-out choice explained.
+- id: permissions
+  keywords: [admin, permission, forbidden, role, owner]
+  question: Where do group permission checks live?
+  good: A small policy/role check reused by add/remove/promote, not repeated inline.
+  principles: [SRP, OCP]
+- id: membership_window
+  keywords: [joined, member, visible, window, since]
+  question: How do members see only messages from their membership period?
+  good: Membership intervals recorded per user; visibility is filtered by message sequence.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are appends and unread counts consistent under load?
+  good: Appending to a conversation (sequence assignment) is atomic; unread derives from sequence vs read pointer.
+  smells: [UNGUARDED_SHARED]

@@ -1,0 +1,21 @@
+- id: win_detection
+  keywords: [win, count, row, col, diagonal, check, scan]
+  question: How is a win detected after each move?
+  good: Per-player counters for each row, column and both diagonals updated in O(1) per move, instead of rescanning the board.
+  smells: [GOD_CLASS]
+- id: board_vs_rules
+  keywords: [board, cell, grid, rules, game]
+  question: Are the board (storage) and the game rules (turns, win/draw) separate?
+  good: Board stores cells; Game enforces turns and outcome. Rules can change without touching storage.
+  principles: [SRP]
+- id: game_state
+  keywords: [state, over, won, draw, progress]
+  question: How are game outcome and phase represented?
+  good: One state value (enum) that every operation checks, not several booleans.
+  smells: [STATE_FLAG]
+- id: players
+  keywords: [player, turn, mark, next]
+  question: How hard would it be to add a third player or a computer player?
+  good: Turn order is a small abstraction (list/cycle of players), not hard-coded X/O branches.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]

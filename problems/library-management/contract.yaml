@@ -1,0 +1,62 @@
+dtos:
+  LibraryConfig:
+    max_loans: int
+    loan_days: int
+    fine_per_day: long
+  Loan:
+    id: str
+    member_id: str
+    isbn: str
+    due_at: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Library:
+    add_book:
+      params: {isbn: str, title: str, author: str, copies: int}
+      returns: void
+      raises: [InvalidCopies]
+    add_member:
+      params: {member_id: str}
+      returns: void
+      raises: [DuplicateMember]
+    checkout:
+      params: {member_id: str, isbn: str}
+      returns: Loan
+      raises: [UnknownMember, UnknownBook, OutstandingFines, LoanLimitReached, NotAvailable]
+    return_book:
+      params: {loan_id: str}
+      returns: long
+      raises: [UnknownLoan]
+      doc: Returns the fine incurred by this loan (cents).
+    pay_fine:
+      params: {member_id: str, amount: long}
+      returns: long
+      raises: [UnknownMember, InvalidAmount]
+    fines:
+      params: {member_id: str}
+      returns: long
+      raises: [UnknownMember]
+    available:
+      params: {isbn: str}
+      returns: int
+      raises: [UnknownBook]
+    loans:
+      params: {member_id: str}
+      returns: "list[Loan]"
+      raises: [UnknownMember]
+    search:
+      params: {query: str}
+      returns: "list[str]"
+
+entrypoint:
+  name: create
+  params: {config: LibraryConfig, clock: Clock}
+  returns: Library
+
+errors: [InvalidCopies, DuplicateMember, UnknownMember, UnknownBook, OutstandingFines, LoanLimitReached, NotAvailable, UnknownLoan, InvalidAmount]

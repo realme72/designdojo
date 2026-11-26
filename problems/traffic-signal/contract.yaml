@@ -1,0 +1,38 @@
+enums:
+  Direction: [NS, EW]
+  Color: [GREEN, YELLOW, RED]
+  Phase: [NS_GREEN, NS_YELLOW, ALL_RED_TO_EW, EW_GREEN, EW_YELLOW, ALL_RED_TO_NS, FLASHING]
+  Mode: [NORMAL, FLASHING]
+
+dtos:
+  SignalConfig:
+    green: long
+    yellow: long
+    all_red: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  TrafficSignal:
+    phase:
+      returns: Phase
+    remaining:
+      returns: long
+    light:
+      params: {direction: Direction}
+      returns: Color
+    emergency:
+      params: {direction: Direction}
+      returns: void
+    set_mode:
+      params: {mode: Mode}
+      returns: void
+
+entrypoint:
+  name: create
+  params: {config: SignalConfig, clock: Clock}
+  returns: TrafficSignal

@@ -1,0 +1,56 @@
+dtos:
+  Message:
+    id: str
+    from_user: str
+    text: str
+  Unread:
+    conversation: str
+    count: long
+
+interfaces:
+  Chat:
+    send_direct:
+      params: {from_user: str, to_user: str, text: str}
+      returns: str
+      raises: [InvalidMessage, Blocked]
+    create_group:
+      params: {group_id: str, owner: str}
+      returns: void
+      raises: [DuplicateGroup]
+    add_member:
+      params: {group_id: str, by: str, user: str}
+      returns: void
+      raises: [UnknownGroup, Forbidden]
+    remove_member:
+      params: {group_id: str, by: str, user: str}
+      returns: void
+      raises: [UnknownGroup, Forbidden, NotMember]
+    promote:
+      params: {group_id: str, by: str, user: str}
+      returns: void
+      raises: [UnknownGroup, Forbidden, NotMember]
+    send_group:
+      params: {group_id: str, from_user: str, text: str}
+      returns: str
+      raises: [UnknownGroup, NotMember, InvalidMessage]
+    messages:
+      params: {user: str, conversation: str}
+      returns: "list[Message]"
+    unread:
+      params: {user: str}
+      returns: "list[Unread]"
+    mark_read:
+      params: {user: str, conversation: str}
+      returns: void
+    block:
+      params: {user: str, other: str}
+      returns: void
+    unblock:
+      params: {user: str, other: str}
+      returns: void
+
+entrypoint:
+  name: create
+  returns: Chat
+
+errors: [InvalidMessage, Blocked, DuplicateGroup, UnknownGroup, Forbidden, NotMember]

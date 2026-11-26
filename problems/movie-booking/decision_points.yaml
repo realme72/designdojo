@@ -1,0 +1,26 @@
+- id: seat_lifecycle
+  keywords: [state, held, booked, available, status, seat]
+  question: How is a seat's lifecycle (available, held, booked) modelled?
+  good: Explicit seat states with transitions in one place; expiry is a rule about holds, not scattered checks.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: hold_expiry
+  keywords: [expire, expiry, hold, seconds, clock, now]
+  question: How do holds expire?
+  good: Lazily, by comparing the injected clock at read/write time; no timers or background threads needed.
+  smells: [DIRECT_TIME]
+  principles: [DIP]
+- id: atomic_hold
+  keywords: [lock, synchronized, atomic, all, nothing, rollback]
+  question: How are multi-seat holds made all-or-nothing and race-free?
+  good: Check and claim all seats under one lock (per show), so no partial holds and no double holds; locks are never held across unrelated shows.
+  smells: [UNGUARDED_SHARED]
+- id: model
+  keywords: [show, booking, hold, seat]
+  question: Are shows, holds and bookings separate concepts?
+  good: Show owns seats; Hold and Booking are separate records referencing seats, with their own ids.
+  principles: [SRP]
+- id: overengineering
+  question: Is anything abstracted without a reason to vary?
+  good: No speculative factories or singletons.
+  smells: [SPECULATIVE_PATTERN]

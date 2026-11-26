@@ -1,0 +1,56 @@
+config: {hold_seconds: 100}
+scenarios:
+  - name: too_big_for_any_locker
+    steps:
+      - {call: add_locker, args: {locker_id: s, size: SMALL}}
+      - {call: deposit, args: {package_id: p, size: MEDIUM, code: c}, expect_error: NoLockerAvailable}
+      - {call: free_count, args: {size: SMALL}, expect: 1}
+  - name: tie_lowest_id
+    steps:
+      - {call: add_locker, args: {locker_id: L2, size: SMALL}}
+      - {call: add_locker, args: {locker_id: L1, size: SMALL}}
+      - {call: deposit, args: {package_id: p, size: SMALL, code: c}, expect: L1}
+  - name: duplicates
+    steps:
+      - {call: add_locker, args: {locker_id: a, size: LARGE}}
+      - {call: add_locker, args: {locker_id: a, size: SMALL}, expect_error: DuplicateLocker}
+      - {call: add_locker, args: {locker_id: b, size: LARGE}}
+      - {call: deposit, args: {package_id: p, size: SMALL, code: c1}}
+      - {call: deposit, args: {package_id: p, size: SMALL, code: c2}, expect_error: DuplicatePackage}
+      - {call: deposit, args: {package_id: q, size: SMALL, code: c1}, expect_error: DuplicateCode}
+      - {call: free_count, args: {size: LARGE}, expect: 1}
+  - name: code_single_use
+    steps:
+      - {call: add_locker, args: {locker_id: a, size: SMALL}}
+      - {call: deposit, args: {package_id: p, size: SMALL, code: c}}
+      - {call: pickup, args: {code: c}, expect: p}
+      - {call: pickup, args: {code: c}, expect_error: InvalidCode}
+      - {call: deposit, args: {package_id: p2, size: SMALL, code: c}, expect: a}
+  - name: expiry_boundary
+    steps:
+      - {call: add_locker, args: {locker_id: a, size: SMALL}}
+      - {call: deposit, args: {package_id: p, size: SMALL, code: c}}
+      - advance_clock: 99
+      - {call: pickup, args: {code: c}, expect: p}
+  - name: expired_pickup_and_reclaim
+    steps:
+      - {call: add_locker, args: {locker_id: a, size: SMALL}}
+      - {call: add_locker, args: {locker_id: b, size: SMALL}}
+      - {call: deposit, args: {package_id: zeta, size: SMALL, code: c1}}
+      - advance_clock: 50
+      - {call: deposit, args: {package_id: alpha, size: SMALL, code: c2}}
+      - advance_clock: 50
+      - {call: pickup, args: {code: c1}, expect_error: Expired}
+      - {call: reclaim_expired, expect: [zeta]}
+      - {call: free_count, args: {size: SMALL}, expect: 1}
+      - {call: pickup, args: {code: c1}, expect_error: InvalidCode}
+      - advance_clock: 50
+      - {call: reclaim_expired, expect: [alpha]}
+      - {call: reclaim_expired, expect: []}
+  - name: freed_locker_reused
+    steps:
+      - {call: add_locker, args: {locker_id: a, size: MEDIUM}}
+      - {call: deposit, args: {package_id: p1, size: MEDIUM, code: x}}
+      - {call: deposit, args: {package_id: p2, size: SMALL, code: y}, expect_error: NoLockerAvailable}
+      - {call: pickup, args: {code: x}}
+      - {call: deposit, args: {package_id: p2, size: SMALL, code: y}, expect: a}

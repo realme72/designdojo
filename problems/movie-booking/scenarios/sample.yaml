@@ -1,0 +1,21 @@
+config: {hold_seconds: 300}
+scenarios:
+  - name: hold_then_confirm
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 2, cols: 3}}
+      - {call: hold, args: {show_id: S1, user: u1, seats: [A2, A1]}, bind: h}
+      - {call: available, args: {show_id: S1}, expect: 4}
+      - {call: confirm, args: {hold_id: $h}, expect: {show_id: S1, user: u1, seats: [A1, A2]}}
+      - {call: seat_state, args: {show_id: S1, seat: A1}, expect: BOOKED}
+  - name: held_seat_is_unavailable
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 2, cols: 3}}
+      - {call: hold, args: {show_id: S1, user: u1, seats: [B2]}}
+      - {call: hold, args: {show_id: S1, user: u2, seats: [B2]}, expect_error: SeatUnavailable}
+  - name: hold_expires
+    steps:
+      - {call: add_show, args: {show_id: S1, rows: 1, cols: 2}}
+      - {call: hold, args: {show_id: S1, user: u1, seats: [A1]}, bind: h}
+      - advance_clock: 300
+      - {call: seat_state, args: {show_id: S1, seat: A1}, expect: AVAILABLE}
+      - {call: confirm, args: {hold_id: $h}, expect_error: HoldExpired}

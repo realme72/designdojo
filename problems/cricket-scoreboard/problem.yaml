@@ -1,0 +1,7 @@
+id: cricket-scoreboard
+title: Cricket Scoreboard (Cricbuzz)
+difficulty: medium
+category: Games
+time_limit_min: 50
+statement: statement.md
+tags: [rules, state, modeling]

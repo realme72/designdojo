@@ -1,0 +1,20 @@
+- id: feed_generation
+  keywords: [feed, merge, heap, timeline, newest, fanout]
+  question: How is a feed assembled?
+  good: Per-user timelines (newest last) merged with a heap, stopping after `limit`; no global scan. Fan-out strategy is swappable.
+  patterns: [Strategy]
+- id: graph
+  keywords: [follow, followers, following, graph]
+  question: How is the follow graph stored?
+  good: user -> set of followees (and optionally followers), separate from posts.
+  principles: [SRP]
+- id: ranking
+  keywords: [rank, order, recent, score]
+  question: Where would ranking plug in?
+  good: Ordering is a strategy over candidate posts (recency today, engagement-weighted later).
+  principles: [OCP]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are likes idempotent under races?
+  good: The set of likers and the count change atomically per post.
+  smells: [UNGUARDED_SHARED]

@@ -1,0 +1,57 @@
+config: {capacity: 3}
+scenarios:
+  - name: update_refreshes_without_evicting
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: put, args: {key: a, value: "10"}}
+      - {call: size, expect: 3}
+      - {call: keys, expect: [a, c, b]}
+      - {call: put, args: {key: d, value: "4"}}
+      - {call: get, args: {key: b}, expect_error: CacheMiss}
+      - {call: get, args: {key: a}, expect: "10"}
+  - name: capacity_one
+    config: {capacity: 1}
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: keys, expect: [b]}
+      - {call: get, args: {key: b}, expect: "2"}
+  - name: delete_existing_and_missing
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: delete, args: {key: a}, expect: true}
+      - {call: delete, args: {key: a}, expect: false}
+      - {call: size, expect: 0}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+  - name: delete_frees_a_slot
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: delete, args: {key: b}}
+      - {call: put, args: {key: d, value: "4"}}
+      - {call: keys, expect: [d, c, a]}
+  - name: miss_does_not_change_order
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: get, args: {key: zz}, expect_error: CacheMiss}
+      - {call: keys, expect: [b, a]}
+  - name: long_sequence
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: a}}
+      - {call: get, args: {key: b}}
+      - {call: put, args: {key: d, value: "4"}}
+      - {call: put, args: {key: e, value: "5"}}
+      - {call: keys, expect: [e, d, b]}
+      - {call: get, args: {key: c}, expect_error: CacheMiss}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+  - name: empty_string_values
+    steps:
+      - {call: put, args: {key: a, value: ""}}
+      - {call: get, args: {key: a}, expect: ""}

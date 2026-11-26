@@ -1,0 +1,55 @@
+config: {rows: 4, cols: 5, mines: [[0, 4], [3, 0], [1, 2]]}
+scenarios:
+  - name: flood_stops_at_numbers
+    steps:
+      - {call: reveal, args: {row: 0, col: 0}, expect: 6}
+      - {call: view, expect: ["01###", "01###", "12###", "#####"]}
+      - {call: reveal, args: {row: 3, col: 4}, expect: 9}
+      - {call: view, expect: ["01###", "01#21", "12110", "#1000"]}
+      - {call: state, expect: PLAYING}
+  - name: flags_block_flood_and_reveal
+    steps:
+      - {call: toggle_flag, args: {row: 1, col: 0}}
+      - {call: reveal, args: {row: 1, col: 0}, expect_error: InvalidMove}
+      - {call: reveal, args: {row: 0, col: 0}, expect: 3}
+      - {call: view, expect: ["01###", "F1###", "#####", "#####"]}
+      - {call: toggle_flag, args: {row: 1, col: 0}}
+      - {call: reveal, args: {row: 1, col: 0}, expect: 3}
+  - name: win_by_revealing_all_safe
+    steps:
+      - {call: reveal, args: {row: 0, col: 0}}
+      - {call: reveal, args: {row: 3, col: 4}}
+      - {call: reveal, args: {row: 0, col: 2}, expect: 1}
+      - {call: state, expect: PLAYING}
+      - {call: reveal, args: {row: 0, col: 3}, expect: 1}
+      - {call: state, expect: WON}
+      - {call: reveal, args: {row: 1, col: 2}, expect_error: GameOver}
+  - name: lost_reveals_all_mines
+    steps:
+      - {call: toggle_flag, args: {row: 3, col: 0}}
+      - {call: reveal, args: {row: 0, col: 4}}
+      - {call: state, expect: LOST}
+      - {call: view, expect: ["####*", "##*##", "#####", "*####"]}
+      - {call: toggle_flag, args: {row: 2, col: 2}, expect_error: GameOver}
+  - name: invalid_moves
+    steps:
+      - {call: reveal, args: {row: 4, col: 0}, expect_error: InvalidMove}
+      - {call: reveal, args: {row: 0, col: -1}, expect_error: InvalidMove}
+      - {call: reveal, args: {row: 2, col: 2}, expect: 1}
+      - {call: reveal, args: {row: 2, col: 2}, expect_error: InvalidMove}
+      - {call: toggle_flag, args: {row: 2, col: 2}, expect_error: InvalidMove}
+  - name: number_next_to_two_mines
+    config: {rows: 2, cols: 3, mines: [[0, 0], [0, 2]]}
+    steps:
+      - {call: reveal, args: {row: 0, col: 1}, expect: 1}
+      - {call: view, expect: ["#2#", "###"]}
+  - name: no_mines_one_click_win
+    config: {rows: 2, cols: 2, mines: []}
+    steps:
+      - {call: reveal, args: {row: 0, col: 0}, expect: 4}
+      - {call: state, expect: WON}
+  - name: large_board_flood_is_iterative
+    config: {rows: 300, cols: 300, mines: [[299, 299]]}
+    steps:
+      - {call: reveal, args: {row: 0, col: 0}, expect: 89999}
+      - {call: state, expect: WON}

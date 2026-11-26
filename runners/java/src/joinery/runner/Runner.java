@@ -325,15 +325,53 @@ public final class Runner {
                         return Failure.of(n, "assertion", "wrong number of " + e.getKey() + " errors").with(map("error_count", a.get("error_count")), summary);
                 }
             }
+            if (a.containsKey("flat_count") || a.containsKey("flat_unique")) {
+                List<Object> items = new ArrayList<>();
+                for (Object r : rs) {
+                    Map<String, Object> m = (Map<String, Object>) r;
+                    if (m.containsKey("ok") && m.get("ok") instanceof List) items.addAll((List<Object>) m.get("ok"));
+                }
+                if (a.containsKey("flat_count") && items.size() != num(a.get("flat_count")))
+                    return Failure.of(n, "assertion", "wrong total number of items across all results")
+                            .with(map("flat_count", a.get("flat_count")), map("flat_count", (long) items.size()));
+                if (a.containsKey("flat_unique")) {
+                    String f = (String) a.get("flat_unique");
+                    Set<String> seen = new HashSet<>();
+                    for (Object x : items) {
+                        Object v = ".".equals(f) ? x : ((Map<String, Object>) x).get(f);
+                        if (!seen.add(Json.write(v)))
+                            return Failure.of(n, "assertion", "items delivered more than once: " + Json.write(v))
+                                    .with(map("flat_unique", f), map("duplicate", v));
+                    }
+                }
+            }
+            if (a.containsKey("value_count")) {
+                Map<String, Object> counts = new LinkedHashMap<>();
+                for (Object r : rs) {
+                    Map<String, Object> m = (Map<String, Object>) r;
+                    if (m.containsKey("ok")) counts.merge(Json.write(canonical(m.get("ok"))), 1L, (x, y) -> (Long) x + (Long) y);
+                }
+                for (Map.Entry<String, Object> e : ((Map<String, Object>) a.get("value_count")).entrySet()) {
+                    long got = counts.containsKey(e.getKey()) ? (Long) counts.get(e.getKey()) : 0;
+                    if (got != num(e.getValue()))
+                        return Failure.of(n, "assertion", "wrong number of calls returning " + e.getKey())
+                                .with(map("value_count", a.get("value_count")), map("value_count", counts));
+                }
+            }
             if (a.containsKey("unique")) {
                 Object u = a.get("unique");
                 List<Object> fields = u instanceof List ? (List<Object>) u : List.of(u);
                 for (Object f : fields) {
                     Set<Object> seen = new HashSet<>();
-                    for (Map<String, Object> m : oks) {
-                        if (!seen.add(m.get(f)))
-                            return Failure.of(n, "assertion", "duplicate " + f + " among successful results: " + m.get(f))
-                                    .with(map("unique", f), map("duplicate", m.get(f)));
+                    for (Object r : rs) {
+                        Map<String, Object> rm = (Map<String, Object>) r;
+                        if (!rm.containsKey("ok")) continue;
+                        Object okv = rm.get("ok");
+                        Object v = ".".equals(f) ? okv : (okv instanceof Map ? ((Map<String, Object>) okv).get(f) : null);
+                        String key = Json.write(v);
+                        if (!seen.add(key))
+                            return Failure.of(n, "assertion", "duplicate " + f + " among successful results: " + key)
+                                    .with(map("unique", f), map("duplicate", v));
                     }
                 }
             }
@@ -344,7 +382,16 @@ public final class Runner {
 
         Object resolve(Object v, int i) {
             if (v instanceof String s) {
-                if (i >= 0) s = s.replace("{i}", Integer.toString(i));
+                if (i >= 0) {
+                    Matcher tm = Pattern.compile("\\{i(?:\\+(\\d+))?}").matcher(s);
+                    StringBuilder sb = new StringBuilder();
+                    while (tm.find()) {
+                        int off = tm.group(1) == null ? 0 : Integer.parseInt(tm.group(1));
+                        tm.appendReplacement(sb, Integer.toString(i + off));
+                    }
+                    tm.appendTail(sb);
+                    s = sb.toString();
+                }
                 return s.startsWith("$") ? lookup(s) : s;
             }
             if (v instanceof Map<?, ?> m) {
@@ -578,7 +625,25 @@ public final class Runner {
         }
     }
 
-    static long num(Object o) { return ((Number) o).longValue(); }
+    /** Sorted map keys, recursively: Json.write of this matches Python's sort_keys + compact separators. */
+    static Object canonical(Object v) {
+        if (v instanceof Map<?, ?> m) {
+            java.util.TreeMap<String, Object> out = new java.util.TreeMap<>();
+            for (Map.Entry<?, ?> e : m.entrySet()) out.put(String.valueOf(e.getKey()), canonical(e.getValue()));
+            return out;
+        }
+        if (v instanceof List<?> l) {
+            List<Object> out = new ArrayList<>();
+            for (Object o : l) out.add(canonical(o));
+            return out;
+        }
+        return v;
+    }
+
+    static long num(Object o) {
+        if (o instanceof String s) return Long.parseLong(s.trim());  // templated "{i+1}" args
+        return ((Number) o).longValue();
+    }
 
     static String camel(String s) {
         StringBuilder b = new StringBuilder();

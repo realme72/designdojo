@@ -1,0 +1,27 @@
+- id: order_lifecycle
+  keywords: [status, transition, state, accepted, ready, delivered, cancel]
+  question: How is the order state machine expressed?
+  good: One transition table (or State objects) defines legal moves; each action just requests a transition.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: notifications
+  keywords: [notify, notification, listener, observer, subscriber, event]
+  question: How do status changes reach customers?
+  good: Order emits status-change events to registered listeners; adding SMS/push is a new listener, not an edit to order code.
+  principles: [OCP]
+  patterns: [Observer]
+- id: assignment
+  keywords: [agent, assign, free, waiting, queue, dispatch]
+  question: Where does agent assignment live?
+  good: A dispatcher owns free agents and the FIFO of waiting orders, with a pluggable selection strategy.
+  principles: [SRP]
+  patterns: [Strategy]
+- id: catalog
+  keywords: [menu, item, price, restaurant, available]
+  question: Are menus/catalog separate from orders?
+  good: Restaurants own menus; an order snapshots prices at placement time.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What stops an agent being given two orders?
+  good: Taking a free agent and attaching them to an order is atomic.
+  smells: [UNGUARDED_SHARED]

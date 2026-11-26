@@ -1,0 +1,29 @@
+- id: domain_model
+  keywords: [book, copy, member, loan, catalog]
+  question: Are Book, copies, Member and Loan modelled as separate concepts?
+  good: Catalog (books + copy counts), members, and loans are distinct; a Loan links member and book with its own lifecycle.
+  smells: [GOD_CLASS]
+  principles: [SRP]
+- id: fine_policy
+  keywords: [fine, late, days, per, day, policy]
+  question: Where does the fine rule live?
+  good: A fine policy object/function computes the fine from due date and return time; swapping policy per member tier is a new class.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: eligibility
+  keywords: [limit, eligible, outstanding, check, rule]
+  question: How are checkout rules (fines, loan limit, availability) organised?
+  good: Checks run in a defined order before any state changes; easy to add a rule (e.g. membership expiry).
+  patterns: [Chain of Responsibility]
+- id: time
+  keywords: [clock, now, due, time]
+  question: Where does time come from?
+  good: Only the injected Clock.
+  smells: [DIRECT_TIME]
+  principles: [DIP]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents lending the last copy twice or exceeding a member's limit?
+  good: Check-and-take of a copy and the member's loan count happen atomically.
+  smells: [UNGUARDED_SHARED]

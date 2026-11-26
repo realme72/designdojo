@@ -1,0 +1,58 @@
+config: {root_level: WARN}
+scenarios:
+  - name: hierarchy_most_specific_wins
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{logger}:{message}"}}
+      - {call: set_level, args: {logger: app, level: INFO}}
+      - {call: set_level, args: {logger: app.db, level: ERROR}}
+      - {call: log, args: {logger: app.http, level: INFO, message: "1"}, expect: 1}
+      - {call: log, args: {logger: app.db.pool, level: WARN, message: "2"}, expect: 0}
+      - {call: log, args: {logger: app.db.pool, level: ERROR, message: "3"}, expect: 1}
+      - {call: log, args: {logger: other, level: INFO, message: "4"}, expect: 0}
+      - {call: output, args: {name: s}, expect: ["app.http:1", "app.db.pool:3"]}
+  - name: prefix_is_not_parent
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{message}"}}
+      - {call: set_level, args: {logger: app, level: DEBUG}}
+      - {call: log, args: {logger: apple, level: INFO, message: x}, expect: 0}
+      - {call: log, args: {logger: app, level: DEBUG, message: y}, expect: 1}
+  - name: lowering_child_below_parent
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{message}"}}
+      - {call: set_level, args: {logger: app, level: ERROR}}
+      - {call: set_level, args: {logger: app.verbose, level: DEBUG}}
+      - {call: log, args: {logger: app.verbose.x, level: DEBUG, message: m}, expect: 1}
+  - name: root_level_change
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{message}"}}
+      - {call: set_level, args: {logger: "", level: DEBUG}}
+      - {call: log, args: {logger: any.thing, level: DEBUG, message: m}, expect: 1}
+  - name: all_placeholders_and_literals
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{time}|{level}|{logger}|{message}|end"}}
+      - {call: log, args: {logger: a.b, level: FATAL, message: boom}}
+      - {call: output, args: {name: s}, expect: ["1700000000|FATAL|a.b|boom|end"]}
+  - name: invalid_format
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{msg}"}, expect_error: InvalidFormat}
+      - {call: output, args: {name: s}, expect_error: UnknownSink}
+  - name: duplicate_and_unknown_sinks
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{message}"}}
+      - {call: add_sink, args: {name: s, min_level: INFO, format: "{message}"}, expect_error: DuplicateSink}
+      - {call: remove_sink, args: {name: nope}, expect_error: UnknownSink}
+  - name: removed_sink_stops_receiving
+    steps:
+      - {call: add_sink, args: {name: a, min_level: DEBUG, format: "{message}"}}
+      - {call: add_sink, args: {name: b, min_level: DEBUG, format: "{message}"}}
+      - {call: remove_sink, args: {name: a}}
+      - {call: log, args: {logger: x, level: FATAL, message: m}, expect: 1}
+      - {call: output, args: {name: a}, expect_error: UnknownSink}
+  - name: no_sinks
+    steps:
+      - {call: log, args: {logger: x, level: FATAL, message: m}, expect: 0}
+  - name: message_with_braces_is_literal
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{message}"}}
+      - {call: log, args: {logger: x, level: ERROR, message: "{level} {oops}"}}
+      - {call: output, args: {name: s}, expect: ["{level} {oops}"]}

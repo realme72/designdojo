@@ -1,0 +1,64 @@
+config: {rows: 3, cols: 3, food: [[1, 2], [0, 1]]}
+scenarios:
+  - name: second_food_appears_after_first
+    steps:
+      - {call: move, args: {direction: RIGHT}}
+      - {call: move, args: {direction: DOWN}}
+      - {call: move, args: {direction: RIGHT}}
+      - {call: move, args: {direction: UP}, expect: {score: 1}}
+      - {call: move, args: {direction: LEFT}, expect: {score: 2, alive: true}}
+      - {call: body, expect: [[0, 1], [0, 2], [1, 2]]}
+  - name: food_not_eaten_before_it_appears
+    steps:
+      - {call: move, args: {direction: RIGHT}, expect: {score: 0}}
+      - {call: body, expect: [[0, 1]]}
+  - name: self_collision
+    config: {rows: 3, cols: 3, food: [[0, 1], [0, 2], [1, 2], [1, 1]]}
+    steps:
+      - {call: move, args: {direction: RIGHT}, expect: {score: 1}}
+      - {call: move, args: {direction: RIGHT}, expect: {score: 2}}
+      - {call: move, args: {direction: DOWN}, expect: {score: 3}}
+      - {call: move, args: {direction: LEFT}, expect: {score: 4}}
+      - {call: move, args: {direction: UP}, expect: {alive: false}}
+  - name: chasing_the_tail_is_fine
+    config: {rows: 2, cols: 2, food: [[0, 1], [1, 1], [1, 0]]}
+    steps:
+      - {call: move, args: {direction: RIGHT}, expect: {score: 1}}
+      - {call: move, args: {direction: DOWN}, expect: {score: 2}}
+      - {call: move, args: {direction: LEFT}, expect: {score: 3}}
+      - {call: body, expect: [[1, 0], [1, 1], [0, 1], [0, 0]]}
+      - {call: move, args: {direction: UP}, expect: {alive: true}}
+      - {call: body, expect: [[0, 0], [1, 0], [1, 1], [0, 1]]}
+  - name: tail_vacates_before_head_enters
+    config: {rows: 2, cols: 2, food: [[0, 1], [1, 1]]}
+    steps:
+      - {call: move, args: {direction: RIGHT}}
+      - {call: move, args: {direction: DOWN}}
+      - {call: move, args: {direction: LEFT}, expect: {alive: true, score: 2}}
+      - {call: move, args: {direction: UP}, expect: {alive: true}}
+      - {call: body, expect: [[0, 0], [1, 0], [1, 1]]}
+  - name: reversing_into_neck_dies
+    config: {rows: 1, cols: 4, food: [[0, 1], [0, 2]]}
+    steps:
+      - {call: move, args: {direction: RIGHT}, expect: {score: 1}}
+      - {call: move, args: {direction: RIGHT}, expect: {score: 2}}
+      - {call: move, args: {direction: LEFT}, expect: {alive: false}}
+  - name: reversing_into_tail_at_length_two_is_fine
+    config: {rows: 1, cols: 4, food: [[0, 1]]}
+    steps:
+      - {call: move, args: {direction: RIGHT}, expect: {score: 1}}
+      - {call: move, args: {direction: LEFT}, expect: {alive: true}}
+  - name: reversing_at_length_one_is_fine
+    config: {rows: 1, cols: 4, food: []}
+    steps:
+      - {call: move, args: {direction: RIGHT}}
+      - {call: move, args: {direction: LEFT}, expect: {alive: true}}
+  - name: other_walls
+    config: {rows: 2, cols: 2, food: []}
+    steps:
+      - {call: move, args: {direction: DOWN}}
+      - {call: move, args: {direction: DOWN}, expect: {alive: false}}
+  - name: left_wall
+    config: {rows: 2, cols: 2, food: []}
+    steps:
+      - {call: move, args: {direction: LEFT}, expect: {alive: false, score: 0}}

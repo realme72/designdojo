@@ -1,0 +1,67 @@
+config: {green: 30, yellow: 5, all_red: 2}
+scenarios:
+  - name: full_cycle_wraps
+    steps:
+      - advance_clock: 74
+      - {call: phase, expect: NS_GREEN}
+      - {call: remaining, expect: 30}
+      - advance_clock: 73
+      - {call: phase, expect: ALL_RED_TO_NS}
+      - {call: remaining, expect: 1}
+  - name: remaining_counts_down
+    steps:
+      - advance_clock: 12
+      - {call: remaining, expect: 18}
+      - advance_clock: 20
+      - {call: phase, expect: NS_YELLOW}
+      - {call: remaining, expect: 3}
+  - name: colours_per_phase
+    steps:
+      - advance_clock: 31
+      - {call: light, args: {direction: NS}, expect: YELLOW}
+      - {call: light, args: {direction: EW}, expect: RED}
+      - advance_clock: 5
+      - {call: light, args: {direction: NS}, expect: RED}
+      - {call: light, args: {direction: EW}, expect: RED}
+      - advance_clock: 33
+      - {call: phase, expect: EW_YELLOW}
+      - {call: light, args: {direction: EW}, expect: YELLOW}
+  - name: emergency_ends_other_green
+    steps:
+      - advance_clock: 10
+      - {call: emergency, args: {direction: EW}}
+      - {call: phase, expect: NS_YELLOW}
+      - {call: remaining, expect: 5}
+      - advance_clock: 7
+      - {call: phase, expect: EW_GREEN}
+      - {call: remaining, expect: 30}
+  - name: emergency_restarts_own_green
+    steps:
+      - advance_clock: 25
+      - {call: emergency, args: {direction: NS}}
+      - {call: remaining, expect: 30}
+      - advance_clock: 29
+      - {call: phase, expect: NS_GREEN}
+  - name: emergency_ignored_during_transition
+    steps:
+      - advance_clock: 31
+      - {call: emergency, args: {direction: NS}}
+      - {call: phase, expect: NS_YELLOW}
+      - {call: remaining, expect: 4}
+  - name: back_to_normal_restarts_cycle
+    steps:
+      - advance_clock: 40
+      - {call: set_mode, args: {mode: FLASHING}}
+      - advance_clock: 500
+      - {call: emergency, args: {direction: EW}}
+      - {call: light, args: {direction: EW}, expect: YELLOW}
+      - {call: set_mode, args: {mode: NORMAL}}
+      - {call: phase, expect: NS_GREEN}
+      - {call: remaining, expect: 30}
+  - name: long_idle_is_consistent
+    steps:
+      - advance_clock: 7400
+      - {call: phase, expect: NS_GREEN}
+      - {call: remaining, expect: 30}
+      - advance_clock: 7437
+      - {call: phase, expect: EW_GREEN}

@@ -1,0 +1,24 @@
+- id: allocation
+  keywords: [allocate, allocation, warehouse, order, split, strategy]
+  question: Where does the warehouse allocation rule live?
+  good: An allocation strategy produces a plan from current stock; reservation applies the plan. New strategies are new classes.
+  principles: [OCP, SRP]
+  patterns: [Strategy]
+- id: reservation_lifecycle
+  keywords: [reserve, commit, release, reservation, status]
+  question: How are reservations tracked?
+  good: A reservation record per order holding its allocations; commit/release consume it exactly once.
+- id: all_or_nothing
+  keywords: [rollback, nothing, all, plan, check]
+  question: How is all-or-nothing guaranteed?
+  good: Compute the full plan first, then apply it under the same lock; no partial reservation to undo.
+- id: alerts
+  keywords: [threshold, low, alert, notify, observer]
+  question: How are low-stock conditions surfaced?
+  good: Thresholds are evaluated from available stock in one place (and could emit events to observers).
+  patterns: [Observer]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents over-reservation?
+  good: Planning and applying a reservation happen atomically.
+  smells: [UNGUARDED_SHARED]

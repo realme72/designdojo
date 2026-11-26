@@ -1,0 +1,20 @@
+scenarios:
+  - name: open_frames
+    steps:
+      - {call: roll, args: {pins: 3}}
+      - {call: roll, args: {pins: 4}}
+      - {call: roll, args: {pins: 2}}
+      - {call: roll, args: {pins: 5}}
+      - {call: frame_scores, expect: [7, 14]}
+  - name: spare_waits_for_bonus
+    steps:
+      - {call: roll, args: {pins: 7}}
+      - {call: roll, args: {pins: 3}}
+      - {call: frame_scores, expect: []}
+      - {call: roll, args: {pins: 4}}
+      - {call: frame_scores, expect: [14]}
+      - {call: score, expect: 14}
+  - name: too_many_pins_in_frame
+    steps:
+      - {call: roll, args: {pins: 7}}
+      - {call: roll, args: {pins: 4}, expect_error: InvalidRoll}

@@ -1,0 +1,7 @@
+id: course-registration
+title: Course Registration System
+difficulty: medium
+category: Booking & reservations
+time_limit_min: 45
+statement: statement.md
+tags: [rules, observer, concurrency]

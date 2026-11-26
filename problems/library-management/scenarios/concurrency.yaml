@@ -1,0 +1,18 @@
+config: {max_loans: 3, loan_days: 14, fine_per_day: 50}
+scenarios:
+  - name: never_lend_more_copies_than_exist
+    repeat: 15
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 5}}
+      - parallel: {threads: 20, call: add_member, args: {member_id: "m{i}"}, collect: members}
+      - parallel: {threads: 20, call: checkout, args: {member_id: "m{i}", isbn: "1"}, collect: r}
+      - assert: {of: r, ok_count: 5, error_count: {NotAvailable: 15}, unique: id}
+      - {call: available, args: {isbn: "1"}, expect: 0}
+  - name: never_exceed_loan_limit
+    repeat: 15
+    steps:
+      - {call: add_book, args: {isbn: "1", title: T, author: A, copies: 10}}
+      - {call: add_member, args: {member_id: m}}
+      - parallel: {threads: 10, call: checkout, args: {member_id: m, isbn: "1"}, collect: r}
+      - assert: {of: r, ok_count: 3, error_count: {LoanLimitReached: 7}}
+      - {call: available, args: {isbn: "1"}, expect: 7}

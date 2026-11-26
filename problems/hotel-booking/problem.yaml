@@ -1,0 +1,7 @@
+id: hotel-booking
+title: Hotel Booking System
+difficulty: medium
+category: Booking & reservations
+time_limit_min: 60
+statement: statement.md
+tags: [state, strategy, concurrency]

@@ -1,0 +1,13 @@
+scenarios:
+  - name: no_lost_updates
+    repeat: 15
+    steps:
+      - parallel: {threads: 100, call: add_score, args: {player: hot, points: 1}, collect: r}
+      - assert: {of: r, ok_count: 100, unique: "."}
+      - {call: top, args: {k: 1}, expect: [{player: hot, score: 100, rank: 1}]}
+  - name: many_players_at_once
+    repeat: 15
+    steps:
+      - parallel: {threads: 60, call: add_score, args: {player: "p{i}", points: "{i}"}, collect: r}
+      - {call: top, args: {k: 2}, expect: [{player: p59, score: 59, rank: 1}, {player: p58, score: 58, rank: 2}]}
+      - {call: rank, args: {player: p0}, expect: 60}

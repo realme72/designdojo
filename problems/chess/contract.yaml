@@ -1,0 +1,35 @@
+enums:
+  Color: [WHITE, BLACK]
+  GameStatus: [IN_PROGRESS, CHECK, CHECKMATE, STALEMATE]
+
+dtos:
+  ChessConfig:
+    setup: "list[str]"
+    to_move: Color
+  MoveResult:
+    captured: str
+    status: GameStatus
+
+interfaces:
+  ChessGame:
+    move:
+      params: {from_sq: str, to_sq: str, promotion: str}
+      returns: MoveResult
+      raises: [InvalidSquare, IllegalMove, GameOver]
+    turn:
+      returns: Color
+    status:
+      returns: GameStatus
+    board:
+      returns: "list[str]"
+    legal_moves:
+      params: {square: str}
+      returns: "list[str]"
+      raises: [InvalidSquare]
+
+entrypoint:
+  name: create
+  params: {config: ChessConfig}
+  returns: ChessGame
+
+errors: [InvalidSquare, IllegalMove, GameOver]

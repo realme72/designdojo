@@ -1,0 +1,34 @@
+enums:
+  BreakerState: [CLOSED, OPEN, HALF_OPEN]
+
+dtos:
+  BreakerConfig:
+    failure_threshold: int
+    open_seconds: long
+    trial_requests: int
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  CircuitBreakers:
+    allow_request:
+      params: {service: str}
+      returns: bool
+    record_success:
+      params: {service: str}
+      returns: void
+    record_failure:
+      params: {service: str}
+      returns: void
+    state:
+      params: {service: str}
+      returns: BreakerState
+
+entrypoint:
+  name: create
+  params: {config: BreakerConfig, clock: Clock}
+  returns: CircuitBreakers

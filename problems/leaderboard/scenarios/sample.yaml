@@ -1,0 +1,18 @@
+scenarios:
+  - name: top_k_with_ties
+    steps:
+      - {call: add_score, args: {player: ann, points: 100}}
+      - {call: add_score, args: {player: bob, points: 90}}
+      - {call: add_score, args: {player: cat, points: 90}}
+      - {call: add_score, args: {player: dan, points: 80}}
+      - call: top
+        args: {k: 4}
+        expect: [{player: ann, score: 100, rank: 1}, {player: bob, score: 90, rank: 2}, {player: cat, score: 90, rank: 2}, {player: dan, score: 80, rank: 4}]
+  - name: scores_accumulate
+    steps:
+      - {call: add_score, args: {player: ann, points: 10}, expect: 10}
+      - {call: add_score, args: {player: ann, points: 5}, expect: 15}
+      - {call: rank, args: {player: ann}, expect: 1}
+  - name: unknown_player
+    steps:
+      - {call: rank, args: {player: ghost}, expect_error: UnknownPlayer}

@@ -1,0 +1,29 @@
+- id: split_types
+  keywords: [split, equal, exact, percent, shares, type]
+  question: How are the different split types implemented?
+  good: Each split type is a strategy (one class or function per type) behind a common interface, selected once; adding SHARES is a new class.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: rounding
+  keywords: [remainder, leftover, cents, floor, round]
+  question: Where does leftover-cent distribution live?
+  good: One shared helper used by every split type, so rounding is consistent and tested once.
+- id: ledger
+  keywords: [balance, ledger, owe, net, settle]
+  question: How are balances stored and updated?
+  good: A single ledger of net balances (or pairwise debts) updated in one place by both expenses and settlements.
+  principles: [SRP]
+- id: simplify
+  keywords: [simplify, creditor, debtor, transfer, largest]
+  question: Is settle-up planning separated from bookkeeping?
+  good: Simplification is a pure function over a snapshot of balances; it never mutates the ledger.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What keeps balances consistent under concurrent expenses?
+  good: Each expense updates all affected balances atomically (one lock around the ledger update).
+  smells: [UNGUARDED_SHARED]
+- id: validation
+  keywords: [invalid, validate, check, sum]
+  question: Where is input validation done?
+  good: Validation happens before any balance changes, so a rejected expense leaves no partial effects.

@@ -1,0 +1,21 @@
+scenarios:
+  - name: direct_messages_and_unread
+    steps:
+      - {call: send_direct, args: {from_user: ann, to_user: bob, text: hi}}
+      - {call: send_direct, args: {from_user: ann, to_user: bob, text: there}}
+      - {call: unread, args: {user: bob}, expect: [{conversation: "dm:ann", count: 2}]}
+      - {call: messages, args: {user: bob, conversation: "dm:ann"}, expect: [{from_user: ann, text: hi}, {from_user: ann, text: there}]}
+      - {call: mark_read, args: {user: bob, conversation: "dm:ann"}}
+      - {call: unread, args: {user: bob}, expect: []}
+  - name: group_chat
+    steps:
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: add_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: send_group, args: {group_id: g, from_user: bob, text: yo}}
+      - {call: unread, args: {user: ann}, expect: [{conversation: "group:g", count: 1}]}
+      - {call: unread, args: {user: bob}, expect: []}
+  - name: only_admins_add
+    steps:
+      - {call: create_group, args: {group_id: g, owner: ann}}
+      - {call: add_member, args: {group_id: g, by: ann, user: bob}}
+      - {call: add_member, args: {group_id: g, by: bob, user: cat}, expect_error: Forbidden}

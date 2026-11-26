@@ -1,0 +1,99 @@
+scenarios:
+  - name: fixed_window_aligned_to_epoch
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: FIXED_WINDOW, limit: 2, window_seconds: 10}}
+      - advance_clock: 7
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 3
+      - {call: allow, args: {client_id: c}, expect: true}
+  - name: fixed_window_boundary_burst
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: FIXED_WINDOW, limit: 3, window_seconds: 10}}
+      - advance_clock: 9
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 1
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+  - name: sliding_log_no_boundary_burst
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: SLIDING_WINDOW_LOG, limit: 3, window_seconds: 10}}
+      - advance_clock: 9
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 1
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 9
+      - {call: allow, args: {client_id: c}, expect: true}
+  - name: sliding_log_ignores_rejections
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: SLIDING_WINDOW_LOG, limit: 1, window_seconds: 10}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 5
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 5
+      - {call: allow, args: {client_id: c}, expect: true}
+  - name: token_bucket_partial_refill
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: TOKEN_BUCKET, limit: 10, window_seconds: 10}}
+      - parallel: {threads: 10, call: allow, args: {client_id: c}, collect: drain}
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 1
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 3
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+  - name: token_bucket_capped_at_capacity
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: TOKEN_BUCKET, limit: 3, window_seconds: 10}}
+      - advance_clock: 1000
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+  - name: token_bucket_fractions_accumulate
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: TOKEN_BUCKET, limit: 3, window_seconds: 10}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 3
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 1
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 3
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+  - name: clients_are_independent
+    steps:
+      - {call: configure, args: {client_id: a, algorithm: FIXED_WINDOW, limit: 1, window_seconds: 60}}
+      - {call: configure, args: {client_id: b, algorithm: TOKEN_BUCKET, limit: 1, window_seconds: 60}}
+      - {call: allow, args: {client_id: a}, expect: true}
+      - {call: allow, args: {client_id: a}, expect: false}
+      - {call: allow, args: {client_id: b}, expect: true}
+      - {call: allow, args: {client_id: b}, expect: false}
+  - name: unknown_client
+    steps:
+      - {call: allow, args: {client_id: ghost}, expect_error: UnknownClient}
+  - name: invalid_rules
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: FIXED_WINDOW, limit: 0, window_seconds: 10}, expect_error: InvalidRule}
+      - {call: configure, args: {client_id: c, algorithm: TOKEN_BUCKET, limit: 5, window_seconds: 0}, expect_error: InvalidRule}
+      - {call: allow, args: {client_id: c}, expect_error: UnknownClient}
+  - name: reconfigure_resets_state
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: FIXED_WINDOW, limit: 1, window_seconds: 60}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+      - {call: configure, args: {client_id: c, algorithm: SLIDING_WINDOW_LOG, limit: 1, window_seconds: 60}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}

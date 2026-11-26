@@ -1,0 +1,25 @@
+- id: queue
+  keywords: [heap, priority, queue, due, next, sorted]
+  question: How are due jobs found efficiently?
+  good: A priority queue keyed by (next_run, id), with lazy deletion for cancelled/paused jobs.
+- id: job_types
+  keywords: [once, recurring, every, interval, schedule, next]
+  question: How do one-off and recurring jobs differ in code?
+  good: A schedule abstraction computes the next run (OneOff returns none, Every computes the next slot); the scheduler never branches on job type.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: catch_up
+  keywords: [missed, catch, skip, slot]
+  question: Where does the missed-run (catch-up) policy live?
+  good: In one place (the schedule), so "run all missed" vs "run once" is a swap.
+- id: time
+  keywords: [clock, now, time]
+  question: Where does time come from?
+  good: Only the injected clock; tick() is driven externally.
+  smells: [DIRECT_TIME]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: How do concurrent ticks avoid running a job twice?
+  good: Popping due jobs and rescheduling happen atomically.
+  smells: [UNGUARDED_SHARED]

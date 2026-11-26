@@ -1,0 +1,75 @@
+config: {max_courses: 2}
+scenarios:
+  - name: check_order
+    steps:
+      - {call: add_course, args: {course_id: A, capacity: 1, prerequisites: []}}
+      - {call: add_course, args: {course_id: B, capacity: 1, prerequisites: [A]}}
+      - {call: enroll, args: {student: s, course_id: Z}, expect_error: UnknownCourse}
+      - {call: complete, args: {student: s, course_id: B}}
+      - {call: enroll, args: {student: s, course_id: B}, expect_error: AlreadyCompleted}
+      - {call: enroll, args: {student: t, course_id: A}}
+      - {call: enroll, args: {student: t, course_id: A}, expect_error: AlreadyRegistered}
+  - name: waitlisted_counts_as_registered
+    steps:
+      - {call: add_course, args: {course_id: A, capacity: 1, prerequisites: []}}
+      - {call: enroll, args: {student: x, course_id: A}}
+      - {call: enroll, args: {student: y, course_id: A}, expect: WAITLISTED}
+      - {call: enroll, args: {student: y, course_id: A}, expect_error: AlreadyRegistered}
+  - name: course_limit
+    steps:
+      - {call: add_course, args: {course_id: A, capacity: 5, prerequisites: []}}
+      - {call: add_course, args: {course_id: B, capacity: 5, prerequisites: []}}
+      - {call: add_course, args: {course_id: C, capacity: 5, prerequisites: []}}
+      - {call: enroll, args: {student: s, course_id: A}}
+      - {call: enroll, args: {student: s, course_id: B}}
+      - {call: enroll, args: {student: s, course_id: C}, expect_error: TooManyCourses}
+      - {call: drop, args: {student: s, course_id: A}}
+      - {call: enroll, args: {student: s, course_id: C}, expect: ENROLLED}
+  - name: waitlist_ignores_limit_until_promotion
+    steps:
+      - {call: add_course, args: {course_id: A, capacity: 1, prerequisites: []}}
+      - {call: add_course, args: {course_id: B, capacity: 5, prerequisites: []}}
+      - {call: add_course, args: {course_id: C, capacity: 5, prerequisites: []}}
+      - {call: enroll, args: {student: other, course_id: A}}
+      - {call: enroll, args: {student: s, course_id: B}}
+      - {call: enroll, args: {student: s, course_id: C}}
+      - {call: enroll, args: {student: s, course_id: A}, expect: WAITLISTED}
+      - {call: enroll, args: {student: t, course_id: A}, expect: WAITLISTED}
+      - {call: drop, args: {student: other, course_id: A}}
+      - {call: roster, args: {course_id: A}, expect: [t]}
+      - {call: waitlist, args: {course_id: A}, expect: [s]}
+      - {call: drop, args: {student: s, course_id: B}}
+      - {call: drop, args: {student: t, course_id: A}}
+      - {call: roster, args: {course_id: A}, expect: [s]}
+  - name: drop_from_waitlist
+    steps:
+      - {call: add_course, args: {course_id: A, capacity: 1, prerequisites: []}}
+      - {call: enroll, args: {student: a, course_id: A}}
+      - {call: enroll, args: {student: b, course_id: A}}
+      - {call: enroll, args: {student: c, course_id: A}}
+      - {call: drop, args: {student: b, course_id: A}}
+      - {call: waitlist, args: {course_id: A}, expect: [c]}
+      - {call: roster, args: {course_id: A}, expect: [a]}
+      - {call: drop, args: {student: b, course_id: A}, expect_error: NotRegistered}
+  - name: multiple_prerequisites
+    steps:
+      - {call: add_course, args: {course_id: M1, capacity: 5, prerequisites: []}}
+      - {call: add_course, args: {course_id: P1, capacity: 5, prerequisites: []}}
+      - {call: add_course, args: {course_id: X, capacity: 5, prerequisites: [M1, P1]}}
+      - {call: complete, args: {student: s, course_id: M1}}
+      - {call: enroll, args: {student: s, course_id: X}, expect_error: MissingPrerequisite}
+      - {call: complete, args: {student: s, course_id: P1}}
+      - {call: enroll, args: {student: s, course_id: X}}
+  - name: course_validation
+    steps:
+      - {call: add_course, args: {course_id: A, capacity: 0, prerequisites: []}, expect_error: InvalidCapacity}
+      - {call: add_course, args: {course_id: A, capacity: 1, prerequisites: [ghost]}, expect_error: UnknownCourse}
+      - {call: add_course, args: {course_id: A, capacity: 1, prerequisites: []}}
+      - {call: add_course, args: {course_id: A, capacity: 1, prerequisites: []}, expect_error: DuplicateCourse}
+      - {call: roster, args: {course_id: Q}, expect_error: UnknownCourse}
+  - name: roster_sorted
+    steps:
+      - {call: add_course, args: {course_id: A, capacity: 5, prerequisites: []}}
+      - {call: enroll, args: {student: zed, course_id: A}}
+      - {call: enroll, args: {student: amy, course_id: A}}
+      - {call: roster, args: {course_id: A}, expect: [amy, zed]}

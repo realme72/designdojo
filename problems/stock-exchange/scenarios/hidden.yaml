@@ -1,0 +1,69 @@
+scenarios:
+  - name: price_priority_best_first
+    steps:
+      - {call: place_order, args: {trader: s1, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 103}}
+      - {call: place_order, args: {trader: s2, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 101}}
+      - {call: place_order, args: {trader: s3, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 102}}
+      - call: place_order
+        args: {trader: b, symbol: X, side: BUY, type: LIMIT, qty: 12, price: 103}
+        expect: {status: FILLED, trades: [{price: 101, qty: 5}, {price: 102, qty: 5}, {price: 103, qty: 2}]}
+      - {call: book, args: {symbol: X}, expect: {asks: [{price: 103, qty: 3}]}}
+  - name: time_priority_within_price
+    steps:
+      - {call: place_order, args: {trader: s1, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 100}, bind: first}
+      - {call: place_order, args: {trader: s2, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 100}, bind: second}
+      - {call: place_order, args: {trader: b, symbol: X, side: BUY, type: LIMIT, qty: 7, price: 100}, expect: {trades: [{sell_order: $first.order_id, qty: 5}, {sell_order: $second.order_id, qty: 2}]}}
+      - {call: order, args: {order_id: $second.order_id}, expect: {status: PARTIALLY_FILLED, filled_qty: 2}}
+      - {call: order, args: {order_id: $first.order_id}, expect: {status: FILLED, filled_qty: 5}}
+  - name: limit_sell_partial_rests
+    steps:
+      - {call: place_order, args: {trader: b, symbol: X, side: BUY, type: LIMIT, qty: 4, price: 99}}
+      - {call: place_order, args: {trader: s, symbol: X, side: SELL, type: LIMIT, qty: 10, price: 98}, expect: {status: PARTIALLY_FILLED, filled_qty: 4, trades: [{price: 99, qty: 4}]}}
+      - {call: book, args: {symbol: X}, expect: {bids: [], asks: [{price: 98, qty: 6}]}}
+  - name: sell_respects_limit
+    steps:
+      - {call: place_order, args: {trader: b1, symbol: X, side: BUY, type: LIMIT, qty: 2, price: 105}}
+      - {call: place_order, args: {trader: b2, symbol: X, side: BUY, type: LIMIT, qty: 2, price: 95}}
+      - {call: place_order, args: {trader: s, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 100}, expect: {filled_qty: 2, status: PARTIALLY_FILLED}}
+      - {call: book, args: {symbol: X}, expect: {bids: [{price: 95, qty: 2}], asks: [{price: 100, qty: 3}]}}
+  - name: market_into_empty_book
+    steps:
+      - {call: place_order, args: {trader: b, symbol: X, side: BUY, type: MARKET, qty: 5, price: 0}, expect: {status: CANCELLED, filled_qty: 0, trades: []}}
+  - name: market_fully_filled
+    steps:
+      - {call: place_order, args: {trader: b1, symbol: X, side: BUY, type: LIMIT, qty: 3, price: 50}}
+      - {call: place_order, args: {trader: b2, symbol: X, side: BUY, type: LIMIT, qty: 3, price: 51}}
+      - {call: place_order, args: {trader: s, symbol: X, side: SELL, type: MARKET, qty: 4, price: 0}, expect: {status: FILLED, trades: [{price: 51, qty: 3}, {price: 50, qty: 1}]}}
+  - name: cancel_rules
+    steps:
+      - {call: place_order, args: {trader: s, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 100}, bind: o}
+      - {call: place_order, args: {trader: b, symbol: X, side: BUY, type: LIMIT, qty: 2, price: 100}}
+      - {call: cancel, args: {order_id: $o.order_id}, expect: {status: CANCELLED, filled_qty: 2}}
+      - {call: book, args: {symbol: X}, expect: {asks: []}}
+      - {call: cancel, args: {order_id: $o.order_id}, expect_error: InvalidState}
+      - {call: cancel, args: {order_id: nope}, expect_error: UnknownOrder}
+      - {call: place_order, args: {trader: b, symbol: X, side: BUY, type: LIMIT, qty: 1, price: 100}, expect: {status: OPEN}}
+  - name: cancelled_orders_never_match
+    steps:
+      - {call: place_order, args: {trader: s1, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 100}, bind: a}
+      - {call: place_order, args: {trader: s2, symbol: X, side: SELL, type: LIMIT, qty: 5, price: 101}, bind: c}
+      - {call: cancel, args: {order_id: $a.order_id}}
+      - {call: place_order, args: {trader: b, symbol: X, side: BUY, type: LIMIT, qty: 5, price: 101}, expect: {trades: [{sell_order: $c.order_id, price: 101}]}}
+  - name: symbols_are_separate
+    steps:
+      - {call: place_order, args: {trader: s, symbol: A, side: SELL, type: LIMIT, qty: 5, price: 10}}
+      - {call: place_order, args: {trader: b, symbol: B, side: BUY, type: LIMIT, qty: 5, price: 10}, expect: {status: OPEN}}
+  - name: book_aggregates_levels
+    steps:
+      - {call: place_order, args: {trader: a, symbol: X, side: BUY, type: LIMIT, qty: 2, price: 99}}
+      - {call: place_order, args: {trader: b, symbol: X, side: BUY, type: LIMIT, qty: 3, price: 99}}
+      - {call: place_order, args: {trader: c, symbol: X, side: BUY, type: LIMIT, qty: 1, price: 98}}
+      - {call: place_order, args: {trader: d, symbol: X, side: SELL, type: LIMIT, qty: 4, price: 101}}
+      - {call: place_order, args: {trader: e, symbol: X, side: SELL, type: LIMIT, qty: 4, price: 100}}
+      - {call: book, args: {symbol: X}, expect: {bids: [{price: 99, qty: 5}, {price: 98, qty: 1}], asks: [{price: 100, qty: 4}, {price: 101, qty: 4}]}}
+  - name: invalid_orders
+    steps:
+      - {call: place_order, args: {trader: a, symbol: X, side: BUY, type: LIMIT, qty: 0, price: 10}, expect_error: InvalidOrder}
+      - {call: place_order, args: {trader: a, symbol: X, side: BUY, type: LIMIT, qty: 1, price: 0}, expect_error: InvalidOrder}
+      - {call: order, args: {order_id: nope}, expect_error: UnknownOrder}
+      - {call: book, args: {symbol: NEW}, expect: {bids: [], asks: []}}

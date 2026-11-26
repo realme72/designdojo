@@ -1,0 +1,17 @@
+- id: bid_rules
+  keywords: [rule, validate, increment, minimum, seller, check]
+  question: Where do bid-validation rules live?
+  good: An ordered list of rule objects/functions; adding reserve prices or bidder verification adds a rule.
+  principles: [OCP]
+  patterns: [Chain of Responsibility]
+- id: lifecycle
+  keywords: [open, closed, ends, extend, sniping, state]
+  question: How are auction state and the end time managed?
+  good: State derived from the injected clock plus an explicit closed flag; anti-sniping is a policy that adjusts ends_at.
+  smells: [DIRECT_TIME, STATE_FLAG]
+  patterns: [Strategy]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Is "check highest + record bid" atomic?
+  good: One lock per auction around validate-and-record so accepted bids are strictly increasing.
+  smells: [UNGUARDED_SHARED]

@@ -1,0 +1,30 @@
+config: {max_transfer: 100000}
+scenarios:
+  - name: never_overdraw
+    repeat: 15
+    steps:
+      - {call: create_wallet, args: {user: src}}
+      - {call: deposit, args: {user: src, amount: 100}}
+      - parallel: {threads: 30, call: create_wallet, args: {user: "u{i}"}, collect: w}
+      - parallel: {threads: 30, call: transfer, args: {from_user: src, to_user: "u{i}", amount: 10, idempotency_key: "k{i}"}, collect: r}
+      - assert: {of: r, ok_count: 10, error_count: {InsufficientFunds: 20}}
+      - {call: balance, args: {user: src}, expect: 0}
+  - name: retry_storm_pays_once
+    repeat: 15
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: deposit, args: {user: a, amount: 100}}
+      - parallel: {threads: 20, call: transfer, args: {from_user: a, to_user: b, amount: 10, idempotency_key: same}, collect: r}
+      - assert: {of: r, ok_count: 20}
+      - {call: balance, args: {user: b}, expect: 10}
+  - name: chain_transfers_conserve_money
+    repeat: 15
+    steps:
+      - parallel: {threads: 41, call: create_wallet, args: {user: "w{i}"}, collect: w}
+      - parallel: {threads: 41, call: deposit, args: {user: "w{i}", amount: 100}, collect: d}
+      - parallel: {threads: 40, call: transfer, args: {from_user: "w{i}", to_user: "w{i+1}", amount: 100, idempotency_key: "t{i}"}, collect: r}
+      - assert: {of: r, ok_count: 40}
+      - {call: balance, args: {user: w0}, expect: 0}
+      - {call: balance, args: {user: w40}, expect: 200}
+      - {call: balance, args: {user: w20}, expect: 100}

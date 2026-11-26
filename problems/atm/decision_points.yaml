@@ -1,0 +1,25 @@
+- id: atm_states
+  keywords: [state, idle, card, inserted, authenticated, session]
+  question: How are the ATM's states and allowed operations modelled?
+  good: State objects (or a state enum + a table of allowed actions) so each operation's legality is decided in one place.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: dispensing
+  keywords: [notes, dispense, cassette, fewest, denomination, greedy]
+  question: Is note dispensing correct with limited notes, and separate from the session logic?
+  good: A dispenser component finds exact amounts with fewest notes; the ATM asks it before changing any balance.
+  principles: [SRP]
+  patterns: [Strategy, Chain of Responsibility]
+- id: bank_boundary
+  keywords: [account, bank, balance, pin, card]
+  question: Is the bank (accounts, PIN checks) separate from the ATM machine?
+  good: Accounts live behind a bank/service interface; the ATM doesn't own balances.
+  principles: [DIP]
+- id: lockout
+  keywords: [wrong, attempts, block, blocked, consecutive]
+  question: Where does the wrong-PIN lockout rule live?
+  good: Per-card attempt tracking in the bank/auth component, surviving sessions.
+- id: atomic_withdrawal
+  keywords: [fail, rollback, nothing, check]
+  question: Does a failed withdrawal leave everything unchanged?
+  good: All checks (funds, dispensable) before debiting the account or removing notes.

@@ -1,0 +1,90 @@
+scenarios:
+  - name: insert_in_middle
+    steps:
+      - {call: insert, args: {text: helo}}
+      - {call: move_cursor, args: {pos: 3}}
+      - {call: insert, args: {text: l}}
+      - {call: content, expect: hello}
+      - {call: cursor, expect: 4}
+      - {call: undo}
+      - {call: content, expect: helo}
+      - {call: cursor, expect: 3}
+  - name: backspace_clamps_at_start
+    steps:
+      - {call: insert, args: {text: abc}}
+      - {call: move_cursor, args: {pos: 2}}
+      - {call: backspace, args: {n: 5}, expect: ab}
+      - {call: content, expect: c}
+      - {call: cursor, expect: 0}
+      - {call: backspace, args: {n: 1}, expect: ""}
+      - {call: undo}
+      - {call: content, expect: abc}
+      - {call: cursor, expect: 2}
+  - name: new_edit_clears_redo
+    steps:
+      - {call: insert, args: {text: a}}
+      - {call: insert, args: {text: b}}
+      - {call: undo}
+      - {call: insert, args: {text: c}}
+      - {call: redo, expect_error: NothingToRedo}
+      - {call: content, expect: ac}
+  - name: multi_level_undo_redo
+    steps:
+      - {call: insert, args: {text: one}}
+      - {call: insert, args: {text: two}}
+      - {call: insert, args: {text: three}}
+      - {call: undo}
+      - {call: undo}
+      - {call: content, expect: one}
+      - {call: redo}
+      - {call: content, expect: onetwo}
+      - {call: redo}
+      - {call: content, expect: onetwothree}
+      - {call: redo, expect_error: NothingToRedo}
+      - {call: undo}
+      - {call: undo}
+      - {call: undo}
+      - {call: content, expect: ""}
+      - {call: undo, expect_error: NothingToUndo}
+  - name: copy_paste_undo
+    steps:
+      - {call: insert, args: {text: "abc"}}
+      - {call: copy, args: {start: 0, end: 2}}
+      - {call: paste}
+      - {call: content, expect: abcab}
+      - {call: move_cursor, args: {pos: 0}}
+      - {call: paste}
+      - {call: content, expect: ababcab}
+      - {call: cursor, expect: 2}
+      - {call: undo}
+      - {call: content, expect: abcab}
+      - {call: cursor, expect: 0}
+  - name: empty_clipboard_and_empty_insert_not_recorded
+    steps:
+      - {call: paste}
+      - {call: insert, args: {text: ""}}
+      - {call: undo, expect_error: NothingToUndo}
+  - name: invalid_positions
+    steps:
+      - {call: insert, args: {text: abc}}
+      - {call: move_cursor, args: {pos: 4}, expect_error: InvalidPosition}
+      - {call: move_cursor, args: {pos: -1}, expect_error: InvalidPosition}
+      - {call: copy, args: {start: 2, end: 1}, expect_error: InvalidPosition}
+      - {call: copy, args: {start: 0, end: 4}, expect_error: InvalidPosition}
+      - {call: backspace, args: {n: 0}, expect_error: InvalidArgument}
+      - {call: move_cursor, args: {pos: 3}}
+  - name: cursor_moves_not_undoable
+    steps:
+      - {call: insert, args: {text: abc}}
+      - {call: move_cursor, args: {pos: 1}}
+      - {call: undo}
+      - {call: content, expect: ""}
+      - {call: cursor, expect: 0}
+      - {call: redo}
+      - {call: cursor, expect: 3}
+  - name: unicode_text
+    steps:
+      - {call: insert, args: {text: "नमस्ते"}}
+      - {call: backspace, args: {n: 1}}
+      - {call: undo}
+      - {call: content, expect: "नमस्ते"}

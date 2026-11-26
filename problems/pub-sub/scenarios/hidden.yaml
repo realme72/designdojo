@@ -1,0 +1,71 @@
+scenarios:
+  - name: poll_respects_max
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - {call: publish, args: {topic: t, payload: a}}
+      - {call: publish, args: {topic: t, payload: b}}
+      - {call: publish, args: {topic: t, payload: c}}
+      - {call: poll, args: {topic: t, group: g, max: 2}, expect: [{offset: 0}, {offset: 1}]}
+      - {call: lag, args: {topic: t, group: g}, expect: 1}
+      - {call: poll, args: {topic: t, group: g, max: 2}, expect: [{offset: 2, payload: c}]}
+  - name: subscribe_latest_skips_history
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: publish, args: {topic: t, payload: old}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: false}}
+      - {call: lag, args: {topic: t, group: g}, expect: 0}
+      - {call: publish, args: {topic: t, payload: new}}
+      - {call: poll, args: {topic: t, group: g, max: 5}, expect: [{offset: 1, payload: new}]}
+  - name: subscribe_earliest_sees_history
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: publish, args: {topic: t, payload: old}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - {call: lag, args: {topic: t, group: g}, expect: 1}
+  - name: seek_replays_and_skips
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - {call: publish, args: {topic: t, payload: a}}
+      - {call: publish, args: {topic: t, payload: b}}
+      - {call: poll, args: {topic: t, group: g, max: 5}}
+      - {call: seek, args: {topic: t, group: g, offset: 1}}
+      - {call: poll, args: {topic: t, group: g, max: 5}, expect: [{offset: 1, payload: b}]}
+      - {call: seek, args: {topic: t, group: g, offset: 2}}
+      - {call: lag, args: {topic: t, group: g}, expect: 0}
+      - {call: seek, args: {topic: t, group: g, offset: 3}, expect_error: InvalidOffset}
+      - {call: seek, args: {topic: t, group: g, offset: -1}, expect_error: InvalidOffset}
+  - name: offsets_are_per_topic
+    steps:
+      - {call: create_topic, args: {name: a}}
+      - {call: create_topic, args: {name: b}}
+      - {call: publish, args: {topic: a, payload: x}, expect: 0}
+      - {call: publish, args: {topic: a, payload: y}, expect: 1}
+      - {call: publish, args: {topic: b, payload: z}, expect: 0}
+  - name: same_group_name_on_two_topics
+    steps:
+      - {call: create_topic, args: {name: a}}
+      - {call: create_topic, args: {name: b}}
+      - {call: subscribe, args: {topic: a, group: g, from_beginning: true}}
+      - {call: subscribe, args: {topic: b, group: g, from_beginning: true}}
+      - {call: publish, args: {topic: a, payload: x}}
+      - {call: poll, args: {topic: b, group: g, max: 5}, expect: []}
+      - {call: poll, args: {topic: a, group: g, max: 5}, expect: [{payload: x}]}
+  - name: errors
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: create_topic, args: {name: t}, expect_error: DuplicateTopic}
+      - {call: subscribe, args: {topic: x, group: g, from_beginning: true}, expect_error: UnknownTopic}
+      - {call: poll, args: {topic: t, group: g, max: 1}, expect_error: UnknownGroup}
+      - {call: lag, args: {topic: t, group: g}, expect_error: UnknownGroup}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: false}, expect_error: DuplicateSubscription}
+      - {call: poll, args: {topic: t, group: g, max: 0}, expect_error: InvalidArgument}
+      - {call: poll, args: {topic: nope, group: g, max: 1}, expect_error: UnknownTopic}
+  - name: empty_topic_poll
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - {call: poll, args: {topic: t, group: g, max: 3}, expect: []}
+      - {call: lag, args: {topic: t, group: g}, expect: 0}

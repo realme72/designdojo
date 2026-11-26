@@ -1,0 +1,7 @@
+id: music-player
+title: Music Player (Spotify playlist)
+difficulty: easy
+category: Social & content
+time_limit_min: 40
+statement: statement.md
+tags: [state, iterator]

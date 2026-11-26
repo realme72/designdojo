@@ -1,0 +1,12 @@
+config: {hold_seconds: 100}
+scenarios:
+  - name: one_package_per_locker
+    repeat: 15
+    steps:
+      - {call: add_locker, args: {locker_id: a, size: SMALL}}
+      - {call: add_locker, args: {locker_id: b, size: SMALL}}
+      - {call: add_locker, args: {locker_id: c, size: MEDIUM}}
+      - {call: add_locker, args: {locker_id: d, size: LARGE}}
+      - {call: add_locker, args: {locker_id: e, size: LARGE}}
+      - parallel: {threads: 20, call: deposit, args: {package_id: "p{i}", size: SMALL, code: "c{i}"}, collect: r}
+      - assert: {of: r, ok_count: 5, error_count: {NoLockerAvailable: 15}, unique: "."}

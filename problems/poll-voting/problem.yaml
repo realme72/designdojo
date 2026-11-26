@@ -1,0 +1,7 @@
+id: poll-voting
+title: Polling & Voting System
+difficulty: easy
+category: Social & content
+time_limit_min: 35
+statement: statement.md
+tags: [validation, concurrency]

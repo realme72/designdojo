@@ -1,0 +1,26 @@
+enums:
+  Algorithm: [FIXED_WINDOW, SLIDING_WINDOW_LOG, TOKEN_BUCKET]
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  RateLimiter:
+    configure:
+      params: {client_id: str, algorithm: Algorithm, limit: int, window_seconds: long}
+      returns: void
+      raises: [InvalidRule]
+    allow:
+      params: {client_id: str}
+      returns: bool
+      raises: [UnknownClient]
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: RateLimiter
+
+errors: [InvalidRule, UnknownClient]

@@ -1,0 +1,18 @@
+scenarios:
+  - name: limit_orders_cross
+    steps:
+      - {call: place_order, args: {trader: s, symbol: ACME, side: SELL, type: LIMIT, qty: 10, price: 100}, expect: {status: OPEN, filled_qty: 0, trades: []}, bind: sell}
+      - call: place_order
+        args: {trader: b, symbol: ACME, side: BUY, type: LIMIT, qty: 4, price: 105}
+        expect: {status: FILLED, filled_qty: 4, trades: [{sell_order: $sell.order_id, price: 100, qty: 4}]}
+      - {call: book, args: {symbol: ACME}, expect: {bids: [], asks: [{price: 100, qty: 6}]}}
+  - name: no_cross_rests
+    steps:
+      - {call: place_order, args: {trader: s, symbol: ACME, side: SELL, type: LIMIT, qty: 5, price: 101}}
+      - {call: place_order, args: {trader: b, symbol: ACME, side: BUY, type: LIMIT, qty: 5, price: 100}, expect: {status: OPEN}}
+      - {call: book, args: {symbol: ACME}, expect: {bids: [{price: 100, qty: 5}], asks: [{price: 101, qty: 5}]}}
+  - name: market_order_partial_then_cancelled
+    steps:
+      - {call: place_order, args: {trader: s, symbol: ACME, side: SELL, type: LIMIT, qty: 3, price: 100}}
+      - {call: place_order, args: {trader: b, symbol: ACME, side: BUY, type: MARKET, qty: 5, price: 0}, expect: {status: CANCELLED, filled_qty: 3}}
+      - {call: book, args: {symbol: ACME}, expect: {bids: [], asks: []}}

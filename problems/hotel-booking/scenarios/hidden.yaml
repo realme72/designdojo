@@ -1,0 +1,88 @@
+scenarios:
+  - name: invalid_dates
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-05", check_out: "2023-12-05"}, expect_error: InvalidDates}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-05", check_out: "2023-12-01"}, expect_error: InvalidDates}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-11-13", check_out: "2023-11-16"}, expect_error: InvalidDates}
+      - {call: search, args: {type: SINGLE, check_in: "12/01/2023", check_out: "2023-12-03"}, expect_error: InvalidDates}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-02-30", check_out: "2023-03-02"}, expect_error: InvalidDates}
+  - name: booking_today_is_allowed
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-11-14", check_out: "2023-11-15"}, expect: {total: 3000}}
+  - name: types_are_separate
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: add_room, args: {number: "201", type: SUITE, nightly_rate: 9000}}
+      - {call: search, args: {type: SUITE, check_in: "2023-12-01", check_out: "2023-12-02"}, expect: ["201"]}
+      - {call: book, args: {guest: a, type: DOUBLE, check_in: "2023-12-01", check_out: "2023-12-02"}, expect_error: NoAvailability}
+  - name: overlap_cases
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-10", check_out: "2023-12-15"}}
+      - {call: search, args: {type: SINGLE, check_in: "2023-12-05", check_out: "2023-12-10"}, expect: ["101"]}
+      - {call: search, args: {type: SINGLE, check_in: "2023-12-05", check_out: "2023-12-11"}, expect: []}
+      - {call: search, args: {type: SINGLE, check_in: "2023-12-12", check_out: "2023-12-13"}, expect: []}
+      - {call: search, args: {type: SINGLE, check_in: "2023-12-01", check_out: "2023-12-31"}, expect: []}
+      - {call: search, args: {type: SINGLE, check_in: "2023-12-15", check_out: "2023-12-16"}, expect: ["101"]}
+  - name: second_room_when_first_taken
+    steps:
+      - {call: add_room, args: {number: "101", type: DOUBLE, nightly_rate: 5000}}
+      - {call: add_room, args: {number: "102", type: DOUBLE, nightly_rate: 6000}}
+      - {call: book, args: {guest: a, type: DOUBLE, check_in: "2023-12-01", check_out: "2023-12-03"}}
+      - {call: book, args: {guest: b, type: DOUBLE, check_in: "2023-12-02", check_out: "2023-12-03"}, expect: {room: "102", total: 6000}}
+  - name: early_cancel_full_refund
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-11-16", check_out: "2023-11-18"}, bind: r}
+      - {call: cancel, args: {reservation_id: $r.id}, expect: 6000}
+      - {call: search, args: {type: SINGLE, check_in: "2023-11-16", check_out: "2023-11-18"}, expect: ["101"]}
+      - {call: cancel, args: {reservation_id: $r.id}, expect_error: InvalidState}
+  - name: late_cancel_half_refund
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3001}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-11-15", check_out: "2023-11-16"}, bind: r}
+      - {call: cancel, args: {reservation_id: $r.id}, expect: 1500}
+  - name: check_in_and_out
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-11-15", check_out: "2023-11-17"}, bind: r}
+      - {call: check_in, args: {reservation_id: $r.id}, expect_error: InvalidState}
+      - {call: check_out, args: {reservation_id: $r.id}, expect_error: InvalidState}
+      - advance_clock: 86400
+      - {call: check_in, args: {reservation_id: $r.id}, expect: {status: CHECKED_IN}}
+      - {call: cancel, args: {reservation_id: $r.id}, expect_error: InvalidState}
+      - {call: check_out, args: {reservation_id: $r.id}, expect: {status: CHECKED_OUT}}
+      - {call: check_in, args: {reservation_id: $r.id}, expect_error: InvalidState}
+  - name: unknown_reservation
+    steps:
+      - {call: cancel, args: {reservation_id: nope}, expect_error: UnknownReservation}
+      - {call: check_in, args: {reservation_id: nope}, expect_error: UnknownReservation}
+  - name: room_validation
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: add_room, args: {number: "101", type: SUITE, nightly_rate: 3000}, expect_error: DuplicateRoom}
+      - {call: add_room, args: {number: "102", type: SUITE, nightly_rate: 0}, expect_error: InvalidRate}
+  - name: guest_reservations_sorted
+    steps:
+      - {call: add_room, args: {number: "101", type: SINGLE, nightly_rate: 3000}}
+      - {call: add_room, args: {number: "102", type: SINGLE, nightly_rate: 3000}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-20", check_out: "2023-12-21"}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-01", check_out: "2023-12-02"}, bind: x}
+      - {call: book, args: {guest: b, type: SINGLE, check_in: "2023-12-05", check_out: "2023-12-06"}}
+      - {call: cancel, args: {reservation_id: $x.id}}
+      - call: reservations
+        args: {guest: a}
+        expect: [{check_in: "2023-12-01", status: CANCELLED}, {check_in: "2023-12-20", status: CONFIRMED}]
+      - {call: reservations, args: {guest: zed}, expect: []}
+  - name: rooms_sorted_as_strings
+    steps:
+      - {call: add_room, args: {number: "20", type: SINGLE, nightly_rate: 1}}
+      - {call: add_room, args: {number: "100", type: SINGLE, nightly_rate: 1}}
+      - {call: search, args: {type: SINGLE, check_in: "2023-12-01", check_out: "2023-12-02"}, expect: ["100", "20"]}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-01", check_out: "2023-12-02"}, expect: {room: "100"}}
+  - name: month_boundary_nights
+    steps:
+      - {call: add_room, args: {number: "1", type: SINGLE, nightly_rate: 100}}
+      - {call: book, args: {guest: a, type: SINGLE, check_in: "2023-12-30", check_out: "2024-01-02"}, expect: {total: 300}}

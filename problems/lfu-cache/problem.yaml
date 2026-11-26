@@ -1,0 +1,7 @@
+id: lfu-cache
+title: LFU Cache
+difficulty: medium
+category: Data structures & caching
+time_limit_min: 40
+statement: statement.md
+tags: [data-structures, concurrency]

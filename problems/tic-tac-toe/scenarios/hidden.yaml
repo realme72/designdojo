@@ -1,0 +1,98 @@
+config: {size: 3}
+scenarios:
+  - name: o_wins_column
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 1, col: 2}}
+      - {call: move, args: {row: 2, col: 1}}
+      - {call: move, args: {row: 2, col: 2}, expect: {mark: O, state: O_WON}}
+      - {call: state, expect: O_WON}
+  - name: main_diagonal
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 2, col: 2}, expect: {state: X_WON}}
+  - name: anti_diagonal
+    steps:
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 2, col: 0}, expect: {state: X_WON}}
+  - name: full_board_without_line_is_draw
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 2, col: 0}}
+      - {call: move, args: {row: 1, col: 2}}
+      - {call: move, args: {row: 2, col: 2}}
+      - {call: move, args: {row: 2, col: 1}, expect: {mark: X, state: DRAW}}
+      - {call: current, expect_error: GameOver}
+  - name: last_cell_win
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 1, col: 2}}
+      - {call: move, args: {row: 2, col: 1}}
+      - {call: move, args: {row: 2, col: 0}}
+      - {call: move, args: {row: 2, col: 2}, expect: {state: X_WON}}
+  - name: off_board
+    steps:
+      - {call: move, args: {row: 3, col: 0}, expect_error: InvalidMove}
+      - {call: move, args: {row: 0, col: -1}, expect_error: InvalidMove}
+      - {call: current, expect: X}
+  - name: no_moves_after_game_over
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 2, col: 2}, expect_error: GameOver}
+      - {call: current, expect_error: GameOver}
+  - name: four_by_four_needs_four
+    config: {size: 4}
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 0, col: 2}, expect: {state: IN_PROGRESS}}
+      - {call: move, args: {row: 1, col: 2}}
+      - {call: move, args: {row: 0, col: 3}, expect: {state: X_WON}}
+      - {call: board, expect: [XXXX, OOO., ...., ....]}
+  - name: reset_starts_over
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: reset}
+      - {call: board, expect: [..., ..., ...]}
+      - {call: current, expect: X}
+      - {call: state, expect: IN_PROGRESS}
+      - {call: move, args: {row: 1, col: 1}, expect: {mark: X}}
+  - name: reset_after_win
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: reset}
+      - {call: move, args: {row: 0, col: 0}, expect: {state: IN_PROGRESS}}
+  - name: mixed_line_is_not_a_win
+    steps:
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 2, col: 2}}
+      - {call: move, args: {row: 0, col: 2}, expect: {state: IN_PROGRESS}}

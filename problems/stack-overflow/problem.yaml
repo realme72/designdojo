@@ -1,0 +1,7 @@
+id: stack-overflow
+title: Q&A Site (Stack Overflow)
+difficulty: medium
+category: Social & content
+time_limit_min: 60
+statement: statement.md
+tags: [modeling, observer, concurrency]

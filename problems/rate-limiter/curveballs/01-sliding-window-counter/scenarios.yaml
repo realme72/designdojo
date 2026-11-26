@@ -1,0 +1,32 @@
+scenarios:
+  - name: counter_weights_previous_window
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: SLIDING_WINDOW_COUNTER, limit: 4, window_seconds: 10}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 10
+      - {call: allow, args: {client_id: c}, expect: false}
+      - advance_clock: 5
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+  - name: old_window_is_forgotten
+    steps:
+      - {call: configure, args: {client_id: c, algorithm: SLIDING_WINDOW_COUNTER, limit: 2, window_seconds: 10}}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - advance_clock: 20
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: true}
+      - {call: allow, args: {client_id: c}, expect: false}
+  - name: other_algorithms_unchanged
+    steps:
+      - {call: configure, args: {client_id: a, algorithm: FIXED_WINDOW, limit: 1, window_seconds: 10}}
+      - {call: configure, args: {client_id: b, algorithm: SLIDING_WINDOW_COUNTER, limit: 1, window_seconds: 10}}
+      - {call: allow, args: {client_id: a}, expect: true}
+      - {call: allow, args: {client_id: b}, expect: true}
+      - {call: allow, args: {client_id: a}, expect: false}
+      - {call: allow, args: {client_id: b}, expect: false}

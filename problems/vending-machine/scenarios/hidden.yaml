@@ -1,0 +1,81 @@
+config: {coins: {ONE: 5, TWO: 5, FIVE: 5, TEN: 5}}
+scenarios:
+  - name: sold_out
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 1, quantity: 1}}
+      - {call: insert, args: {coin: ONE}}
+      - {call: select, args: {code: A1}}
+      - {call: insert, args: {coin: ONE}}
+      - {call: select, args: {code: A1}, expect_error: SoldOut}
+      - {call: balance, expect: 1}
+  - name: unknown_product
+    steps:
+      - {call: select, args: {code: Z9}, expect_error: UnknownProduct}
+      - {call: stock, args: {code: Z9}, expect_error: UnknownProduct}
+  - name: error_order_unknown_before_funds
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 5, quantity: 0}}
+      - {call: select, args: {code: A1}, expect_error: SoldOut}
+  - name: cancel_returns_inserted_coins
+    steps:
+      - {call: insert, args: {coin: TWO}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: insert, args: {coin: TWO}}
+      - {call: cancel, expect: [TEN, TWO, TWO]}
+      - {call: balance, expect: 0}
+      - {call: cancel, expect: []}
+  - name: restock_adds_and_reprices
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 5, quantity: 2}}
+      - {call: add_product, args: {code: A1, name: Mint, price: 4, quantity: 3}}
+      - {call: stock, args: {code: A1}, expect: 5}
+      - {call: insert, args: {coin: FIVE}}
+      - {call: select, args: {code: A1}, expect: {change: [ONE]}}
+  - name: invalid_products
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 0, quantity: 1}, expect_error: InvalidProduct}
+      - {call: add_product, args: {code: A1, name: Gum, price: 3, quantity: -1}, expect_error: InvalidProduct}
+      - {call: stock, args: {code: A1}, expect_error: UnknownProduct}
+  - name: cannot_make_change_keeps_session
+    config: {coins: {}}
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 7, quantity: 1}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: select, args: {code: A1}, expect_error: CannotMakeChange}
+      - {call: balance, expect: 10}
+      - {call: stock, args: {code: A1}, expect: 1}
+      - {call: cancel, expect: [TEN]}
+  - name: exact_change_when_greedy_fails
+    config: {coins: {FIVE: 1, TWO: 4}}
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 2, quantity: 1}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: select, args: {code: A1}, expect: {change: [TWO, TWO, TWO, TWO]}}
+  - name: fewest_coins
+    config: {coins: {TEN: 1, FIVE: 4, TWO: 10, ONE: 10}}
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 5, quantity: 1}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: select, args: {code: A1}, expect: {change: [TEN, FIVE]}}
+  - name: inserted_coins_become_change
+    config: {coins: {}}
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 5, quantity: 1}}
+      - {call: insert, args: {coin: FIVE}}
+      - {call: insert, args: {coin: FIVE}}
+      - {call: select, args: {code: A1}, expect: {change: [FIVE]}}
+  - name: change_depletes_float
+    config: {coins: {ONE: 1}}
+    steps:
+      - {call: add_product, args: {code: A1, name: Gum, price: 1, quantity: 5}}
+      - {call: insert, args: {coin: TWO}}
+      - {call: select, args: {code: A1}, expect: {change: [ONE]}}
+      - {call: insert, args: {coin: TWO}}
+      - {call: select, args: {code: A1}, expect_error: CannotMakeChange}
+  - name: balance_accumulates
+    steps:
+      - {call: insert, args: {coin: ONE}, expect: 1}
+      - {call: insert, args: {coin: FIVE}, expect: 6}
+      - {call: insert, args: {coin: TEN}, expect: 16}
+      - {call: balance, expect: 16}

@@ -1,0 +1,77 @@
+config: {max_transfer: 1000}
+scenarios:
+  - name: idempotency_conflict
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: deposit, args: {user: a, amount: 500}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 100, idempotency_key: k}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 150, idempotency_key: k}, expect_error: IdempotencyConflict}
+      - {call: balance, args: {user: a}, expect: 400}
+  - name: failed_attempt_does_not_consume_key
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 100, idempotency_key: k}, expect_error: InsufficientFunds}
+      - {call: deposit, args: {user: a, amount: 100}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 100, idempotency_key: k}}
+      - {call: balance, args: {user: b}, expect: 100}
+  - name: check_order
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: transfer, args: {from_user: a, to_user: z, amount: -1, idempotency_key: k1}, expect_error: UnknownWallet}
+      - {call: transfer, args: {from_user: a, to_user: a, amount: 0, idempotency_key: k2}, expect_error: InvalidAmount}
+      - {call: transfer, args: {from_user: a, to_user: a, amount: 5000, idempotency_key: k3}, expect_error: SameWallet}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 5000, idempotency_key: k4}, expect_error: LimitExceeded}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 1000, idempotency_key: k5}, expect_error: InsufficientFunds}
+  - name: limit_is_inclusive
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: deposit, args: {user: a, amount: 5000}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 1000, idempotency_key: k}}
+  - name: withdraw_rules
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: deposit, args: {user: a, amount: 100}}
+      - {call: withdraw, args: {user: a, amount: 101}, expect_error: InsufficientFunds}
+      - {call: withdraw, args: {user: a, amount: 0}, expect_error: InvalidAmount}
+      - {call: withdraw, args: {user: a, amount: 100}, expect: 0}
+      - {call: deposit, args: {user: a, amount: -5}, expect_error: InvalidAmount}
+  - name: ledger_history
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: deposit, args: {user: a, amount: 500}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 200, idempotency_key: k}}
+      - {call: withdraw, args: {user: a, amount: 50}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 200, idempotency_key: k}}
+      - call: history
+        args: {user: a}
+        expect: [{type: DEPOSIT, amount: 500, balance_after: 500}, {type: TRANSFER_OUT, amount: 200, balance_after: 300}, {type: WITHDRAWAL, amount: 50, balance_after: 250}]
+      - {call: history, args: {user: b}, expect: [{type: TRANSFER_IN, amount: 200, balance_after: 200}]}
+  - name: unknown_and_duplicate_wallets
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: a}, expect_error: DuplicateWallet}
+      - {call: balance, args: {user: z}, expect_error: UnknownWallet}
+      - {call: deposit, args: {user: z, amount: 1}, expect_error: UnknownWallet}
+      - {call: history, args: {user: z}, expect_error: UnknownWallet}
+  - name: keys_are_global_not_per_wallet
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: create_wallet, args: {user: c}}
+      - {call: deposit, args: {user: a, amount: 500}}
+      - {call: deposit, args: {user: c, amount: 500}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 10, idempotency_key: same}}
+      - {call: transfer, args: {from_user: c, to_user: b, amount: 10, idempotency_key: same}, expect_error: IdempotencyConflict}
+  - name: transaction_ids_unique
+    steps:
+      - {call: create_wallet, args: {user: a}}
+      - {call: create_wallet, args: {user: b}}
+      - {call: deposit, args: {user: a, amount: 500}}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 1, idempotency_key: x}, bind: t1}
+      - {call: transfer, args: {from_user: a, to_user: b, amount: 1, idempotency_key: y}, bind: t2}
+      - assert: {distinct: [$t1.id, $t2.id]}

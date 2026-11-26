@@ -1,0 +1,14 @@
+scenarios:
+  - name: no_share_traded_twice
+    repeat: 15
+    steps:
+      - {call: place_order, args: {trader: s, symbol: X, side: SELL, type: LIMIT, qty: 30, price: 100}, bind: s}
+      - parallel: {threads: 50, call: place_order, args: {trader: "b{i}", symbol: X, side: BUY, type: LIMIT, qty: 1, price: 100}, collect: r}
+      - assert: {of: r, ok_count: 50}
+      - {call: order, args: {order_id: $s.order_id}, expect: {status: FILLED, filled_qty: 30}}
+      - {call: book, args: {symbol: X}, expect: {bids: [{price: 100, qty: 20}], asks: []}}
+  - name: unique_order_ids
+    repeat: 10
+    steps:
+      - parallel: {threads: 50, call: place_order, args: {trader: "t{i}", symbol: Y, side: BUY, type: LIMIT, qty: 1, price: "{i+1}"}, collect: r}
+      - assert: {of: r, ok_count: 50, unique: order_id}

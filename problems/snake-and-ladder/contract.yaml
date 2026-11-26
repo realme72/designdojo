@@ -1,0 +1,43 @@
+dtos:
+  BoardConfig:
+    size: int
+    snakes: "map[int, int]"
+    ladders: "map[int, int]"
+  MoveResult:
+    player: str
+    roll: int
+    from_pos: int
+    to_pos: int
+    won: bool
+    next_player: str
+
+interfaces:
+  Game:
+    add_player:
+      params: {name: str}
+      returns: void
+      raises: [GameStarted, DuplicatePlayer]
+    move:
+      params: {player: str, roll: int}
+      returns: MoveResult
+      raises: [GameOver, UnknownPlayer, NotYourTurn, InvalidRoll]
+    position:
+      params: {player: str}
+      returns: int
+      raises: [UnknownPlayer]
+    current_player:
+      returns: str
+      raises: [NoPlayers, GameOver]
+    winner:
+      returns: str
+      doc: Empty string while nobody has won.
+
+entrypoint:
+  name: create
+  params: {config: BoardConfig}
+  returns: Game
+
+errors: [GameStarted, DuplicatePlayer, GameOver, UnknownPlayer, NotYourTurn, InvalidRoll, NoPlayers]
+
+docs:
+  BoardConfig: snakes map head -> tail; ladders map bottom -> top.

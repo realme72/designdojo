@@ -1,0 +1,46 @@
+dtos:
+  Booking:
+    id: str
+    room: str
+    organizer: str
+    start: long
+    end: long
+  Slot:
+    start: long
+    end: long
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  RoomScheduler:
+    add_room:
+      params: {room_id: str, capacity: int}
+      returns: void
+      raises: [DuplicateRoom, InvalidCapacity]
+    book:
+      params: {organizer: str, attendees: int, start: long, end: long}
+      returns: Booking
+      raises: [InvalidInterval, NoRoomAvailable]
+    cancel:
+      params: {booking_id: str}
+      returns: void
+      raises: [UnknownBooking]
+    bookings:
+      params: {room_id: str}
+      returns: "list[Booking]"
+      raises: [UnknownRoom]
+    free_slots:
+      params: {room_id: str, start: long, end: long}
+      returns: "list[Slot]"
+      raises: [UnknownRoom, InvalidInterval]
+
+entrypoint:
+  name: create
+  params: {clock: Clock}
+  returns: RoomScheduler
+
+errors: [DuplicateRoom, InvalidCapacity, InvalidInterval, NoRoomAvailable, UnknownBooking, UnknownRoom]

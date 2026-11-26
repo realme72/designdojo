@@ -1,0 +1,22 @@
+scenarios:
+  - name: slots_and_booking
+    steps:
+      - {call: add_doctor, args: {doctor_id: d1, specialty: derma, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d1, start: 1700003600, end: 1700007200}}
+      - {call: available_slots, args: {specialty: derma, start: 1700000000, end: 1700100000}, expect: [{doctor_id: d1, start: 1700003600}, {doctor_id: d1, start: 1700005400}]}
+      - {call: book, args: {patient: p1, doctor_id: d1, start: 1700005400}, bind: a}
+      - {call: available_slots, args: {specialty: derma, start: 1700000000, end: 1700100000}, expect: [{doctor_id: d1, start: 1700003600}]}
+      - {call: appointments, args: {patient: p1}, expect: [{doctor_id: d1, start: 1700005400, end: 1700007200}]}
+  - name: slot_taken
+    steps:
+      - {call: add_doctor, args: {doctor_id: d1, specialty: derma, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d1, start: 1700003600, end: 1700005400}}
+      - {call: book, args: {patient: p1, doctor_id: d1, start: 1700003600}}
+      - {call: book, args: {patient: p2, doctor_id: d1, start: 1700003600}, expect_error: SlotUnavailable}
+  - name: cancel_frees
+    steps:
+      - {call: add_doctor, args: {doctor_id: d1, specialty: derma, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d1, start: 1700003600, end: 1700005400}}
+      - {call: book, args: {patient: p1, doctor_id: d1, start: 1700003600}, bind: a}
+      - {call: cancel, args: {appointment_id: $a}}
+      - {call: book, args: {patient: p2, doctor_id: d1, start: 1700003600}}

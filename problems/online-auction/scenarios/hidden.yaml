@@ -1,0 +1,58 @@
+config: {extension_window: 60, extension: 120}
+scenarios:
+  - name: anti_sniping_extends
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 10, min_increment: 1, ends_at: 1700000100}}
+      - advance_clock: 41
+      - {call: bid, args: {auction_id: A, bidder: a, amount: 10}, expect: {ends_at: 1700000161}}
+      - advance_clock: 100
+      - {call: bid, args: {auction_id: A, bidder: b, amount: 11}, expect: {ends_at: 1700000261}}
+  - name: no_extension_outside_window
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 10, min_increment: 1, ends_at: 1700000100}}
+      - advance_clock: 40
+      - {call: bid, args: {auction_id: A, bidder: a, amount: 10}, expect: {ends_at: 1700000100}}
+  - name: closed_at_end_time
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 10, min_increment: 1, ends_at: 1700000100}}
+      - advance_clock: 100
+      - {call: bid, args: {auction_id: A, bidder: a, amount: 50}, expect_error: AuctionClosed}
+      - {call: close, args: {auction_id: A}, expect: {winner: "", price: 0}}
+      - {call: close, args: {auction_id: A}, expect: {winner: "", price: 0}}
+  - name: below_starting_price
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 100, min_increment: 5, ends_at: 1700000100}}
+      - {call: bid, args: {auction_id: A, bidder: a, amount: 99}, expect_error: BidTooLow}
+      - {call: highest, args: {auction_id: A}, expect_error: NoBids}
+  - name: check_order
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 100, min_increment: 5, ends_at: 1700000100}}
+      - {call: bid, args: {auction_id: Z, bidder: a, amount: 1}, expect_error: UnknownAuction}
+      - {call: bid, args: {auction_id: A, bidder: s, amount: 1}, expect_error: SelfBid}
+      - advance_clock: 200
+      - {call: bid, args: {auction_id: A, bidder: s, amount: 1}, expect_error: AuctionClosed}
+  - name: history_in_order
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 10, min_increment: 5, ends_at: 1700000100}}
+      - {call: bid, args: {auction_id: A, bidder: a, amount: 10}}
+      - {call: bid, args: {auction_id: A, bidder: b, amount: 12}, expect_error: BidTooLow}
+      - {call: bid, args: {auction_id: A, bidder: b, amount: 20}}
+      - {call: bid, args: {auction_id: A, bidder: a, amount: 25}}
+      - {call: history, args: {auction_id: A}, expect: [{bidder: a, amount: 10}, {bidder: b, amount: 20}, {bidder: a, amount: 25}]}
+  - name: invalid_auctions
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 0, min_increment: 5, ends_at: 1700000100}, expect_error: InvalidAuction}
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 1, min_increment: 0, ends_at: 1700000100}, expect_error: InvalidAuction}
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 1, min_increment: 1, ends_at: 1700000000}, expect_error: InvalidAuction}
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 1, min_increment: 1, ends_at: 1700000001}}
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 1, min_increment: 1, ends_at: 1700000001}, expect_error: DuplicateAuction}
+  - name: extended_auction_stays_open
+    steps:
+      - {call: create_auction, args: {auction_id: A, seller: s, starting_price: 10, min_increment: 1, ends_at: 1700000100}}
+      - advance_clock: 90
+      - {call: bid, args: {auction_id: A, bidder: a, amount: 10}}
+      - advance_clock: 20
+      - {call: close, args: {auction_id: A}, expect_error: AuctionOpen}
+      - {call: bid, args: {auction_id: A, bidder: b, amount: 11}}
+      - advance_clock: 120
+      - {call: close, args: {auction_id: A}, expect: {winner: b, price: 11}}

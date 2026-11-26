@@ -149,7 +149,9 @@ def review(ws, *, last_run: dict | None = None, provider: Provider | None = None
     files = read_solution(ws.root, EXT[lang])
     analysis = analyze(ws.root, lang, concurrency=problem.concurrency, contract_types=problem.contract_types)
     dps = problem.decision_points
-    user, meta = build(title=problem.title, statement=problem.statement, decision_points=dps,
+    from ..judge import problem_text
+
+    user, meta = build(title=problem.title, statement=problem_text(problem, ws.level), decision_points=dps,
                        analysis=analysis, files=files, tests=_tests_summary(last_run))
 
     key = hashlib.sha256(f"{PROMPT_VERSION}\n{SYSTEM}\n{user}".encode()).hexdigest()[:24]

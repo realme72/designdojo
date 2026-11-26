@@ -1,0 +1,21 @@
+config: {capacity: 2}
+scenarios:
+  - name: evicts_least_recently_used
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+      - {call: keys, expect: [c, b]}
+  - name: get_refreshes_recency
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: get, args: {key: a}, expect: "1"}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: b}, expect_error: CacheMiss}
+      - {call: get, args: {key: a}, expect: "1"}
+  - name: miss_on_empty
+    steps:
+      - {call: get, args: {key: x}, expect_error: CacheMiss}
+      - {call: size, expect: 0}

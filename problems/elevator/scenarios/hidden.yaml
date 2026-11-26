@@ -1,0 +1,126 @@
+config: {floors: 10, elevators: 1}
+scenarios:
+  - name: serves_stops_in_one_sweep
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 5}}
+      - {call: press, args: {elevator_id: 1, floor: 3}}
+      - {call: step}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 3, direction: UP, stops: [5]}}
+      - {call: step}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 5, direction: IDLE, stops: []}}
+  - name: reverses_after_last_stop_ahead
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 4}}
+      - {call: step}
+      - {call: step}
+      - {call: press, args: {elevator_id: 1, floor: 2}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 4, direction: DOWN, stops: [2]}}
+      - {call: step}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 2, direction: IDLE, stops: []}}
+  - name: idle_heads_to_nearest_stop
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 5}}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: press, args: {elevator_id: 1, floor: 3}}
+      - {call: press, args: {elevator_id: 1, floor: 8}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 4, direction: DOWN, stops: [3, 8]}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 3, direction: UP, stops: [8]}}
+  - name: equidistant_goes_up
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 5}}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: press, args: {elevator_id: 1, floor: 3}}
+      - {call: press, args: {elevator_id: 1, floor: 7}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 6, direction: UP}}
+  - name: request_at_idle_floor_is_immediate
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 1}}
+      - {call: call, args: {floor: 1, direction: UP}, expect: 1}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 1, direction: IDLE, stops: []}}
+  - name: invalid_hall_directions
+    steps:
+      - {call: call, args: {floor: 10, direction: UP}, expect_error: InvalidRequest}
+      - {call: call, args: {floor: 1, direction: DOWN}, expect_error: InvalidRequest}
+      - {call: call, args: {floor: 3, direction: IDLE}, expect_error: InvalidRequest}
+  - name: unknown_elevator
+    steps:
+      - {call: press, args: {elevator_id: 2, floor: 3}, expect_error: UnknownElevator}
+      - {call: status, args: {elevator_id: 0}, expect_error: UnknownElevator}
+  - name: no_stops_stays_idle
+    steps:
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 1, direction: IDLE, stops: []}}
+  - name: duplicate_stop_is_one_stop
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 4}}
+      - {call: press, args: {elevator_id: 1, floor: 4}}
+      - {call: call, args: {floor: 4, direction: UP}}
+      - {call: status, args: {elevator_id: 1}, expect: {stops: [4]}}
+  - name: dispatch_tie_goes_to_lowest_id
+    config: {floors: 10, elevators: 3}
+    steps:
+      - {call: call, args: {floor: 4, direction: UP}, expect: 1}
+  - name: dispatch_prefers_elevator_on_the_way
+    config: {floors: 10, elevators: 2}
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 9}}
+      - {call: step}
+      - {call: call, args: {floor: 5, direction: UP}, expect: 1}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 2, direction: UP, stops: [5, 9]}}
+  - name: dispatch_skips_elevator_moving_away
+    config: {floors: 10, elevators: 2}
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 9}}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: call, args: {floor: 2, direction: UP}, expect: 2}
+  - name: dispatch_ignores_opposite_direction
+    config: {floors: 10, elevators: 2}
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 9}}
+      - {call: step}
+      - {call: step}
+      - {call: call, args: {floor: 6, direction: DOWN}, expect: 2}
+  - name: dispatch_falls_back_to_nearest
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 9}}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: call, args: {floor: 2, direction: UP}, expect: 1}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 5, direction: UP, stops: [2, 9]}}
+  - name: elevators_move_independently
+    config: {floors: 10, elevators: 2}
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 3}}
+      - {call: press, args: {elevator_id: 2, floor: 2}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 2, direction: UP, stops: [3]}}
+      - {call: status, args: {elevator_id: 2}, expect: {floor: 2, direction: IDLE, stops: []}}
+  - name: full_trip_down_and_back_up
+    steps:
+      - {call: press, args: {elevator_id: 1, floor: 4}}
+      - {call: step}
+      - {call: step}
+      - {call: step}
+      - {call: press, args: {elevator_id: 1, floor: 2}}
+      - {call: press, args: {elevator_id: 1, floor: 7}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 3, direction: DOWN, stops: [2, 7]}}
+      - {call: step}
+      - {call: status, args: {elevator_id: 1}, expect: {floor: 2, direction: UP, stops: [7]}}

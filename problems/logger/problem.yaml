@@ -1,0 +1,7 @@
+id: logger
+title: Logging Framework
+difficulty: easy
+category: Infrastructure & control
+time_limit_min: 40
+statement: statement.md
+tags: [chain-of-responsibility, observer, concurrency]

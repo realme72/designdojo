@@ -1,0 +1,7 @@
+id: tic-tac-toe
+title: Tic-Tac-Toe (N×N)
+difficulty: easy
+category: Games
+time_limit_min: 30
+statement: statement.md
+tags: [games, algorithms]

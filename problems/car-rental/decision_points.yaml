@@ -1,0 +1,21 @@
+- id: billing
+  keywords: [bill, fee, late, mileage, rate, price, charge]
+  question: Where is the bill computed?
+  good: A pricing component composed of fee rules (base, late, mileage) that each compute one line; adding insurance is a new rule.
+  principles: [OCP, SRP]
+  patterns: [Strategy, Composite]
+- id: lifecycle
+  keywords: [status, reserved, active, returned, cancelled, transition]
+  question: How are rental transitions enforced?
+  good: A transition table or State objects; illegal transitions raise in one place.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: availability
+  keywords: [available, overlap, days, free, car]
+  question: How is availability determined, including late returns?
+  good: Each car's rentals as day ranges; an active (unreturned) rental blocks the car until return.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents double-booking?
+  good: Picking a free car and recording the rental is atomic.
+  smells: [UNGUARDED_SHARED]

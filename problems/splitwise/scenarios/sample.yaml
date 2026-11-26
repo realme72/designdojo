@@ -1,0 +1,26 @@
+scenarios:
+  - name: equal_split_three_ways
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - call: add_expense
+        args: {paid_by: A, amount: 300, split_type: EQUAL, shares: [{user: A, value: 0}, {user: B, value: 0}, {user: C, value: 0}]}
+      - {call: balance, args: {user_id: A}, expect: 200}
+      - {call: balance, args: {user_id: B}, expect: -100}
+      - {call: balance, args: {user_id: C}, expect: -100}
+  - name: exact_split
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - {call: add_user, args: {user_id: C}}
+      - call: add_expense
+        args: {paid_by: A, amount: 1000, split_type: EXACT, shares: [{user: B, value: 600}, {user: C, value: 400}]}
+      - {call: balances, expect: [{user: A, amount: 1000}, {user: B, amount: -600}, {user: C, amount: -400}]}
+  - name: percents_must_total_100
+    steps:
+      - {call: add_user, args: {user_id: A}}
+      - {call: add_user, args: {user_id: B}}
+      - call: add_expense
+        args: {paid_by: A, amount: 1000, split_type: PERCENT, shares: [{user: A, value: 50}, {user: B, value: 40}]}
+        expect_error: InvalidSplit

@@ -1,0 +1,50 @@
+scenarios:
+  - name: multi_choice
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [a, b, c], closes_at: 1700000100, multi_choice: true}}
+      - {call: vote, args: {poll_id: p, user: u1, choices: [a, c]}}
+      - {call: vote, args: {poll_id: p, user: u2, choices: [c]}}
+      - {call: results, args: {poll_id: p}, expect: [{option: a, votes: 1}, {option: b, votes: 0}, {option: c, votes: 2}]}
+  - name: invalid_choices
+    steps:
+      - {call: create_poll, args: {poll_id: s, options: [a, b], closes_at: 1700000100, multi_choice: false}}
+      - {call: create_poll, args: {poll_id: m, options: [a, b], closes_at: 1700000100, multi_choice: true}}
+      - {call: vote, args: {poll_id: s, user: u, choices: [a, b]}, expect_error: InvalidChoice}
+      - {call: vote, args: {poll_id: s, user: u, choices: []}, expect_error: InvalidChoice}
+      - {call: vote, args: {poll_id: s, user: u, choices: [z]}, expect_error: InvalidChoice}
+      - {call: vote, args: {poll_id: m, user: u, choices: [a, a]}, expect_error: InvalidChoice}
+      - {call: vote, args: {poll_id: s, user: u, choices: [b]}}
+  - name: invalid_polls
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [only], closes_at: 1700000100, multi_choice: false}, expect_error: InvalidPoll}
+      - {call: create_poll, args: {poll_id: p, options: [x, x], closes_at: 1700000100, multi_choice: false}, expect_error: InvalidPoll}
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000000, multi_choice: false}, expect_error: InvalidPoll}
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000001, multi_choice: false}}
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000001, multi_choice: false}, expect_error: DuplicatePoll}
+  - name: closed_poll
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000010, multi_choice: false}}
+      - advance_clock: 10
+      - {call: vote, args: {poll_id: p, user: u, choices: [x]}, expect_error: PollClosed}
+      - {call: retract, args: {poll_id: p, user: u}, expect_error: PollClosed}
+  - name: retract_and_revote
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000100, multi_choice: false}}
+      - {call: vote, args: {poll_id: p, user: u, choices: [x]}}
+      - {call: retract, args: {poll_id: p, user: u}}
+      - {call: retract, args: {poll_id: p, user: u}, expect_error: NotVoted}
+      - {call: vote, args: {poll_id: p, user: u, choices: [y]}}
+      - {call: results, args: {poll_id: p}, expect: [{option: x, votes: 0}, {option: y, votes: 1}]}
+  - name: tie_and_zero_winners
+    steps:
+      - {call: create_poll, args: {poll_id: t, options: [a, b, c], closes_at: 1700000010, multi_choice: false}}
+      - {call: create_poll, args: {poll_id: z, options: [a, b], closes_at: 1700000010, multi_choice: false}}
+      - {call: vote, args: {poll_id: t, user: u1, choices: [c]}}
+      - {call: vote, args: {poll_id: t, user: u2, choices: [a]}}
+      - advance_clock: 10
+      - {call: winners, args: {poll_id: t}, expect: [a, c]}
+      - {call: winners, args: {poll_id: z}, expect: [a, b]}
+  - name: unknown_poll
+    steps:
+      - {call: vote, args: {poll_id: nope, user: u, choices: [x]}, expect_error: UnknownPoll}
+      - {call: results, args: {poll_id: nope}, expect_error: UnknownPoll}

@@ -10,7 +10,7 @@ public final class Solution {
 
     public static ParkingLotApi create(LotConfig config, Clock clock) {
         SpotAllocator allocator = new SmallestFitAllocator(SpotLayout.from(config.floors()), new Compatibility());
-        PricingPolicy pricing = new HourlyPricing(config.hourlyRateCents());
+        DailyCapPricing pricing = new DailyCapPricing(new HourlyPricing(config.hourlyRateCents()));
         return new ParkingLot(allocator, pricing, clock);
     }
 }

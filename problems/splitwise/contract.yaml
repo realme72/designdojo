@@ -1,0 +1,47 @@
+enums:
+  SplitType: [EQUAL, EXACT, PERCENT]
+
+dtos:
+  Share:
+    user: str
+    value: long
+  Balance:
+    user: str
+    amount: long
+  Transfer:
+    from_user: str
+    to_user: str
+    amount: long
+
+interfaces:
+  Splitwise:
+    add_user:
+      params: {user_id: str}
+      returns: void
+      raises: [DuplicateUser]
+    add_expense:
+      params: {paid_by: str, amount: long, split_type: SplitType, shares: "list[Share]"}
+      returns: str
+      raises: [UnknownUser, InvalidSplit]
+      doc: Returns a unique expense id.
+    settle:
+      params: {from_user: str, to_user: str, amount: long}
+      returns: void
+      raises: [UnknownUser, InvalidAmount]
+    balance:
+      params: {user_id: str}
+      returns: long
+      raises: [UnknownUser]
+      doc: Net cents; positive = others owe this user.
+    balances:
+      returns: "list[Balance]"
+      doc: All users sorted by id, zeros included.
+    simplify:
+      returns: "list[Transfer]"
+      doc: Settle-up plan; does not change balances.
+
+entrypoint:
+  name: create
+  returns: Splitwise
+
+errors: [DuplicateUser, UnknownUser, InvalidSplit, InvalidAmount]

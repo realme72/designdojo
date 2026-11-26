@@ -1,0 +1,38 @@
+config: {epoch: 1699999990, worker_id: 1023, sequence_bits: 2}
+scenarios:
+  - name: exhausts_small_sequence
+    steps:
+      - {call: next_id}
+      - {call: next_id}
+      - {call: next_id}
+      - {call: next_id, bind: last}
+      - {call: parse, args: {id: $last}, expect: {sequence: 3, worker: 1023}}
+      - {call: next_id, expect_error: SequenceExhausted}
+      - advance_clock: 1
+      - {call: next_id, bind: n}
+      - {call: parse, args: {id: $n}, expect: {timestamp: 1700000001, sequence: 0}}
+  - name: clock_backwards
+    steps:
+      - {call: next_id}
+      - advance_clock: -1
+      - {call: next_id, expect_error: ClockMovedBackwards}
+      - advance_clock: 1
+      - {call: next_id}
+  - name: ids_increase_across_seconds
+    steps:
+      - {call: next_id, bind: a}
+      - {call: next_id, bind: b}
+      - advance_clock: 1
+      - {call: next_id, bind: c}
+      - assert: {distinct: [$a, $b, $c]}
+      - {call: parse, args: {id: $c}, expect: {timestamp: 1700000001, worker: 1023, sequence: 0}}
+  - name: exact_value_small_layout
+    config: {epoch: 1700000000, worker_id: 3, sequence_bits: 2}
+    steps:
+      - advance_clock: 2
+      - {call: next_id, expect: 8204}
+      - {call: next_id, expect: 8205}
+  - name: parse_foreign_id
+    config: {epoch: 1700000000, worker_id: 0, sequence_bits: 2}
+    steps:
+      - {call: parse, args: {id: 8207}, expect: {timestamp: 1700000002, worker: 3, sequence: 3}}

@@ -1,0 +1,9 @@
+config: {max_per_hour: 10}
+scenarios:
+  - name: rate_limit_holds_under_load
+    repeat: 15
+    steps:
+      - {call: set_preferences, args: {user: u, channels: [EMAIL]}}
+      - {call: add_template, args: {template_id: t, body: "m"}}
+      - parallel: {threads: 50, call: send, args: {user: u, template_id: t, vars: {}, priority: LOW}, collect: r}
+      - assert: {of: r, ok_count: 50, value_count: {"[{\"channel\":\"EMAIL\",\"message\":\"m\",\"status\":\"SENT\"}]": 10}}

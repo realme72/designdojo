@@ -1,0 +1,7 @@
+id: lru-cache
+title: LRU Cache
+difficulty: easy
+category: Data structures & caching
+time_limit_min: 30
+statement: statement.md
+tags: [data-structures, concurrency]

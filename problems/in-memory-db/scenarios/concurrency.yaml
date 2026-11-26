@@ -1,0 +1,16 @@
+scenarios:
+  - name: unique_keys_under_concurrent_inserts
+    repeat: 15
+    steps:
+      - {call: create_table, args: {name: t, columns: [k, by], primary_key: k}}
+      - parallel: {threads: 30, call: insert, args: {table: t, row: {k: same, by: "w{i}"}}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {DuplicateKey: 29}}
+      - {call: select, args: {table: t, where: {}, order_by: "", limit: 0}, bind: rows}
+  - name: concurrent_distinct_inserts_with_index
+    repeat: 10
+    steps:
+      - {call: create_table, args: {name: t, columns: [k, g], primary_key: k}}
+      - {call: create_index, args: {table: t, column: g}}
+      - parallel: {threads: 60, call: insert, args: {table: t, row: {k: "k{i}", g: same}}, collect: r}
+      - assert: {of: r, ok_count: 60}
+      - {call: delete, args: {table: t, where: {g: same}}, expect: 60}

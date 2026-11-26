@@ -1,0 +1,28 @@
+- id: availability
+  keywords: [overlap, available, free, range, interval, search]
+  question: How is room availability for a date range determined?
+  good: Each room keeps its booked half-open intervals; overlap check is one clear function used by search and book.
+  principles: [SRP]
+- id: lifecycle
+  keywords: [status, confirmed, cancelled, checked, transition, state]
+  question: How are reservation status transitions enforced?
+  good: Transitions are defined in one place (state machine/table); illegal ones raise.
+  smells: [STATE_FLAG, TYPE_SWITCH]
+  patterns: [State]
+- id: policies
+  keywords: [refund, price, rate, policy, total, nights]
+  question: Where do pricing and the refund rule live?
+  good: Pricing and cancellation policies are separate strategy objects, so seasonal rates or new refund rules don't touch booking logic.
+  principles: [OCP]
+  patterns: [Strategy]
+- id: dates
+  keywords: [date, today, clock, parse, iso]
+  question: How are dates and "today" handled?
+  good: Parsed once into date objects; today comes from the injected Clock.
+  smells: [DIRECT_TIME, PRIMITIVE_OBSESSION]
+  principles: [DIP]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents double-booking?
+  good: Find-free-room and record-reservation happen atomically (lock per room type or per hotel).
+  smells: [UNGUARDED_SHARED]

@@ -1,0 +1,17 @@
+config: {close_threshold: 1000}
+scenarios:
+  - name: votes_not_lost
+    repeat: 15
+    steps:
+      - {call: ask, args: {user: ann, question_id: q, title: t, tags: [x]}}
+      - {call: answer, args: {user: bob, question_id: q, answer_id: a}}
+      - parallel: {threads: 100, call: vote, args: {user: "u{i}", post_id: a, up: true}, collect: r}
+      - {call: score, args: {post_id: a}, expect: 100}
+      - {call: reputation, args: {user: bob}, expect: 1001}
+  - name: same_user_vote_race
+    repeat: 15
+    steps:
+      - {call: ask, args: {user: ann, question_id: q, title: t, tags: [x]}}
+      - parallel: {threads: 30, call: vote, args: {user: same, post_id: q, up: true}, collect: r}
+      - {call: score, args: {post_id: q}, expect: 1}
+      - {call: reputation, args: {user: ann}, expect: 6}

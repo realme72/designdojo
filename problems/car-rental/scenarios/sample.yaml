@@ -1,0 +1,19 @@
+config: {late_multiplier: 2, free_km_per_day: 100, per_km: 10}
+scenarios:
+  - name: reserve_pickup_return
+    steps:
+      - {call: add_car, args: {car_id: c2, branch: blr, category: SEDAN, daily_rate: 2000, odometer: 5000}}
+      - {call: add_car, args: {car_id: c1, branch: blr, category: SEDAN, daily_rate: 2000, odometer: 1000}}
+      - {call: reserve, args: {customer: ann, branch: blr, category: SEDAN, pickup_day: 19675, return_day: 19677}, expect: {car_id: c1, status: RESERVED}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}, expect: {status: ACTIVE}}
+      - advance_clock: 172800
+      - {call: return_car, args: {rental_id: $r.id, odometer: 1150}, expect: {base: 4000, late_fee: 0, mileage_fee: 0, total: 4000}}
+  - name: mileage_fee
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: blr, category: SUV, daily_rate: 3000, odometer: 0}}
+      - {call: reserve, args: {customer: ann, branch: blr, category: SUV, pickup_day: 19675, return_day: 19676}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - {call: return_car, args: {rental_id: $r.id, odometer: 250}, expect: {base: 3000, mileage_fee: 1500, total: 4500}}
+  - name: no_car
+    steps:
+      - {call: reserve, args: {customer: ann, branch: blr, category: SUV, pickup_day: 19675, return_day: 19676}, expect_error: NoCarAvailable}

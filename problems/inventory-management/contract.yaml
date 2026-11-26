@@ -1,0 +1,47 @@
+dtos:
+  Line:
+    sku: str
+    qty: int
+  Allocation:
+    sku: str
+    warehouse: str
+    qty: int
+
+interfaces:
+  Inventory:
+    receive:
+      params: {sku: str, warehouse: str, qty: int}
+      returns: void
+      raises: [InvalidQuantity]
+    available:
+      params: {sku: str}
+      returns: int
+      raises: [UnknownSku]
+    available_at:
+      params: {sku: str, warehouse: str}
+      returns: int
+      raises: [UnknownSku]
+    reserve:
+      params: {order_id: str, lines: "list[Line]"}
+      returns: "list[Allocation]"
+      raises: [DuplicateOrder, InvalidQuantity, UnknownSku, OutOfStock]
+    commit:
+      params: {order_id: str}
+      returns: void
+      raises: [UnknownOrder]
+    release:
+      params: {order_id: str}
+      returns: void
+      raises: [UnknownOrder]
+    set_threshold:
+      params: {sku: str, threshold: int}
+      returns: void
+      raises: [UnknownSku]
+    low_stock:
+      returns: "list[str]"
+
+entrypoint:
+  name: create
+  returns: Inventory
+
+errors: [InvalidQuantity, UnknownSku, DuplicateOrder, OutOfStock, UnknownOrder]

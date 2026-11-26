@@ -1,0 +1,15 @@
+- id: next_policy
+  keywords: [next, repeat, wrap, order, iterator, shuffle]
+  question: Where does "what plays next" live?
+  good: A playback-order strategy/iterator (sequential, repeat-all, later shuffle) consulted after the queue; the player doesn't branch on mode in several places.
+  smells: [TYPE_SWITCH, STATE_FLAG]
+  patterns: [Strategy, Iterator]
+- id: queue_and_history
+  keywords: [queue, history, previous, stack]
+  question: How are the queue and history modelled?
+  good: A FIFO queue for play-next and a stack of (song, position) for previous; clearly separated from the playlist.
+- id: model
+  keywords: [playlist, song, library]
+  question: Are library, playlists and the player separate?
+  good: Library (songs), Playlist (ordered entries), Player (playback state).
+  principles: [SRP]

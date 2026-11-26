@@ -1,0 +1,23 @@
+scenarios:
+  - name: round_robin_cycles
+    steps:
+      - {call: add_server, args: {server_id: b, weight: 1}}
+      - {call: add_server, args: {server_id: a, weight: 1}}
+      - {call: add_server, args: {server_id: c, weight: 1}}
+      - {call: acquire, expect: a}
+      - {call: acquire, expect: b}
+      - {call: acquire, expect: c}
+      - {call: acquire, expect: a}
+  - name: least_connections
+    steps:
+      - {call: add_server, args: {server_id: a, weight: 1}}
+      - {call: add_server, args: {server_id: b, weight: 1}}
+      - {call: set_strategy, args: {strategy: LEAST_CONNECTIONS}}
+      - {call: acquire, expect: a}
+      - {call: acquire, expect: b}
+      - {call: release, args: {server_id: b}}
+      - {call: acquire, expect: b}
+      - {call: active, args: {server_id: a}, expect: 1}
+  - name: no_servers
+    steps:
+      - {call: acquire, expect_error: NoHealthyServer}
