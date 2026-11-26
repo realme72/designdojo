@@ -1,0 +1,16 @@
+scenarios:
+  - name: smallest_room_that_fits
+    steps:
+      - {call: add_room, args: {room_id: big, capacity: 20}}
+      - {call: add_room, args: {room_id: small, capacity: 4}}
+      - {call: book, args: {organizer: ann, attendees: 3, start: 1700003600, end: 1700007200}, expect: {room: small, organizer: ann}}
+      - {call: book, args: {organizer: bob, attendees: 3, start: 1700003600, end: 1700007200}, expect: {room: big}}
+  - name: back_to_back_is_fine
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 4}}
+      - {call: book, args: {organizer: a, attendees: 2, start: 1700000000, end: 1700003600}}
+      - {call: book, args: {organizer: b, attendees: 2, start: 1700003600, end: 1700007200}, expect: {room: r}}
+  - name: no_room
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 4}}
+      - {call: book, args: {organizer: a, attendees: 5, start: 1700000000, end: 1700003600}, expect_error: NoRoomAvailable}

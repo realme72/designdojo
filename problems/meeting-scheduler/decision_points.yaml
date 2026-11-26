@@ -1,0 +1,21 @@
+- id: room_selection
+  keywords: [select, choose, smallest, fit, capacity, policy]
+  question: Where does the room-selection policy live?
+  good: A selection strategy picks from candidate free rooms; swapping to "nearest room" is a new class.
+  principles: [OCP]
+  patterns: [Strategy]
+- id: intervals
+  keywords: [overlap, interval, free, slot, gap, sorted]
+  question: How are overlaps and free slots computed?
+  good: Each room keeps bookings sorted by start; overlap and gap computation are small, well-tested functions.
+  principles: [SRP]
+- id: time
+  keywords: [clock, now, past]
+  question: How is "not in the past" enforced?
+  good: Using the injected clock.
+  smells: [DIRECT_TIME]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents double-booking?
+  good: Checking availability and recording the booking happen atomically.
+  smells: [UNGUARDED_SHARED]

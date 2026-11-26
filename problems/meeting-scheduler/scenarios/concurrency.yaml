@@ -1,0 +1,9 @@
+scenarios:
+  - name: no_double_booking
+    repeat: 15
+    steps:
+      - {call: add_room, args: {room_id: a, capacity: 10}}
+      - {call: add_room, args: {room_id: b, capacity: 10}}
+      - {call: add_room, args: {room_id: c, capacity: 10}}
+      - parallel: {threads: 20, call: book, args: {organizer: "o{i}", attendees: 5, start: 1700003600, end: 1700007200}, collect: r}
+      - assert: {of: r, ok_count: 3, error_count: {NoRoomAvailable: 17}, unique: room}

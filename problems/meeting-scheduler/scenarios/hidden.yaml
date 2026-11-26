@@ -1,0 +1,59 @@
+scenarios:
+  - name: tie_lowest_room_id
+    steps:
+      - {call: add_room, args: {room_id: r2, capacity: 6}}
+      - {call: add_room, args: {room_id: r1, capacity: 6}}
+      - {call: book, args: {organizer: a, attendees: 6, start: 1700000000, end: 1700000100}, expect: {room: r1}}
+  - name: partial_overlaps_block
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 4}}
+      - {call: book, args: {organizer: a, attendees: 1, start: 1700001000, end: 1700002000}}
+      - {call: book, args: {organizer: b, attendees: 1, start: 1700000500, end: 1700001001}, expect_error: NoRoomAvailable}
+      - {call: book, args: {organizer: b, attendees: 1, start: 1700001999, end: 1700003000}, expect_error: NoRoomAvailable}
+      - {call: book, args: {organizer: b, attendees: 1, start: 1700000000, end: 1700005000}, expect_error: NoRoomAvailable}
+      - {call: book, args: {organizer: b, attendees: 1, start: 1700001200, end: 1700001300}, expect_error: NoRoomAvailable}
+      - {call: book, args: {organizer: b, attendees: 1, start: 1700000000, end: 1700001000}}
+  - name: invalid_intervals
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 4}}
+      - {call: book, args: {organizer: a, attendees: 1, start: 1700000100, end: 1700000100}, expect_error: InvalidInterval}
+      - {call: book, args: {organizer: a, attendees: 1, start: 1699999999, end: 1700000100}, expect_error: InvalidInterval}
+      - {call: free_slots, args: {room_id: r, start: 1700000100, end: 1700000100}, expect_error: InvalidInterval}
+  - name: cancel_frees_room
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 4}}
+      - {call: book, args: {organizer: a, attendees: 1, start: 1700000000, end: 1700000100}, bind: b}
+      - {call: cancel, args: {booking_id: $b.id}}
+      - {call: book, args: {organizer: c, attendees: 1, start: 1700000000, end: 1700000100}, expect: {room: r}}
+      - {call: cancel, args: {booking_id: $b.id}, expect_error: UnknownBooking}
+  - name: bookings_sorted
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 4}}
+      - {call: book, args: {organizer: late, attendees: 1, start: 1700009000, end: 1700009100}}
+      - {call: book, args: {organizer: early, attendees: 1, start: 1700001000, end: 1700001100}}
+      - {call: bookings, args: {room_id: r}, expect: [{organizer: early}, {organizer: late}]}
+      - {call: bookings, args: {room_id: zz}, expect_error: UnknownRoom}
+  - name: free_slots_window
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 4}}
+      - {call: book, args: {organizer: a, attendees: 1, start: 1700000100, end: 1700000200}}
+      - {call: book, args: {organizer: b, attendees: 1, start: 1700000200, end: 1700000300}}
+      - {call: book, args: {organizer: c, attendees: 1, start: 1700000500, end: 1700000900}}
+      - call: free_slots
+        args: {room_id: r, start: 1700000000, end: 1700000600}
+        expect: [{start: 1700000000, end: 1700000100}, {start: 1700000300, end: 1700000500}]
+      - {call: free_slots, args: {room_id: r, start: 1700000150, end: 1700000250}, expect: []}
+      - {call: free_slots, args: {room_id: r, start: 1700000900, end: 1700001000}, expect: [{start: 1700000900, end: 1700001000}]}
+  - name: room_validation
+    steps:
+      - {call: add_room, args: {room_id: r, capacity: 0}, expect_error: InvalidCapacity}
+      - {call: add_room, args: {room_id: r, capacity: 2}}
+      - {call: add_room, args: {room_id: r, capacity: 3}, expect_error: DuplicateRoom}
+  - name: falls_through_to_bigger_room
+    steps:
+      - {call: add_room, args: {room_id: s, capacity: 2}}
+      - {call: add_room, args: {room_id: m, capacity: 8}}
+      - {call: add_room, args: {room_id: l, capacity: 30}}
+      - {call: book, args: {organizer: a, attendees: 2, start: 1700000000, end: 1700000100}, expect: {room: s}}
+      - {call: book, args: {organizer: b, attendees: 2, start: 1700000050, end: 1700000150}, expect: {room: m}}
+      - {call: book, args: {organizer: c, attendees: 9, start: 1700000000, end: 1700000100}, expect: {room: l}}
