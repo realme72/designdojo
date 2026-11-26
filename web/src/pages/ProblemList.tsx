@@ -6,7 +6,7 @@ import Brand from '../components/Brand'
 const LANGS: Lang[] = ['java', 'python']
 const LEVELS = ['all', 'easy', 'medium', 'hard'] as const
 type Level = (typeof LEVELS)[number]
-const FILTER_KEY = 'joinery.problemFilter'
+const FILTER_KEY = 'dojo.problemFilter'
 
 function loadFilter(): { q: string; level: Level } {
   try {
@@ -23,7 +23,7 @@ export default function ProblemList() {
   const [{ q, level }, setFilter] = useState(loadFilter)
 
   useEffect(() => {
-    document.title = 'Joinery'
+    document.title = 'DesignDojo'
     api.problems().then(setProblems, (e: Error) => setError(e.message))
   }, [])
 

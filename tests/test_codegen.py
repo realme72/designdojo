@@ -1,8 +1,8 @@
 import importlib
 import sys
 
-from joinery import codegen
-from joinery.problems import get_problem
+from designdojo import codegen
+from designdojo.problems import get_problem
 
 
 def test_python_contract_is_importable(tmp_path, monkeypatch):

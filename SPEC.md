@@ -1,7 +1,7 @@
-# Joinery — v1 Spec
+# DesignDojo — v1 Spec
 
-> *Joinery* is the craft of fitting pieces together so they hold under load.
-> That's LLD: classes that compose cleanly, and tables that join cleanly.
+> A *dojo* is where you practise until the moves are second nature. DesignDojo is that
+> for low-level design: drill the problems interviewers ask, get judged, get coached.
 
 A personal LLD practice playground. Pick a problem, design and implement it in
 **Java or Python**, and get judged by hidden tests, change-request "curveballs",
@@ -16,7 +16,7 @@ Curveballs exist for 7 problems so far; more can be added as data.
 M6 as built: every problem has a Python reference that passes all suites; Java references
 exist for Parking Lot, Pub-Sub and Rate Limiter (which together exercise every Java runner
 assertion path), and every other problem's generated Java contract + stub is compiled in
-the test suite. `joinery validate` lints contracts (reserved words), scenarios (unknown
+the test suite. `dojo validate` lints contracts (reserved words), scenarios (unknown
 methods/args/errors, values vs contract types, YAML surprises like `OFF` → false), decision
 points, categories, and forbids `parallel` steps in problems not tagged `concurrency`. Single user (self-prep). May go public later.
 
@@ -49,7 +49,7 @@ points, categories, and forbids `parallel` steps in problems not tagged `concurr
 4. `Review my design` (coach mode, anytime) → line comments + hints.
 5. `Submit` → hidden tests + concurrency tests + structural analysis + coach review.
 6. On pass, **Curveball 1 unlocks**: a new requirement. Modify your code, submit
-   again. Joinery measures how much existing code you had to change.
+   again. DesignDojo measures how much existing code you had to change.
 7. Final report: scores, line comments, class diagram, curveball churn,
    comparison with the reference design's decision points.
 
@@ -124,7 +124,7 @@ interfaces:
 errors: [LotFull, InvalidTicket]
 ```
 
-**Codegen**: `joinery scaffold parking-lot --lang java|python` produces:
+**Codegen**: `dojo scaffold parking-lot --lang java|python` produces:
 - Java: `interface ParkingLotApi`, `record Ticket`, `enum VehicleType`,
   exceptions, `Clock` interface, plus an empty `Solution.create(...)`.
 - Python: `Protocol`/ABC, `@dataclass(frozen=True)` DTOs, `Enum`s, exceptions,
@@ -202,7 +202,7 @@ One Docker container per run.
 
 | | Java | Python |
 |---|---|---|
-| Image | `joinery-java:21` (Temurin + runner jar + Jackson) | `joinery-python:3.12` (runner + PyYAML) |
+| Image | `designdojo-java:21` (Temurin + runner jar + Jackson) | `designdojo-python:3.12` (runner + PyYAML) |
 | Build | `javac` | none (`py_compile` for early syntax errors) |
 
 Limits: `--network none`, `--read-only` + tmpfs `/work`, `--memory 512m`,
@@ -385,8 +385,8 @@ back to the relevant decision point (`curveball_link`).
 - Package: `curveballs/NN-name/{statement.md, contract.patch.yaml, scenarios.yaml}`. Patches
   deep-merge into the contract (maps merge, lists append), so curveballs are additive and every
   earlier scenario keeps running. Lint checks each suite against the contract at its own level.
-- Unlock (`joinery curveball`, UI "Next curveball") requires a fully passing submit at the
-  current level, snapshots `solution/` to `.joinery-snapshots/<k>/`, regenerates the contract
+- Unlock (`dojo curveball`, UI "Next curveball") requires a fully passing submit at the
+  current level, snapshots `solution/` to `.dojo-snapshots/<k>/`, regenerates the contract
   and appends the curveball to PROBLEM.md. References implement the final level.
 - Churn compares symbols (methods/functions, and each class's / module's non-method body)
   with comments and whitespace ignored. A changed symbol whose diff is only inserted lines
@@ -420,7 +420,7 @@ until an AI review exists (offline reviews don't score). Remaining weights are r
 web/  (React + Vite + Monaco, built to web/dist and served by FastAPI; no SSR needed locally)
   editor · run/submit · line comments in gutter · hint reveal · Mermaid diagram
         │  HTTP
-src/joinery/  (Python 3.12, uv; FastAPI arrives with the web UI)
+src/designdojo/  (Python 3.12, uv; FastAPI arrives with the web UI)
   problems loader · codegen · submissions · scoring
   ├─ runner/    docker SDK → per-run container, collects JSON
   ├─ analyzer/  tree-sitter → class graph, smells, churn diff
@@ -433,21 +433,21 @@ No queue in v1 (single user). Runs execute as background tasks.
 
 CLI (built first; works with your own IDE):
 ```
-joinery list
-joinery scaffold parking-lot --lang java ./work/pl
-joinery run      ./work/pl            # sample suite
-joinery review   ./work/pl --hint 1   # coach mode
-joinery submit   ./work/pl            # hidden + concurrency + review
-joinery curveball ./work/pl --next
+dojo list
+dojo scaffold parking-lot --lang java ./work/pl
+dojo run      ./work/pl            # sample suite
+dojo review   ./work/pl --hint 1   # coach mode
+dojo submit   ./work/pl            # hidden + concurrency + review
+dojo curveball ./work/pl --next
 ```
 
 ### Repo layout
 ```
-joinery/
+designdojo/
   SPEC.md
   problems/<id>/...
   runners/java/  runners/python/        # scenario runners + Dockerfiles
-  src/joinery/  (codegen, judge, report, cli; later analyzer, coach, scoring, api)
+  src/designdojo/  (codegen, judge, report, cli; later analyzer, coach, scoring, api)
   tests/        (unit + e2e; tests/fixtures/<problem>/<lang>/naive must be caught)
   web/
 ```

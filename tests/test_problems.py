@@ -2,7 +2,7 @@
 
 import pytest
 
-from joinery.problems import lint_problem, list_problems
+from designdojo.problems import lint_problem, list_problems
 
 
 @pytest.mark.parametrize("problem", list_problems(), ids=lambda p: p.id)
@@ -11,8 +11,8 @@ def test_problem_lints_clean(problem):
 
 
 def test_type_lint_catches_yaml_surprises():
-    from joinery.contract import parse_type
-    from joinery.problems import _type_issue, get_problem
+    from designdojo.contract import parse_type
+    from designdojo.problems import _type_issue, get_problem
 
     c = get_problem("parking-lot").contract
     kinds = {**{k: "enum" for k in c.enums}, **{k: "dto" for k in c.dtos}}

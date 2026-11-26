@@ -117,7 +117,7 @@ export default function CoachView({ result, status, loading, error, locked, onRe
           <KeyRound size={15} />
           <div>
             <strong>AI coach not connected.</strong> Reviews come from static analysis until you add{' '}
-            <code>GROQ_API_KEY</code> to <code>joinery/.env</code> and restart <code>joinery serve</code>.
+            <code>GROQ_API_KEY</code> to <code>designdojo/.env</code> and restart <code>dojo serve</code>.
           </div>
         </div>
       )}

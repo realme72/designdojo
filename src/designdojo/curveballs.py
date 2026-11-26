@@ -9,7 +9,7 @@ from .analyzer.churn import churn
 from .judge import JudgeError, Workspace, judge, scaffold
 from .results import public_view, totals
 
-SNAPSHOTS = ".joinery-snapshots"
+SNAPSHOTS = ".dojo-snapshots"
 
 WEIGHTS = {"correctness": 35, "concurrency": 15, "extensibility": 25, "design": 25}
 

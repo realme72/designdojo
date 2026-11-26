@@ -12,7 +12,7 @@ import yaml
 from .contract import Contract, contract_from_raw, merge_patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PROBLEMS_DIR = Path(os.environ.get("JOINERY_PROBLEMS", REPO_ROOT / "problems"))
+PROBLEMS_DIR = Path(os.environ.get("DOJO_PROBLEMS", REPO_ROOT / "problems"))
 
 # Suites in run order. "visible" suites show full expected/actual on failure.
 SUITES = ("sample", "hidden", "concurrency")

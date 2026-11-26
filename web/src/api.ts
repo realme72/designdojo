@@ -172,7 +172,7 @@ export const api = {
   coachStatus: () => req<CoachStatus>('GET', '/api/coach/status'),
 }
 
-const LANG_KEY = 'joinery.lang'
+const LANG_KEY = 'dojo.lang'
 
 /** Remembered language: per problem first, then the last one used anywhere. */
 export function preferredLang(problemId: string, started: Lang[] = []): Lang {

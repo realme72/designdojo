@@ -1,4 +1,4 @@
-# Joinery
+# DesignDojo
 
 LLD practice playground. Pick a problem, implement it in Java or Python, and get judged
 by hidden tests, concurrency races and (soon) a coach that points at your code.
@@ -13,7 +13,7 @@ See [SPEC.md](SPEC.md) for the full design.
 
 Every problem ships with a statement, a language-neutral contract (Java + Python stubs are generated),
 visible sample tests, hidden edge-case tests, concurrency race tests where relevant, decision points for
-the coach, and a reference solution that passes every scenario (`uv run joinery validate`).
+the coach, and a reference solution that passes every scenario (`uv run dojo validate`).
 
 **Booking & reservations**
 
@@ -110,8 +110,8 @@ correctness 35 · concurrency 15 · extensibility 25 · design 25 (components th
 are left out and the rest re-weighted).
 
 ```sh
-uv run joinery submit    work/parking-lot-java   # score + churn report
-uv run joinery curveball work/parking-lot-java   # unlock the next one (needs all passing)
+uv run dojo submit    work/parking-lot-java   # score + churn report
+uv run dojo curveball work/parking-lot-java   # unlock the next one (needs all passing)
 ```
 
 8 curveballs across 7 problems so far:
@@ -128,12 +128,12 @@ uv run joinery curveball work/parking-lot-java   # unlock the next one (needs al
 
 ```sh
 (cd web && npm install && npm run build)   # once, and after frontend changes
-uv run joinery serve --open                # http://127.0.0.1:8765
+uv run dojo serve --open                # http://127.0.0.1:8765
 ```
 
 Problem statement, editor with file tree (autosave), Run (⌘↵) / Submit (⌘⇧↵),
 results with compile errors shown in the editor, run history, and an interview timer.
-Frontend dev with hot reload: `uv run joinery serve` + `cd web && npm run dev` (port 5174).
+Frontend dev with hot reload: `uv run dojo serve` + `cd web && npm run dev` (port 5174).
 
 ## Design coach
 
@@ -143,12 +143,12 @@ a time. Uses Groq's free tier:
 
 ```sh
 cp .env.example .env        # then set GROQ_API_KEY
-uv run joinery review work/parking-lot-java --hints 2
+uv run dojo review work/parking-lot-java --hints 2
 ```
 
 Each review is budgeted to ~5.2k input + 2k output tokens (under the 8k tokens/minute
 limit) and cached by content, so re-reviewing an unchanged design is free. Models rotate
-when one hits its daily limit (`JOINERY_COACH_MODELS` to change the order). Interview
+when one hits its daily limit (`DOJO_COACH_MODELS` to change the order). Interview
 mode keeps the coach locked until you Submit.
 
 **When Groq isn't available** (no key, daily limit, network), reviews fall back to an
@@ -160,11 +160,11 @@ and marks decision points without signals "not assessed" rather than "good".
 ## CLI
 
 ```sh
-uv run joinery list
-uv run joinery scaffold parking-lot --lang java          # -> work/parking-lot-java/
+uv run dojo list
+uv run dojo scaffold parking-lot --lang java          # -> work/parking-lot-java/
 # read work/parking-lot-java/PROBLEM.md, implement solution/
-uv run joinery run    work/parking-lot-java              # visible sample scenarios
-uv run joinery submit work/parking-lot-java              # + hidden + concurrency
+uv run dojo run    work/parking-lot-java              # visible sample scenarios
+uv run dojo submit work/parking-lot-java              # + hidden + concurrency
 ```
 
 Your workspace's `contract/` is generated (for your IDE). The judge regenerates it on
@@ -174,7 +174,7 @@ every run, so edits there have no effect. Code goes in `solution/`.
 
 ```sh
 uv run pytest            # Docker-backed tests skip if no engine is running
-uv run joinery validate  # authoring: lint every problem and run its reference solutions
+uv run dojo validate  # authoring: lint every problem and run its reference solutions
 ```
 
 ## Layout
@@ -182,7 +182,7 @@ uv run joinery validate  # authoring: lint every problem and run its reference s
 ```
 problems/<id>/      problem package: statement, contract, scenarios, decision points, reference solutions
 runners/<lang>/     in-container scenario runners + Dockerfiles (image tag = hash of this dir)
-src/joinery/        CLI, contract parser, codegen, docker judge, report, server (FastAPI)
+src/designdojo/     CLI, contract parser, codegen, docker judge, report, server (FastAPI)
 web/                React + Vite + Monaco frontend
 tests/              unit + end-to-end (reference must pass; naive fixture must be caught)
 ```

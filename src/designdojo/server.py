@@ -24,9 +24,9 @@ from .judge import JudgeError, Workspace, judge, scaffold
 from .problems import REPO_ROOT, ProblemError, get_problem, list_problems
 from .results import public_view, totals
 
-WORK_DIR = Path(os.environ.get("JOINERY_WORK_DIR", REPO_ROOT / "work"))
+WORK_DIR = Path(os.environ.get("DOJO_WORK_DIR", REPO_ROOT / "work"))
 WEB_DIST = REPO_ROOT / "web" / "dist"
-HISTORY_FILE = ".joinery-history.jsonl"
+HISTORY_FILE = ".dojo-history.jsonl"
 EXTENSIONS = {"java": ".java", "python": ".py"}
 MAX_FILE_BYTES = 200_000
 MODES = ("run", "submit")
@@ -35,7 +35,7 @@ from .coach.provider import load_env  # noqa: E402
 
 load_env(REPO_ROOT / ".env")
 
-app = FastAPI(title="Joinery", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="DesignDojo", docs_url="/api/docs", openapi_url="/api/openapi.json")
 _locks: dict[str, threading.Lock] = {}
 _locks_guard = threading.Lock()
 
@@ -104,7 +104,7 @@ def problems():
             "category": p.meta.get("category", "Other"),
             "time_limit_min": p.meta.get("time_limit_min"),
             "tags": p.meta.get("tags", []),
-            "started": [lang for lang in codegen.LANGS if (WORK_DIR / f"{p.id}-{lang}" / ".joinery.json").exists()],
+            "started": [lang for lang in codegen.LANGS if (WORK_DIR / f"{p.id}-{lang}" / ".dojo.json").exists()],
         }
         for p in list_problems()
     ]
@@ -221,7 +221,7 @@ def reset(problem_id: str, lang: str):
     ws = _workspace(problem_id, lang)
     backup = None
     if ws.solution_dir.exists():
-        backups = ws.root / ".joinery-backups"
+        backups = ws.root / ".dojo-backups"
         backups.mkdir(exist_ok=True)
         backup = backups / time.strftime("solution-%Y%m%d-%H%M%S")
         shutil.move(str(ws.solution_dir), backup)

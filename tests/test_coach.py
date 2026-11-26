@@ -7,10 +7,10 @@ from pathlib import Path
 import httpx
 import pytest
 
-from joinery.coach import CoachError, CoachUnavailable, review, validate
-from joinery.coach.prompt import INPUT_BUDGET, build, est_tokens, outline
-from joinery.coach.provider import Completion, GroqProvider
-from joinery.judge import Workspace
+from designdojo.coach import CoachError, CoachUnavailable, review, validate
+from designdojo.coach.prompt import INPUT_BUDGET, build, est_tokens, outline
+from designdojo.coach.provider import Completion, GroqProvider
+from designdojo.judge import Workspace
 
 ROOT = Path(__file__).resolve().parents[1]
 NAIVE_PY = ROOT / "tests/fixtures/parking-lot/python/naive"
@@ -85,7 +85,7 @@ def test_review_end_to_end_and_cache(ws):
 def test_big_solutions_are_outlined_to_fit_budget(ws):
     big = "\n".join(f"class C{i}:\n    def m(self):\n" + "        x = 1\n" * 60 for i in range(40))
     (ws.solution_dir / "big.py").write_text(big)
-    from joinery.analyzer import analyze
+    from designdojo.analyzer import analyze
     files = {p.relative_to(ws.root).as_posix(): p.read_text() for p in ws.solution_dir.rglob("*.py")}
     a = analyze(ws.root, "python", concurrency=True)
     user, meta = build(title="t", statement="s", decision_points=[], analysis=a, files=files, tests="-")

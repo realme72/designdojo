@@ -4,7 +4,7 @@ Inputs:  $JOB/contract.json, $JOB/scenarios.json, $JOB/contract/__init__.py (gen
          $WORK/solution/ (user code, read-only).
 Output:  $JOB/result.json
 
-Semantics must stay identical to runners/java/src/joinery/runner/Runner.java.
+Semantics must stay identical to runners/java/src/designdojo/runner/Runner.java.
 """
 
 from __future__ import annotations
@@ -21,17 +21,17 @@ import time
 import traceback
 from enum import Enum
 
-JOB = os.environ.get("JOINERY_JOB", "/job")
-WORK = os.environ.get("JOINERY_WORK", "/work")
+JOB = os.environ.get("DOJO_JOB", "/job")
+WORK = os.environ.get("DOJO_WORK", "/work")
 START_TIME = 1_700_000_000
-CASE_TIMEOUT = float(os.environ.get("JOINERY_CASE_TIMEOUT_MS", "5000")) / 1000
+CASE_TIMEOUT = float(os.environ.get("DOJO_CASE_TIMEOUT_MS", "5000")) / 1000
 # The GIL hides most races at the default 5 ms switch interval; switch threads
 # far more often while parallel steps run so check-then-act bugs surface.
 PARALLEL_SWITCH_INTERVAL = 1e-6
 # Even then, short methods finish inside one GIL slice. During parallel steps a
 # trace hook yields the GIL between lines of *solution* code with this
 # probability ("chaos scheduling"), so interleavings look like real cores.
-CHAOS_YIELD_P = float(os.environ.get("JOINERY_CHAOS_P", "0.3"))
+CHAOS_YIELD_P = float(os.environ.get("DOJO_CHAOS_P", "0.3"))
 
 SPEC: dict = {}
 C = None  # generated contract module

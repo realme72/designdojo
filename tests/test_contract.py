@@ -1,7 +1,7 @@
 import pytest
 
-from joinery.contract import ContractError, parse_type, snake_to_camel
-from joinery.problems import get_problem
+from designdojo.contract import ContractError, parse_type, snake_to_camel
+from designdojo.problems import get_problem
 
 KINDS = {"SpotSize": "enum", "Ticket": "dto", "Clock": "iface"}
 

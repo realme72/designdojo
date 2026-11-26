@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    from joinery import server
+    from designdojo import server
 
     monkeypatch.setattr(server, "WORK_DIR", tmp_path)
     return TestClient(server.app), tmp_path
@@ -22,7 +22,7 @@ def test_problems_and_workspace_scaffold(client):
     paths = {f["path"]: f["editable"] for f in ws["files"]}
     assert paths["solution/__init__.py"] is True
     assert paths["contract/__init__.py"] is False
-    assert (root / "parking-lot-python" / ".joinery.json").exists()
+    assert (root / "parking-lot-python" / ".dojo.json").exists()
 
 
 @pytest.mark.parametrize("path", [

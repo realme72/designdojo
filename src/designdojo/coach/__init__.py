@@ -18,12 +18,12 @@ from .provider import CoachError, CoachUnavailable, Provider, default_provider
 
 __all__ = ["review", "latest", "validate", "CoachError", "CoachUnavailable"]
 
-log = logging.getLogger("joinery.coach")
+log = logging.getLogger("designdojo.coach")
 
 EXT = {"java": ".java", "python": ".py"}
 KINDS = {"suggestion", "praise", "warning", "overengineering"}
 DP_STATUS = {"good", "partial", "missed", "not_applicable"}
-CACHE_DIR = ".joinery-cache/coach"
+CACHE_DIR = ".dojo-cache/coach"
 
 
 def _s(v, limit: int) -> str | None:

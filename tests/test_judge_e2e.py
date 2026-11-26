@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from joinery.judge import Workspace, judge
-from joinery.problems import SUITES
+from designdojo.judge import Workspace, judge
+from designdojo.problems import SUITES
 
 ROOT = Path(__file__).resolve().parents[1]
 REF = ROOT / "problems" / "parking-lot" / "reference"
@@ -21,7 +21,7 @@ def failures(result: dict) -> dict[str, set[str]]:
 
 
 def _references():
-    from joinery.problems import list_problems
+    from designdojo.problems import list_problems
 
     for p in list_problems():
         for lang in LANGS:
@@ -34,11 +34,11 @@ def _references():
 def test_reference_passes_everything(problem_id, lang):
     import json
 
-    from joinery.problems import get_problem, reference_meta
+    from designdojo.problems import get_problem, reference_meta
 
     p = get_problem(problem_id)
     ref = p.root / "reference" / lang
-    (ref / ".joinery.json").write_text(reference_meta(p, lang))  # references implement every curveball
+    (ref / ".dojo.json").write_text(reference_meta(p, lang))  # references implement every curveball
     suites = p.suites_at(len(p.curveballs))
     result = judge(Workspace.open(ref), suites)
     assert failures(result) == {s: set() for s in suites}
@@ -114,7 +114,7 @@ public final class Solution {
 
 
 def _stub_only():
-    from joinery.problems import list_problems
+    from designdojo.problems import list_problems
 
     for p in list_problems():
         for lang in LANGS:
@@ -125,8 +125,8 @@ def _stub_only():
 @pytest.mark.parametrize("problem_id,lang", list(_stub_only()))
 def test_generated_contract_compiles(problem_id, lang, tmp_path):
     """Problems without a reference in this language must still give users a compiling stub."""
-    from joinery.judge import scaffold
-    from joinery.problems import get_problem
+    from designdojo.judge import scaffold
+    from designdojo.problems import get_problem
 
     scaffold(get_problem(problem_id), lang, tmp_path / "ws")
     result = judge(Workspace.open(tmp_path / "ws"), ["sample"])

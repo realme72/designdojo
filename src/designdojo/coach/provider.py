@@ -20,11 +20,11 @@ from typing import Protocol
 
 import httpx
 
-log = logging.getLogger("joinery.coach")
+log = logging.getLogger("designdojo.coach")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_MODELS = ("openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b")
-STATE_PATH = Path(os.environ.get("JOINERY_COACH_STATE", Path.home() / ".cache" / "joinery" / "coach-state.json"))
+STATE_PATH = Path(os.environ.get("DOJO_COACH_STATE", Path.home() / ".cache" / "designdojo" / "coach-state.json"))
 MAX_SHORT_WAIT_S = 15
 
 
@@ -96,7 +96,7 @@ class GroqProvider:
     def __init__(self, api_key: str, models: tuple[str, ...] = DEFAULT_MODELS, *,
                  client: httpx.Client | None = None, state_path: Path = STATE_PATH, sleep=time.sleep):
         if not api_key:
-            raise CoachError("GROQ_API_KEY is not set. Add it to joinery/.env (see .env.example).")
+            raise CoachError("GROQ_API_KEY is not set. Add it to designdojo/.env (see .env.example).")
         self.api_key = api_key
         self.models = models
         self.client = client or httpx.Client(timeout=90)
@@ -132,7 +132,7 @@ class GroqProvider:
                                       int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0)))
                 text = r.text[:600]
                 if r.status_code == 401:
-                    raise CoachError("Groq rejected GROQ_API_KEY (401). Check the key in joinery/.env.")
+                    raise CoachError("Groq rejected GROQ_API_KEY (401). Check the key in designdojo/.env.")
                 if r.status_code == 429:
                     log.warning("groq 429 on %s: %s", model, text)  # the body says WHICH limit
                     if "per day" in text.lower() or "(tpd)" in text.lower() or "(rpd)" in text.lower():
@@ -184,5 +184,5 @@ def load_env(path: Path) -> None:
 
 
 def default_provider() -> GroqProvider:
-    models = tuple(m.strip() for m in os.environ.get("JOINERY_COACH_MODELS", "").split(",") if m.strip())
+    models = tuple(m.strip() for m in os.environ.get("DOJO_COACH_MODELS", "").split(",") if m.strip())
     return GroqProvider(os.environ.get("GROQ_API_KEY", ""), models or DEFAULT_MODELS)

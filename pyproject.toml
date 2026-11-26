@@ -1,5 +1,5 @@
 [project]
-name = "joinery"
+name = "designdojo"
 version = "0.1.0"
 description = "LLD practice playground: design it, get judged, get coached."
 requires-python = ">=3.12"
@@ -14,14 +14,15 @@ dependencies = [
 ]
 
 [project.scripts]
-joinery = "joinery.cli:main"
+dojo = "designdojo.cli:main"
+designdojo = "designdojo.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/joinery"]
+packages = ["src/designdojo"]
 
 [dependency-groups]
 dev = [

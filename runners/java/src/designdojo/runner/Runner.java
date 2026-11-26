@@ -1,4 +1,4 @@
-package joinery.runner;
+package designdojo.runner;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -51,11 +51,11 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("unchecked")
 public final class Runner {
-    static final Path JOB = Paths.get(env("JOINERY_JOB", "/job"));
-    static final Path WORK = Paths.get(env("JOINERY_WORK", "/work"));
-    static final Path CLASSES = Paths.get(env("JOINERY_CLASSES", "/tmp/classes"));
+    static final Path JOB = Paths.get(env("DOJO_JOB", "/job"));
+    static final Path WORK = Paths.get(env("DOJO_WORK", "/work"));
+    static final Path CLASSES = Paths.get(env("DOJO_CLASSES", "/tmp/classes"));
     static final long START_TIME = 1_700_000_000L;
-    static final long CASE_TIMEOUT_MS = Long.parseLong(env("JOINERY_CASE_TIMEOUT_MS", "5000"));
+    static final long CASE_TIMEOUT_MS = Long.parseLong(env("DOJO_CASE_TIMEOUT_MS", "5000"));
 
     static Map<String, Object> contract;
     static ClassLoader loader;

@@ -8,6 +8,7 @@ __pycache__/
 .env
 web/node_modules/
 web/dist/
-.joinery-history.jsonl
-.joinery-cache/
-.joinery-backups/
+.dojo-history.jsonl
+.dojo-cache/
+.dojo-backups/
+.dojo-snapshots/

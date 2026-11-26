@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from joinery.analyzer.churn import churn
-from joinery.curveballs import CurveballLocked, score, unlock_next
-from joinery.judge import Workspace, judge
-from joinery.problems import get_problem
+from designdojo.analyzer.churn import churn
+from designdojo.curveballs import CurveballLocked, score, unlock_next
+from designdojo.judge import Workspace, judge
+from designdojo.problems import get_problem
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -104,7 +104,7 @@ def test_score_reweights_missing_components():
 
 @pytest.mark.docker
 def test_unlock_flow_snapshots_and_scores(tmp_path):
-    from joinery.curveballs import evaluate
+    from designdojo.curveballs import evaluate
 
     ws_dir = tmp_path / "ws"
     shutil.copytree(ROOT / "tests/fixtures/parking-lot/python/level0", ws_dir)  # solves the base problem only
@@ -115,7 +115,7 @@ def test_unlock_flow_snapshots_and_scores(tmp_path):
     assert info["index"] == 1 and "Motorbike" in info["title"]
     ws = Workspace.open(ws_dir)
     assert ws.level == 1
-    assert (ws_dir / ".joinery-snapshots/1/solution/allocation.py").exists()
+    assert (ws_dir / ".dojo-snapshots/1/solution/allocation.py").exists()
     assert "MOTORBIKE" in (ws_dir / "contract/__init__.py").read_text()
     assert "## Curveball 1" in (ws_dir / "PROBLEM.md").read_text()
 

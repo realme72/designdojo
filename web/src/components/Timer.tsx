@@ -1,7 +1,7 @@
 import { Square, Timer as TimerIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const key = (id: string) => `joinery.interview.${id}`
+const key = (id: string) => `dojo.interview.${id}`
 
 function load(id: string): number | null {
   try {

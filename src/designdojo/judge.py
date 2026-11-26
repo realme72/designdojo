@@ -15,8 +15,8 @@ from . import codegen
 from .problems import REPO_ROOT, Problem, get_problem
 
 RUNNERS_DIR = REPO_ROOT / "runners"
-JOBS_DIR = Path(os.environ.get("JOINERY_JOBS", Path.home() / ".cache" / "joinery" / "jobs"))
-WORKSPACE_META = ".joinery.json"
+JOBS_DIR = Path(os.environ.get("DOJO_JOBS", Path.home() / ".cache" / "designdojo" / "jobs"))
+WORKSPACE_META = ".dojo.json"
 
 LIMITS = {
     "memory": "512m",
@@ -30,6 +30,18 @@ class JudgeError(RuntimeError):
     pass
 
 
+LEGACY_NAMES = {  # the app was called Joinery before; migrate old workspaces in place
+    ".joinery.json": ".dojo.json", ".joinery-history.jsonl": ".dojo-history.jsonl",
+    ".joinery-snapshots": ".dojo-snapshots", ".joinery-cache": ".dojo-cache", ".joinery-backups": ".dojo-backups",
+}
+
+
+def migrate_legacy(root: Path) -> None:
+    for old, new in LEGACY_NAMES.items():
+        if (root / old).exists() and not (root / new).exists():
+            (root / old).rename(root / new)
+
+
 @dataclass
 class Workspace:
     root: Path
@@ -39,9 +51,10 @@ class Workspace:
 
     @classmethod
     def open(cls, root: Path) -> "Workspace":
+        migrate_legacy(root)
         meta_path = root / WORKSPACE_META
         if not meta_path.exists():
-            raise JudgeError(f"{root} is not a joinery workspace (no {WORKSPACE_META}); run `joinery scaffold` first")
+            raise JudgeError(f"{root} is not a DesignDojo workspace (no {WORKSPACE_META}); run `dojo scaffold` first")
         meta = json.loads(meta_path.read_text())
         return cls(root.resolve(), get_problem(meta["problem"]), meta["lang"], int(meta.get("curveball", 0)))
 
@@ -70,6 +83,7 @@ def scaffold(problem: Problem, lang: str, dest: Path, level: int | None = None) 
     if lang not in codegen.LANGS:
         raise JudgeError(f"unsupported language {lang!r} (choose: {', '.join(codegen.LANGS)})")
     dest.mkdir(parents=True, exist_ok=True)
+    migrate_legacy(dest)
     current = 0
     if (dest / WORKSPACE_META).exists():
         existing = json.loads((dest / WORKSPACE_META).read_text())
@@ -109,7 +123,7 @@ def image_tag(lang: str) -> str:
         if p.is_file():
             h.update(str(p.relative_to(root)).encode())
             h.update(p.read_bytes())
-    return f"joinery-{lang}:{h.hexdigest()[:12]}"
+    return f"designdojo-{lang}:{h.hexdigest()[:12]}"
 
 
 def ensure_image(lang: str, force: bool = False, quiet: bool = True) -> str:
@@ -151,7 +165,7 @@ def judge(ws: Workspace, suites: list[str]) -> dict:
         for p in [job, *job.rglob("*")]:
             p.chmod(0o777 if p.is_dir() else 0o666)
 
-        name = f"joinery-{job.name}"
+        name = f"dojo-{job.name}"
         cmd = [
             docker, "run", "--rm", "--name", name,
             "--network", "none",

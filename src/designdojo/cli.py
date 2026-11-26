@@ -1,4 +1,4 @@
-"""joinery command line."""
+"""dojo: the DesignDojo command line."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def cmd_scaffold(args) -> int:
     for p in written:
         print(f"  {p.relative_to(dest)}")
     entry = "solution/Solution.java" if args.lang == "java" else "solution/__init__.py"
-    print(f"\nRead PROBLEM.md, start in {entry}, then: joinery run {dest}")
+    print(f"\nRead PROBLEM.md, start in {entry}, then: dojo run {dest}")
     return 0
 
 
@@ -84,7 +84,7 @@ def cmd_curveball(args) -> int:
     print(report.bold(f"Curveball {info['index']}/{total}: {info['title']}\n"))
     print(info["statement"])
     print(report.dim(f"\nThe contract in {ws.root}/contract was updated; your code was snapshotted so"
-                     " `joinery submit` can measure how much existing code this change forces you to edit."))
+                     " `dojo submit` can measure how much existing code this change forces you to edit."))
     return 0
 
 
@@ -118,7 +118,7 @@ def cmd_review(args) -> int:
     from .coach import CoachError, CoachUnavailable, review
 
     ws = Workspace.open(Path(args.dir))
-    hist = ws.root / ".joinery-history.jsonl"
+    hist = ws.root / ".dojo-history.jsonl"
     last = json.loads(hist.read_text().splitlines()[-1]) if hist.exists() and hist.read_text().strip() else None
     try:
         out = review(ws, last_run=last, force=args.force)
@@ -190,7 +190,7 @@ def cmd_validate(args) -> int:
                 parts.append(report.red(f"{lang} stub: {problem_msg}") if problem_msg else report.dim(f"{lang} stub ok"))
                 bad += bool(problem_msg)
                 continue
-            meta = ref / ".joinery.json"
+            meta = ref / ".dojo.json"
             want = reference_meta(p, lang)
             if not meta.exists() or meta.read_text() != want:
                 meta.write_text(want)
@@ -229,17 +229,17 @@ def cmd_serve(args) -> int:
     if not WEB_DIST.is_dir():
         print("note: web UI not built (cd web && npm install && npm run build); serving the API only")
     url = f"http://{args.host}:{args.port}"
-    print(f"Joinery on {url}")
+    print(f"DesignDojo on {url}")
     if args.open:
         import threading
         import webbrowser
         threading.Timer(1.0, webbrowser.open, [url]).start()
-    uvicorn.run("joinery.server:app", host=args.host, port=args.port, reload=args.reload, log_level="warning")
+    uvicorn.run("designdojo.server:app", host=args.host, port=args.port, reload=args.reload, log_level="warning")
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="joinery", description="LLD practice playground")
+    ap = argparse.ArgumentParser(prog="dojo", description="LLD practice playground")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("list", help="list problems").set_defaults(fn=cmd_list)

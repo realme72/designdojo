@@ -117,7 +117,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
         api.latestReview(problemId, lang).then((r) => r.review && setCoachResult(r), () => {})
         api.coachStatus().then(setCoachStatus, () => {})
         setEntry(h[0] ?? null)
-        document.title = `${p.title} · ${LANG_LABEL[lang]} · Joinery`
+        document.title = `${p.title} · ${LANG_LABEL[lang]} · DesignDojo`
       })
       .catch((e: Error) => !cancelled && setLoadError(e.message))
     return () => {
@@ -311,7 +311,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     const diags = entry?.result.status === 'compile_error' ? (entry.result.diagnostics ?? []) : []
     monaco.editor.setModelMarkers(
       model,
-      'joinery',
+      'dojo',
       diags
         .filter((d) => d.file === active && d.line > 0)
         .map((d) => ({
@@ -325,13 +325,13 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     )
     monaco.editor.setModelMarkers(
       model,
-      'joinery-design',
+      'dojo-design',
       (analysis?.smells ?? [])
         .filter((s) => s.file === active && s.line_start <= model.getLineCount())
         .map((s) => ({
           severity: s.level === 'warning' ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Info,
           message: `${s.title}: ${s.evidence}\nConsider: ${s.suggests.join(', ')}`,
-          source: 'Joinery design signals',
+          source: 'DesignDojo design signals',
           startLineNumber: s.line_start,
           endLineNumber: s.line_start,
           startColumn: model.getLineFirstNonWhitespaceColumn(s.line_start) || 1,
@@ -340,13 +340,13 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     )
     monaco.editor.setModelMarkers(
       model,
-      'joinery-coach',
+      'dojo-coach',
       (coachLocked ? [] : (coachResult?.review?.comments ?? []))
         .filter((c) => c.file === active && c.line_start <= model.getLineCount())
         .map((c) => ({
           severity: c.kind === 'warning' ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Info,
           message: `Coach · ${c.title}${c.principle ? ` (${c.principle})` : ''}\n${c.hints[0]}`,
-          source: 'Joinery coach',
+          source: 'DesignDojo coach',
           startLineNumber: c.line_start,
           endLineNumber: Math.min(c.line_end, model.getLineCount()),
           startColumn: model.getLineFirstNonWhitespaceColumn(c.line_start) || 1,
@@ -591,7 +591,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                             value={current.content}
                             onChange={onChange}
                             onMount={onMount}
-                            theme={dark ? 'joinery-dark' : 'joinery-light'}
+                            theme={dark ? 'dojo-dark' : 'dojo-light'}
                             options={{
                               readOnly: !current.editable,
                               fontSize: 13.5,

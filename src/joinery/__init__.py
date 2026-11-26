@@ -1,1 +1,0 @@
-"""Joinery: LLD practice playground."""

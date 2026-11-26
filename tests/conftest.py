@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from joinery.judge import JudgeError, docker_bin
+from designdojo.judge import JudgeError, docker_bin
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,8 +31,8 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture
 def workspace(tmp_path):
     """Make a scratch workspace from {path: source} for a language."""
-    from joinery.judge import Workspace, scaffold
-    from joinery.problems import get_problem
+    from designdojo.judge import Workspace, scaffold
+    from designdojo.problems import get_problem
 
     def make(lang: str, files: dict[str, str], problem: str = "parking-lot") -> Workspace:
         dest = tmp_path / f"{problem}-{lang}"

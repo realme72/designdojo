@@ -9,7 +9,7 @@ self.MonacoEnvironment = {
 
 loader.config({ monaco })
 
-monaco.editor.defineTheme('joinery-dark', {
+monaco.editor.defineTheme('dojo-dark', {
   base: 'vs-dark',
   inherit: true,
   rules: [],
@@ -21,7 +21,7 @@ monaco.editor.defineTheme('joinery-dark', {
   },
 })
 
-monaco.editor.defineTheme('joinery-light', {
+monaco.editor.defineTheme('dojo-light', {
   base: 'vs',
   inherit: true,
   rules: [],

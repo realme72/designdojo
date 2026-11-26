@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from joinery.analyzer import analyze
+from designdojo.analyzer import analyze
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = {"ParkingLotApi", "Clock"}

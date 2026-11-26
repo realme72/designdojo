@@ -96,6 +96,6 @@ def render_extras(view: dict, ws) -> str:
             if ch.get(label):
                 out.append(f"    {colour(label + ':')} {', '.join(ch[label])}")
     if ws.level < len(ws.problem.curveballs):
-        out.append(dim(f"\n  Next: `joinery curveball {ws.root}` unlocks curveball "
+        out.append(dim(f"\n  Next: `dojo curveball {ws.root}` unlocks curveball "
                        f"{ws.level + 1}/{len(ws.problem.curveballs)} once everything passes."))
     return "\n".join(out)
