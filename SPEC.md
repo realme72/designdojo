@@ -11,7 +11,7 @@ principle/pattern X would help, and here's why."*
 Status: v1 (2026-11-27). **M0–M6 done**: 50 problems judged end-to-end in Java
 and Python from the CLI or browser, with design signals, a class diagram and the LLM
 coach (Groq free tier; validated against fake responses, not yet run on a live key).
-Curveballs exist for 7 problems so far; more can be added as data.
+All 50 problems have curveballs (51 total); more can be added as data.
 
 M6 as built: every problem has a Python reference that passes all suites; Java references
 exist for Parking Lot, Pub-Sub and Rate Limiter (which together exercise every Java runner

@@ -114,15 +114,60 @@ uv run dojo submit    work/parking-lot-java   # score + churn report
 uv run dojo curveball work/parking-lot-java   # unlock the next one (needs all passing)
 ```
 
-8 curveballs across 7 problems so far:
+Every problem has at least one curveball (51 in total):
 
-- **Elevator System**: Maintenance mode
-- **Logging Framework**: JSON sink
-- **Notification Service**: WhatsApp channel
-- **Parking Lot**: Motorbikes; Daily price cap
-- **Rate Limiter**: Sliding window counter
-- **Shopping Cart & Promotions**: Bundle pricing
-- **Splitwise**: Split by shares
+| Problem | Curveballs |
+|---|---|
+| Airline Reservation System | Premium economy |
+| Package Locker (Amazon Locker) | Extra-large lockers |
+| ATM | Mini statement |
+| Bowling Scorer | Current frame |
+| Car Rental (Zoomcar) | Insurance add-on |
+| Chat Application (WhatsApp) | Delete for everyone |
+| Chess | Undo |
+| Circuit Breaker | Per-service settings |
+| Course Registration System | Instructor override |
+| Cricket Scoreboard (Cricbuzz) | Free hit |
+| Digital Wallet (Paytm / PhonePe) | Transfer reversal |
+| Doctor Appointment Booking (Practo) | Reschedule |
+| Elevator System | Maintenance mode |
+| In-memory File System | Copy |
+| Food Delivery (Swiggy / Zomato) | Coupons |
+| Hotel Booking System | Seasonal rates |
+| Unique ID Generator (Snowflake) | Time-range queries |
+| In-memory Database (mini SQL) | Unique constraints |
+| Inventory Management (Multi-warehouse) | Warehouse priority |
+| Key-Value Store with Transactions | Counters |
+| Game Leaderboard | Dense ranking |
+| LFU Cache | Pinned entries |
+| Library Management System | Holds |
+| Load Balancer | Sticky sessions |
+| Logging Framework | JSON sink |
+| LRU Cache | Resize at runtime |
+| Meeting Room Scheduler | Recurring meetings |
+| Minesweeper | Chording |
+| Movie Ticket Booking (BookMyShow) | Row pricing |
+| Music Player (Spotify playlist) | Repeat one |
+| News Feed (Twitter) | Reposts |
+| Notification Service | WhatsApp channel |
+| Online Auction (eBay) | Reserve price |
+| Parking Lot | Motorbikes; Daily price cap |
+| Polling & Voting System | Ranked-choice polls |
+| Pub-Sub Message Broker | Retention |
+| Rate Limiter | Sliding window counter |
+| Ride Sharing (Uber / Ola) | Surge pricing |
+| Shopping Cart & Promotions | Bundle pricing |
+| Snake and Ladder | Three sixes |
+| Snake Game | Wrap-around mode |
+| Splitwise | Split by shares |
+| Q&A Site (Stack Overflow) | Bounties |
+| Stock Exchange Order Matching | Immediate-or-cancel |
+| Task Scheduler (Cron-lite) | Limited repeats |
+| Text Editor with Undo/Redo | Replace all |
+| Tic-Tac-Toe (N×N) | K in a row |
+| Traffic Signal Controller | Uneven greens |
+| URL Shortener | Click limits |
+| Vending Machine | A new coin |
 
 ## Web UI
 
