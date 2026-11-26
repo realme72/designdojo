@@ -1,0 +1,21 @@
+scenarios:
+  - name: no_lost_likes
+    repeat: 15
+    steps:
+      - {call: post, args: {user: ann, post_id: viral}}
+      - parallel: {threads: 100, call: like, args: {user: "u{i}", post_id: viral}, collect: r}
+      - assert: {of: r, value_count: {"true": 100}}
+      - {call: likes, args: {post_id: viral}, expect: 100}
+  - name: double_like_race
+    repeat: 15
+    steps:
+      - {call: post, args: {user: ann, post_id: p}}
+      - parallel: {threads: 30, call: like, args: {user: same, post_id: p}, collect: r}
+      - assert: {of: r, ok_count: 30, value_count: {"true": 1, "false": 29}}
+      - {call: likes, args: {post_id: p}, expect: 1}
+  - name: concurrent_posts_unique_and_ordered
+    repeat: 10
+    steps:
+      - parallel: {threads: 50, call: post, args: {user: ann, post_id: "p{i}"}, collect: r}
+      - {call: feed, args: {user: ann, limit: 100}, bind: f}
+      - assert: {distinct: $f}

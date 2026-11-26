@@ -1,0 +1,36 @@
+interfaces:
+  SocialNetwork:
+    post:
+      params: {user: str, post_id: str}
+      returns: void
+      raises: [DuplicatePost]
+    follow:
+      params: {follower: str, followee: str}
+      returns: void
+      raises: [InvalidFollow]
+    unfollow:
+      params: {follower: str, followee: str}
+      returns: void
+      raises: [NotFollowing]
+    feed:
+      params: {user: str, limit: int}
+      returns: "list[str]"
+      raises: [InvalidArgument]
+    delete:
+      params: {user: str, post_id: str}
+      returns: void
+      raises: [UnknownPost, NotAuthor]
+    like:
+      params: {user: str, post_id: str}
+      returns: bool
+      raises: [UnknownPost]
+    likes:
+      params: {post_id: str}
+      returns: long
+      raises: [UnknownPost]
+
+entrypoint:
+  name: create
+  returns: SocialNetwork
+
+errors: [DuplicatePost, InvalidFollow, NotFollowing, InvalidArgument, UnknownPost, NotAuthor]
