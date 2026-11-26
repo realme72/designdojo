@@ -1,0 +1,16 @@
+scenarios:
+  - name: never_over_reserve
+    repeat: 15
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: a, qty: 5}}
+      - {call: receive, args: {sku: pen, warehouse: b, qty: 5}}
+      - parallel: {threads: 30, call: reserve, args: {order_id: "o{i}", lines: [{sku: pen, qty: 1}]}, collect: r}
+      - assert: {of: r, ok_count: 10, error_count: {OutOfStock: 20}}
+      - {call: available, args: {sku: pen}, expect: 0}
+  - name: duplicate_order_race
+    repeat: 15
+    steps:
+      - {call: receive, args: {sku: pen, warehouse: a, qty: 100}}
+      - parallel: {threads: 20, call: reserve, args: {order_id: same, lines: [{sku: pen, qty: 1}]}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {DuplicateOrder: 19}}
+      - {call: available, args: {sku: pen}, expect: 99}

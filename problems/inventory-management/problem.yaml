@@ -1,0 +1,7 @@
+id: inventory-management
+title: Inventory Management (Multi-warehouse)
+difficulty: medium
+category: Commerce & payments
+time_limit_min: 60
+statement: statement.md
+tags: [concurrency, observer, allocation]
