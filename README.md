@@ -9,6 +9,97 @@ See [SPEC.md](SPEC.md) for the full design.
 - Docker engine (OrbStack: `brew install --cask orbstack`, open it once)
 - `uv sync`
 
+## Problems (50)
+
+Every problem ships with a statement, a language-neutral contract (Java + Python stubs are generated),
+visible sample tests, hidden edge-case tests, concurrency race tests where relevant, decision points for
+the coach, and a reference solution that passes every scenario (`uv run joinery validate`).
+
+**Booking & reservations**
+
+| Problem | Difficulty | Concurrency |
+|---|---|---|
+| Package Locker (Amazon Locker) | easy | yes |
+| Airline Reservation System | medium | yes |
+| Car Rental (Zoomcar) | medium | yes |
+| Course Registration System | medium | yes |
+| Doctor Appointment Booking (Practo) | medium | yes |
+| Hotel Booking System | medium | yes |
+| Library Management System | medium | yes |
+| Movie Ticket Booking (BookMyShow) | medium | yes |
+| Parking Lot | medium | yes |
+| Ride Sharing (Uber / Ola) | hard | yes |
+
+**Commerce & payments**
+
+| Problem | Difficulty | Concurrency |
+|---|---|---|
+| ATM | medium |  |
+| Digital Wallet (Paytm / PhonePe) | medium | yes |
+| Inventory Management (Multi-warehouse) | medium | yes |
+| Online Auction (eBay) | medium | yes |
+| Shopping Cart & Promotions | medium |  |
+| Splitwise | medium | yes |
+| Food Delivery (Swiggy / Zomato) | hard | yes |
+| Stock Exchange Order Matching | hard | yes |
+
+**Data structures & caching**
+
+| Problem | Difficulty | Concurrency |
+|---|---|---|
+| Game Leaderboard | easy | yes |
+| LRU Cache | easy | yes |
+| In-memory File System | medium |  |
+| Key-Value Store with Transactions | medium |  |
+| LFU Cache | medium | yes |
+| Text Editor with Undo/Redo | medium |  |
+| In-memory Database (mini SQL) | hard | yes |
+
+**Games**
+
+| Problem | Difficulty | Concurrency |
+|---|---|---|
+| Bowling Scorer | easy |  |
+| Minesweeper | easy |  |
+| Snake Game | easy |  |
+| Snake and Ladder | easy |  |
+| Tic-Tac-Toe (N×N) | easy |  |
+| Cricket Scoreboard (Cricbuzz) | medium |  |
+| Chess | hard |  |
+
+**Infrastructure & control**
+
+| Problem | Difficulty | Concurrency |
+|---|---|---|
+| Logging Framework | easy | yes |
+| URL Shortener | easy | yes |
+| Unique ID Generator (Snowflake) | easy | yes |
+| Vending Machine | easy |  |
+| Circuit Breaker | medium | yes |
+| Elevator System | medium | yes |
+| Load Balancer | medium | yes |
+| Notification Service | medium | yes |
+| Pub-Sub Message Broker | medium | yes |
+| Rate Limiter | medium | yes |
+| Traffic Signal Controller | medium |  |
+
+**Scheduling & workflows**
+
+| Problem | Difficulty | Concurrency |
+|---|---|---|
+| Meeting Room Scheduler | medium | yes |
+| Task Scheduler (Cron-lite) | medium | yes |
+
+**Social & content**
+
+| Problem | Difficulty | Concurrency |
+|---|---|---|
+| Music Player (Spotify playlist) | easy |  |
+| Polling & Voting System | easy | yes |
+| Chat Application (WhatsApp) | medium | yes |
+| News Feed (Twitter) | medium | yes |
+| Q&A Site (Stack Overflow) | medium | yes |
+
 ## Web UI
 
 ```sh
@@ -59,6 +150,7 @@ every run, so edits there have no effect. Code goes in `solution/`.
 
 ```sh
 uv run pytest            # Docker-backed tests skip if no engine is running
+uv run joinery validate  # authoring: lint every problem and run its reference solutions
 ```
 
 ## Layout

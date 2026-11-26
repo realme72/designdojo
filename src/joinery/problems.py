@@ -83,6 +83,10 @@ PY_RESERVED = set("""False None True and as assert async await break class conti
 finally for from global if import in is lambda nonlocal not or pass raise return try while with yield
 self cls""".split())
 
+CATEGORIES = {"Booking & reservations", "Commerce & payments", "Data structures & caching", "Games",
+              "Infrastructure & control", "Scheduling & workflows", "Social & content"}
+DIFFICULTIES = {"easy", "medium", "hard"}
+
 STEP_KEYS = {"call", "args", "expect", "expect_error", "bind", "advance_clock", "parallel", "assert"}
 
 
@@ -136,6 +140,12 @@ def lint_problem(p: Problem) -> list[str]:
     for key in ("title", "difficulty", "category"):
         if key not in p.meta:
             issues.append(f"problem.yaml: missing {key}")
+    if p.meta.get("category") not in CATEGORIES:
+        issues.append(f"problem.yaml: category must be one of {sorted(CATEGORIES)}")
+    if p.meta.get("difficulty") not in DIFFICULTIES:
+        issues.append(f"problem.yaml: difficulty must be one of {sorted(DIFFICULTIES)}")
+    if p.meta.get("id") != p.id:
+        issues.append(f"problem.yaml: id {p.meta.get('id')!r} must match the folder name {p.id!r}")
     from .contract import snake_to_camel
 
     names = [(f"field {d}.{f.name}", f.name) for d, fs in c.dtos.items() for f in fs]

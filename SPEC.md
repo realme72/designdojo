@@ -8,10 +8,17 @@ A personal LLD practice playground. Pick a problem, design and implement it in
 and a **coach** that points at specific lines and says *"this is where
 principle/pattern X would help, and here's why."*
 
-Status: v1 (2026-11-26). **M0–M3 and M5 done**: Parking Lot judged end-to-end in Java
+Status: v1 (2026-11-27). **M0–M3, M5 and M6 done**: 50 problems judged end-to-end in Java
 and Python from the CLI or browser, with design signals, a class diagram and the LLM
 coach (Groq free tier; validated against fake responses, not yet run on a live key).
-M4 (curveballs) and M6 (more problems) next. Single user (self-prep). May go public later.
+M4 (curveballs) next.
+
+M6 as built: every problem has a Python reference that passes all suites; Java references
+exist for Parking Lot, Pub-Sub and Rate Limiter (which together exercise every Java runner
+assertion path), and every other problem's generated Java contract + stub is compiled in
+the test suite. `joinery validate` lints contracts (reserved words), scenarios (unknown
+methods/args/errors, values vs contract types, YAML surprises like `OFF` → false), decision
+points, categories, and forbids `parallel` steps in problems not tagged `concurrency`. Single user (self-prep). May go public later.
 
 ---
 

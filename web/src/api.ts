@@ -4,6 +4,7 @@ export type Problem = {
   id: string
   title: string
   difficulty?: string
+  category?: string
   time_limit_min?: number
   tags: string[]
   started?: Lang[]

@@ -101,6 +101,7 @@ def problems():
             "id": p.id,
             "title": p.title,
             "difficulty": p.meta.get("difficulty"),
+            "category": p.meta.get("category", "Other"),
             "time_limit_min": p.meta.get("time_limit_min"),
             "tags": p.meta.get("tags", []),
             "started": [lang for lang in codegen.LANGS if (WORK_DIR / f"{p.id}-{lang}" / ".joinery.json").exists()],
