@@ -1,0 +1,26 @@
+config:
+  floors:
+    - {small: 1, medium: 2, large: 1}
+    - {small: 1, medium: 0, large: 0}
+  hourly_rate_cents: {SMALL: 1000, MEDIUM: 2000, LARGE: 5000}
+scenarios:
+  - name: motorbike_takes_small
+    steps:
+      - {call: park, args: {plate: M1, vehicle_type: MOTORBIKE}, expect: {spot_size: SMALL, floor: 1}}
+      - {call: park, args: {plate: M2, vehicle_type: MOTORBIKE}, expect: {spot_size: SMALL, floor: 2}}
+  - name: motorbike_never_takes_bigger_spots
+    steps:
+      - {call: park, args: {plate: M1, vehicle_type: MOTORBIKE}}
+      - {call: park, args: {plate: M2, vehicle_type: MOTORBIKE}}
+      - {call: park, args: {plate: M3, vehicle_type: MOTORBIKE}, expect_error: LotFull}
+      - {call: available, args: {size: MEDIUM}, expect: 2}
+  - name: motorbike_pays_small_rate
+    steps:
+      - {call: park, args: {plate: M1, vehicle_type: MOTORBIKE}, bind: t}
+      - advance_clock: 3601
+      - {call: unpark, args: {ticket_id: $t.id}, expect: {fee_cents: 2000}}
+  - name: bikes_still_fall_back
+    steps:
+      - {call: park, args: {plate: M1, vehicle_type: MOTORBIKE}}
+      - {call: park, args: {plate: M2, vehicle_type: MOTORBIKE}}
+      - {call: park, args: {plate: B1, vehicle_type: BIKE}, expect: {spot_size: MEDIUM}}

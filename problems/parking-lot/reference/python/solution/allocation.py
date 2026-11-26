@@ -32,6 +32,7 @@ class Compatibility:
         VehicleType.BIKE: (SpotSize.SMALL, SpotSize.MEDIUM, SpotSize.LARGE),
         VehicleType.CAR: (SpotSize.MEDIUM, SpotSize.LARGE),
         VehicleType.TRUCK: (SpotSize.LARGE,),
+        VehicleType.MOTORBIKE: (SpotSize.SMALL,),
     }
 
     def sizes_for(self, vehicle_type: VehicleType) -> tuple[SpotSize, ...]:

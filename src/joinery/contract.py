@@ -143,7 +143,24 @@ def _method(name: str, raw: dict | None, kinds: dict[str, str], errors: list[str
 
 
 def load_contract(path: Path) -> Contract:
-    raw = yaml.safe_load(path.read_text())
+    return contract_from_raw(yaml.safe_load(path.read_text()))
+
+
+def merge_patch(base: dict, patch: dict) -> dict:
+    """Curveball contract patches: maps merge recursively, lists append new items (enum values,
+    errors). Existing entries are never removed, so older scenarios keep working."""
+    out = dict(base)
+    for k, v in (patch or {}).items():
+        if k in out and isinstance(out[k], dict) and isinstance(v, dict):
+            out[k] = merge_patch(out[k], v)
+        elif k in out and isinstance(out[k], list) and isinstance(v, list):
+            out[k] = out[k] + [x for x in v if x not in out[k]]
+        else:
+            out[k] = v
+    return out
+
+
+def contract_from_raw(raw: dict) -> Contract:
     enums = {_ident(k, "enum"): [_ident(v, "enum value") for v in vals] for k, vals in (raw.get("enums") or {}).items()}
     dto_raw = raw.get("dtos") or {}
     provided_raw = raw.get("provided") or {}

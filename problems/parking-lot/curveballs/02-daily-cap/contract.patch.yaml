@@ -1,0 +1,8 @@
+interfaces:
+  ParkingLotApi:
+    set_daily_cap:
+      params: {size: SpotSize, cap_cents: long}
+      returns: void
+      raises: [InvalidCap]
+      doc: Cap the fee per 24 hours for spots of this size.
+errors: [InvalidCap]

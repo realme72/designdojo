@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-from .contract import Contract, load_contract
+from .contract import Contract, contract_from_raw, merge_patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PROBLEMS_DIR = Path(os.environ.get("JOINERY_PROBLEMS", REPO_ROOT / "problems"))
@@ -37,8 +37,39 @@ class Problem:
         return self.meta.get("title", self.id)
 
     @cached_property
+    def _raw_contract(self) -> dict:
+        return yaml.safe_load((self.root / "contract.yaml").read_text())
+
+    @cached_property
     def contract(self) -> Contract:
-        return load_contract(self.root / "contract.yaml")
+        return contract_from_raw(self._raw_contract)
+
+    # ---- curveballs: problems/<id>/curveballs/<NN-name>/{statement.md, contract.patch.yaml, scenarios.yaml}
+    @cached_property
+    def curveballs(self) -> list[Path]:
+        d = self.root / "curveballs"
+        return sorted(p for p in d.iterdir() if p.is_dir()) if d.is_dir() else []
+
+    def curveball_info(self, index: int) -> dict:
+        """index is 1-based."""
+        path = self.curveballs[index - 1]
+        text = (path / "statement.md").read_text()
+        title = text.splitlines()[0].lstrip("# ").strip() if text else path.name
+        return {"index": index, "id": path.name, "title": title, "statement": text}
+
+    def contract_at(self, level: int) -> Contract:
+        """The contract after the first `level` curveballs have been applied."""
+        if level == 0:
+            return self.contract
+        raw = self._raw_contract
+        for path in self.curveballs[:level]:
+            patch = path / "contract.patch.yaml"
+            if patch.exists():
+                raw = merge_patch(raw, yaml.safe_load(patch.read_text()) or {})
+        return contract_from_raw(raw)
+
+    def suites_at(self, level: int) -> list[str]:
+        return list(SUITES) + [f"curveball-{i}" for i in range(1, level + 1)]
 
     @property
     def concurrency(self) -> bool:
@@ -60,7 +91,10 @@ class Problem:
 
     def suite(self, name: str) -> dict:
         """Load a scenario suite, applying the file-level default config."""
-        path = self.root / "scenarios" / f"{name}.yaml"
+        if name.startswith("curveball-"):
+            path = self.curveballs[int(name.split("-")[1]) - 1] / "scenarios.yaml"
+        else:
+            path = self.root / "scenarios" / f"{name}.yaml"
         if not path.exists():
             return {"name": name, "scenarios": []}
         raw = yaml.safe_load(path.read_text()) or {}
@@ -148,6 +182,16 @@ def lint_problem(p: Problem) -> list[str]:
         issues.append(f"problem.yaml: id {p.meta.get('id')!r} must match the folder name {p.id!r}")
     from .contract import snake_to_camel
 
+    plan = [(suite, c) for suite in SUITES]
+    for i, cb in enumerate(p.curveballs, 1):
+        if not (cb / "statement.md").exists() or not (cb / "scenarios.yaml").exists():
+            issues.append(f"curveballs/{cb.name}: needs statement.md and scenarios.yaml")
+            continue
+        try:
+            plan.append((f"curveball-{i}", p.contract_at(i)))
+        except Exception as e:  # noqa: BLE001
+            issues.append(f"curveballs/{cb.name}/contract.patch.yaml: {e}")
+    c = plan[-1][1]  # reserved-word checks on the fullest contract
     names = [(f"field {d}.{f.name}", f.name) for d, fs in c.dtos.items() for f in fs]
     for group in (c.interfaces, c.provided):
         for iname, methods in group.items():
@@ -158,14 +202,14 @@ def lint_problem(p: Problem) -> list[str]:
     for what, n in names:
         if snake_to_camel(n) in JAVA_RESERVED or n in PY_RESERVED:
             issues.append(f"contract: {what} is a reserved word in Java or Python")
-    iface = c.interfaces[c.entrypoint.returns["name"]]
-    entry_params = {x.name for x in c.entrypoint.params if not (x.type.get("kind") == "iface")}
     seen: set[str] = set()
-    for suite in SUITES:
+    for suite, c in plan:  # each suite is checked against the contract at its own level
+        iface = c.interfaces[c.entrypoint.returns["name"]]
+        entry_params = {x.name for x in c.entrypoint.params if not (x.type.get("kind") == "iface")}
         try:
             data = p.suite(suite)
         except Exception as e:  # noqa: BLE001 - surface YAML/shape errors as lint issues
-            issues.append(f"scenarios/{suite}.yaml: {str(e).splitlines()[0]} ({type(e).__name__})")
+            issues.append(f"{suite} scenarios: {str(e).splitlines()[0]} ({type(e).__name__})")
             continue
         if suite == "sample" and not data["scenarios"]:
             issues.append("scenarios/sample.yaml: no scenarios")
@@ -220,6 +264,16 @@ def lint_problem(p: Problem) -> list[str]:
     if not (p.root / "reference" / "python" / "solution").is_dir():
         issues.append("reference/python/solution missing")
     return issues
+
+
+def reference_meta(p: Problem, lang: str) -> str:
+    """Workspace meta for a reference solution: references implement every curveball."""
+    import json
+
+    meta = {"problem": p.id, "lang": lang}
+    if p.curveballs:
+        meta["curveball"] = len(p.curveballs)
+    return json.dumps(meta) + "\n"
 
 
 def list_problems() -> list[Problem]:

@@ -23,13 +23,13 @@ final class ParkingLot implements ParkingLotApi {
     private record Session(Ticket ticket, Spot spot) {}
 
     private final SpotAllocator allocator;
-    private final PricingPolicy pricing;
+    private final DailyCapPricing pricing;
     private final Clock clock;
     private final Map<String, Session> active = new ConcurrentHashMap<>();
     private final Set<String> parkedPlates = ConcurrentHashMap.newKeySet();
     private final AtomicLong ticketSeq = new AtomicLong();
 
-    ParkingLot(SpotAllocator allocator, PricingPolicy pricing, Clock clock) {
+    ParkingLot(SpotAllocator allocator, DailyCapPricing pricing, Clock clock) {
         this.allocator = allocator;
         this.pricing = pricing;
         this.clock = clock;
@@ -63,5 +63,10 @@ final class ParkingLot implements ParkingLotApi {
     @Override
     public int available(SpotSize size) {
         return allocator.free(size);
+    }
+
+    @Override
+    public void setDailyCap(SpotSize size, long capCents) {
+        pricing.setCap(size, capCents);
     }
 }

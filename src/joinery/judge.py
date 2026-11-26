@@ -35,6 +35,7 @@ class Workspace:
     root: Path
     problem: Problem
     lang: str
+    level: int = 0  # curveballs unlocked so far
 
     @classmethod
     def open(cls, root: Path) -> "Workspace":
@@ -42,25 +43,48 @@ class Workspace:
         if not meta_path.exists():
             raise JudgeError(f"{root} is not a joinery workspace (no {WORKSPACE_META}); run `joinery scaffold` first")
         meta = json.loads(meta_path.read_text())
-        return cls(root.resolve(), get_problem(meta["problem"]), meta["lang"])
+        return cls(root.resolve(), get_problem(meta["problem"]), meta["lang"], int(meta.get("curveball", 0)))
+
+    @property
+    def contract(self):
+        return self.problem.contract_at(self.level)
+
+    @property
+    def suites(self) -> list[str]:
+        return self.problem.suites_at(self.level)
 
     @property
     def solution_dir(self) -> Path:
         return self.root / "solution"
 
 
-def scaffold(problem: Problem, lang: str, dest: Path) -> list[Path]:
+def problem_text(problem: Problem, level: int) -> str:
+    parts = [problem.statement]
+    for i in range(1, level + 1):
+        parts.append(f"\n---\n\n## Curveball {i}\n\n" + problem.curveball_info(i)["statement"])
+    return "\n".join(parts)
+
+
+def scaffold(problem: Problem, lang: str, dest: Path, level: int | None = None) -> list[Path]:
+    """Create or refresh a workspace. Keeps the existing curveball level unless one is given."""
     if lang not in codegen.LANGS:
         raise JudgeError(f"unsupported language {lang!r} (choose: {', '.join(codegen.LANGS)})")
     dest.mkdir(parents=True, exist_ok=True)
+    current = 0
     if (dest / WORKSPACE_META).exists():
         existing = json.loads((dest / WORKSPACE_META).read_text())
-        if existing != {"problem": problem.id, "lang": lang}:
+        if (existing.get("problem"), existing.get("lang")) != (problem.id, lang):
             raise JudgeError(f"{dest} is already a workspace for {existing}")
-    written = codegen.write_files(dest, codegen.contract_files(problem.contract, lang))
+        current = int(existing.get("curveball", 0))
+    level = current if level is None else level
+    contract = problem.contract_at(level)
+    meta = {"problem": problem.id, "lang": lang}
+    if level:
+        meta["curveball"] = level
+    written = codegen.write_files(dest, codegen.contract_files(contract, lang))
     written += codegen.write_files(dest, codegen.stub_files(problem.contract, lang), overwrite=False)
-    written += codegen.write_files(dest, {"PROBLEM.md": problem.statement, WORKSPACE_META: json.dumps(
-        {"problem": problem.id, "lang": lang}, indent=2) + "\n"})
+    written += codegen.write_files(dest, {"PROBLEM.md": problem_text(problem, level),
+                                          WORKSPACE_META: json.dumps(meta, indent=2) + "\n"})
     return written
 
 
@@ -116,9 +140,14 @@ def judge(ws: Workspace, suites: list[str]) -> dict:
     job.mkdir(parents=True)
     try:
         # Fresh contract every run: the workspace copy is for the IDE only.
-        codegen.write_files(job, codegen.contract_files(problem.contract, lang))
-        (job / "contract.json").write_text(json.dumps(problem.contract.to_json()))
+        codegen.write_files(job, codegen.contract_files(ws.contract, lang))
+        (job / "contract.json").write_text(json.dumps(ws.contract.to_json()))
         (job / "scenarios.json").write_text(json.dumps({"suites": [problem.suite(s) for s in suites]}))
+        # Copy the solution into this run's fresh job dir instead of bind-mounting the workspace:
+        # Docker Desktop/OrbStack file sharing can serve stale metadata for a file rewritten in
+        # place moments earlier (seen: a just-edited file read truncated -> bogus SyntaxError).
+        shutil.copytree(ws.solution_dir, job / "work" / "solution",
+                        ignore=shutil.ignore_patterns("__pycache__", "*.class", ".*"))
         for p in [job, *job.rglob("*")]:
             p.chmod(0o777 if p.is_dir() else 0o666)
 
@@ -132,7 +161,7 @@ def judge(ws: Workspace, suites: list[str]) -> dict:
             "--pids-limit", LIMITS["pids"],
             "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
             "-v", f"{job}:/job",
-            "-v", f"{ws.solution_dir}:/work/solution:ro",
+            "-v", f"{job / 'work' / 'solution'}:/work/solution:ro",
             image,
         ]
         try:

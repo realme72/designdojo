@@ -72,3 +72,30 @@ def render(raw: dict, title: str, lang: str) -> str:
     out.append("")
     out.append((green if p == t else red)(f"  {p}/{t} scenarios passed"))
     return "\n".join(out)
+
+
+def render_extras(view: dict, ws) -> str:
+    """Score breakdown and curveball churn for a full submit."""
+    out = []
+    sc = view.get("score")
+    if sc:
+        out.append("")
+        out.append(bold(f"  Score {sc['total']}/100"))
+        for c in sc["components"]:
+            pts = "  —  " if c["points"] is None else f"{c['points']:>5}"
+            weight = f"/{c['weight']}" if c["weight"] else "   "
+            out.append(f"    {c['name']:<14}{pts}{weight:<4} {dim(c['detail'])}")
+    for ch in view.get("churn") or []:
+        out.append("")
+        out.append(bold(f"  Curveball {ch['curveball']}: {ch['title']}") + dim(f"  extensibility {ch['extensibility']}"))
+        if ch.get("error"):
+            out.append(f"    {ch['error']}")
+            continue
+        for label, colour in (("added", green), ("extended", green), ("modified", yellow), ("deleted", red),
+                              ("wiring", dim)):
+            if ch.get(label):
+                out.append(f"    {colour(label + ':')} {', '.join(ch[label])}")
+    if ws.level < len(ws.problem.curveballs):
+        out.append(dim(f"\n  Next: `joinery curveball {ws.root}` unlocks curveball "
+                       f"{ws.level + 1}/{len(ws.problem.curveballs)} once everything passes."))
+    return "\n".join(out)

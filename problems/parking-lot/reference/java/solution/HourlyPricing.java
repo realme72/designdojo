@@ -17,10 +17,17 @@ final class HourlyPricing implements PricingPolicy {
         }
     }
 
+    static long hours(long entry, long exit) {
+        long seconds = Math.max(0, exit - entry);
+        return Math.max(1, (seconds + HOUR - 1) / HOUR);
+    }
+
+    long rate(SpotSize size) {
+        return rateCents.get(size);
+    }
+
     @Override
     public long feeCents(SpotSize size, long entry, long exit) {
-        long seconds = Math.max(0, exit - entry);
-        long hours = Math.max(1, (seconds + HOUR - 1) / HOUR);
-        return hours * rateCents.get(size);
+        return hours(entry, exit) * rateCents.get(size);
     }
 }

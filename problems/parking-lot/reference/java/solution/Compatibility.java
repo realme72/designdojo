@@ -15,6 +15,7 @@ final class Compatibility {
         fits.put(VehicleType.BIKE, List.of(SpotSize.SMALL, SpotSize.MEDIUM, SpotSize.LARGE));
         fits.put(VehicleType.CAR, List.of(SpotSize.MEDIUM, SpotSize.LARGE));
         fits.put(VehicleType.TRUCK, List.of(SpotSize.LARGE));
+        fits.put(VehicleType.MOTORBIKE, List.of(SpotSize.SMALL));
     }
 
     List<SpotSize> sizesFor(VehicleType type) {
