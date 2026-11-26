@@ -1,0 +1,66 @@
+scenarios:
+  - name: trailing_partial_slot_dropped
+    steps:
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 20}}
+      - {call: add_availability, args: {doctor_id: d, start: 1700003600, end: 1700006000}}
+      - {call: available_slots, args: {specialty: s, start: 0, end: 1800000000}, expect: [{start: 1700003600}, {start: 1700004800}]}
+  - name: not_a_slot_boundary
+    steps:
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d, start: 1700003600, end: 1700007200}}
+      - {call: book, args: {patient: p, doctor_id: d, start: 1700004000}, expect_error: SlotUnavailable}
+      - {call: book, args: {patient: p, doctor_id: d, start: 1700007200}, expect_error: SlotUnavailable}
+  - name: past_slots_hidden_and_unbookable
+    steps:
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 10}}
+      - {call: add_availability, args: {doctor_id: d, start: 1699999400, end: 1700001200}}
+      - {call: available_slots, args: {specialty: s, start: 0, end: 1800000000}, expect: [{start: 1700000000}, {start: 1700000600}]}
+      - {call: book, args: {patient: p, doctor_id: d, start: 1699999400}, expect_error: SlotUnavailable}
+  - name: patient_conflict_across_doctors
+    steps:
+      - {call: add_doctor, args: {doctor_id: a, specialty: s, slot_minutes: 30}}
+      - {call: add_doctor, args: {doctor_id: b, specialty: s, slot_minutes: 20}}
+      - {call: add_availability, args: {doctor_id: a, start: 1700003600, end: 1700007200}}
+      - {call: add_availability, args: {doctor_id: b, start: 1700004800, end: 1700008400}}
+      - {call: book, args: {patient: p, doctor_id: a, start: 1700003600}}
+      - {call: book, args: {patient: p, doctor_id: b, start: 1700004800}, expect_error: PatientConflict}
+      - {call: book, args: {patient: p, doctor_id: b, start: 1700006000}}
+      - {call: appointments, args: {patient: p}, expect: [{doctor_id: a}, {doctor_id: b, start: 1700006000, end: 1700007200}]}
+  - name: specialty_filter_and_order
+    steps:
+      - {call: add_doctor, args: {doctor_id: z, specialty: eye, slot_minutes: 60}}
+      - {call: add_doctor, args: {doctor_id: a, specialty: eye, slot_minutes: 60}}
+      - {call: add_doctor, args: {doctor_id: m, specialty: ent, slot_minutes: 60}}
+      - {call: add_availability, args: {doctor_id: z, start: 1700003600, end: 1700010800}}
+      - {call: add_availability, args: {doctor_id: a, start: 1700007200, end: 1700010800}}
+      - {call: add_availability, args: {doctor_id: m, start: 1700003600, end: 1700007200}}
+      - call: available_slots
+        args: {specialty: eye, start: 1700000000, end: 1700010000}
+        expect: [{doctor_id: z, start: 1700003600}, {doctor_id: a, start: 1700007200}, {doctor_id: z, start: 1700007200}]
+      - {call: available_slots, args: {specialty: dental, start: 0, end: 1800000000}, expect: []}
+  - name: window_rules
+    steps:
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 30}}
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 30}, expect_error: DuplicateDoctor}
+      - {call: add_availability, args: {doctor_id: d, start: 1700003600, end: 1700003600}, expect_error: InvalidWindow}
+      - {call: add_availability, args: {doctor_id: d, start: 1700003600, end: 1700007200}}
+      - {call: add_availability, args: {doctor_id: d, start: 1700005400, end: 1700009000}, expect_error: InvalidWindow}
+      - {call: add_availability, args: {doctor_id: d, start: 1700007200, end: 1700009000}}
+      - {call: add_availability, args: {doctor_id: x, start: 1700003600, end: 1700007200}, expect_error: UnknownDoctor}
+      - {call: book, args: {patient: p, doctor_id: x, start: 1700003600}, expect_error: UnknownDoctor}
+  - name: cancel_rules
+    steps:
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d, start: 1700003600, end: 1700007200}}
+      - {call: book, args: {patient: p, doctor_id: d, start: 1700003600}, bind: a}
+      - advance_clock: 3600
+      - {call: cancel, args: {appointment_id: $a}, expect_error: InvalidState}
+      - {call: cancel, args: {appointment_id: nope}, expect_error: UnknownAppointment}
+  - name: cancel_twice
+    steps:
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: d, start: 1700003600, end: 1700007200}}
+      - {call: book, args: {patient: p, doctor_id: d, start: 1700003600}, bind: a}
+      - {call: cancel, args: {appointment_id: $a}}
+      - {call: cancel, args: {appointment_id: $a}, expect_error: UnknownAppointment}
+      - {call: appointments, args: {patient: p}, expect: []}

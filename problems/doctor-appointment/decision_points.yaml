@@ -1,0 +1,18 @@
+- id: slots
+  keywords: [slot, window, availability, minutes, split]
+  question: How are slots represented?
+  good: Availability windows expand into slot records (or are computed on demand) by one function; booking marks a slot taken.
+  principles: [SRP]
+- id: search
+  keywords: [specialty, search, index, sorted]
+  question: How is slot search organised?
+  good: Doctors indexed by specialty; slots sorted by time per doctor; results merged.
+- id: conflicts
+  keywords: [conflict, overlap, patient, double]
+  question: How are patient double-bookings prevented?
+  good: Each patient's appointments checked for overlap before booking, in the same atomic step.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What prevents double-booking a slot?
+  good: Check-and-take of the slot and patient conflict checks happen atomically.
+  smells: [UNGUARDED_SHARED]

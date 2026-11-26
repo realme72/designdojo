@@ -1,0 +1,15 @@
+scenarios:
+  - name: one_patient_per_slot
+    repeat: 15
+    steps:
+      - {call: add_doctor, args: {doctor_id: d, specialty: s, slot_minutes: 15}}
+      - {call: add_availability, args: {doctor_id: d, start: 1700003600, end: 1700004500}}
+      - parallel: {threads: 20, call: book, args: {patient: "p{i}", doctor_id: d, start: 1700003600}, collect: r}
+      - assert: {of: r, ok_count: 1, error_count: {SlotUnavailable: 19}}
+  - name: same_patient_two_doctors_same_time
+    repeat: 15
+    steps:
+      - {call: add_doctor, args: {doctor_id: a, specialty: s, slot_minutes: 30}}
+      - {call: add_availability, args: {doctor_id: a, start: 1700003600, end: 1700005400}}
+      - parallel: {threads: 10, call: book, args: {patient: same, doctor_id: a, start: 1700003600}, collect: r}
+      - assert: {of: r, ok_count: 1}
