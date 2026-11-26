@@ -1,0 +1,70 @@
+config: {close_threshold: 20}
+scenarios:
+  - name: vote_switching
+    steps:
+      - {call: ask, args: {user: ann, question_id: q, title: t, tags: [x]}}
+      - {call: answer, args: {user: bob, question_id: q, answer_id: a}}
+      - {call: vote, args: {user: cat, post_id: a, up: true}}
+      - {call: vote, args: {user: cat, post_id: a, up: true}}
+      - {call: score, args: {post_id: a}, expect: 1}
+      - {call: reputation, args: {user: bob}, expect: 11}
+      - {call: vote, args: {user: cat, post_id: a, up: false}}
+      - {call: score, args: {post_id: a}, expect: -1}
+      - {call: reputation, args: {user: bob}, expect: -1}
+  - name: downvote_on_question
+    steps:
+      - {call: ask, args: {user: ann, question_id: q, title: t, tags: [x]}}
+      - {call: vote, args: {user: b, post_id: q, up: false}}
+      - {call: vote, args: {user: c, post_id: q, up: false}}
+      - {call: reputation, args: {user: ann}, expect: -3}
+      - {call: score, args: {post_id: q}, expect: -2}
+  - name: accept_moves_bonus
+    steps:
+      - {call: ask, args: {user: ann, question_id: q, title: t, tags: [x]}}
+      - {call: answer, args: {user: bob, question_id: q, answer_id: a1}}
+      - {call: answer, args: {user: cat, question_id: q, answer_id: a2}}
+      - {call: accept, args: {user: ann, answer_id: a1}}
+      - {call: accept, args: {user: ann, answer_id: a2}}
+      - {call: reputation, args: {user: bob}, expect: 1}
+      - {call: reputation, args: {user: cat}, expect: 16}
+      - {call: accept, args: {user: ann, answer_id: a2}}
+      - {call: reputation, args: {user: cat}, expect: 16}
+  - name: accept_rules
+    steps:
+      - {call: ask, args: {user: ann, question_id: q, title: t, tags: [x]}}
+      - {call: answer, args: {user: ann, question_id: q, answer_id: own}}
+      - {call: answer, args: {user: bob, question_id: q, answer_id: a}}
+      - {call: accept, args: {user: bob, answer_id: a}, expect_error: Forbidden}
+      - {call: accept, args: {user: ann, answer_id: own}}
+      - {call: reputation, args: {user: ann}, expect: 1}
+      - {call: accept, args: {user: ann, answer_id: nope}, expect_error: UnknownPost}
+  - name: close_needs_reputation
+    steps:
+      - {call: ask, args: {user: ann, question_id: q, title: t, tags: [x]}}
+      - {call: answer, args: {user: bob, question_id: q, answer_id: a}}
+      - {call: close, args: {user: bob, question_id: q}, expect_error: Forbidden}
+      - {call: vote, args: {user: ann, post_id: a, up: true}}
+      - {call: vote, args: {user: cat, post_id: a, up: true}}
+      - {call: close, args: {user: bob, question_id: q}}
+      - {call: answer, args: {user: cat, question_id: q, answer_id: late}, expect_error: QuestionClosed}
+  - name: invalid_questions
+    steps:
+      - {call: ask, args: {user: a, question_id: q, title: "", tags: [x]}, expect_error: InvalidQuestion}
+      - {call: ask, args: {user: a, question_id: q, title: t, tags: []}, expect_error: InvalidQuestion}
+      - {call: ask, args: {user: a, question_id: q, title: t, tags: [a, b, c, d, e, f]}, expect_error: InvalidQuestion}
+      - {call: ask, args: {user: a, question_id: q, title: t, tags: [a, b, c, d, e]}}
+      - {call: answer, args: {user: b, question_id: q, answer_id: q}, expect_error: DuplicatePost}
+      - {call: answer, args: {user: b, question_id: nope, answer_id: z}, expect_error: UnknownPost}
+      - {call: vote, args: {user: b, post_id: nope, up: true}, expect_error: UnknownPost}
+  - name: search_by_tag_and_score
+    steps:
+      - {call: ask, args: {user: a, question_id: q2, title: t, tags: [py]}}
+      - {call: ask, args: {user: a, question_id: q1, title: t, tags: [py, web]}}
+      - {call: ask, args: {user: a, question_id: q3, title: t, tags: [py]}}
+      - {call: ask, args: {user: a, question_id: q4, title: t, tags: [go]}}
+      - {call: vote, args: {user: b, post_id: q3, up: true}}
+      - {call: search, args: {tag: py}, expect: [q3, q1, q2]}
+      - {call: search, args: {tag: rust}, expect: []}
+  - name: new_user_reputation
+    steps:
+      - {call: reputation, args: {user: stranger}, expect: 1}

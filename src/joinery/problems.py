@@ -112,7 +112,11 @@ def lint_problem(p: Problem) -> list[str]:
     entry_params = {x.name for x in c.entrypoint.params if not (x.type.get("kind") == "iface")}
     seen: set[str] = set()
     for suite in SUITES:
-        data = p.suite(suite)
+        try:
+            data = p.suite(suite)
+        except Exception as e:  # noqa: BLE001 - surface YAML/shape errors as lint issues
+            issues.append(f"scenarios/{suite}.yaml: {str(e).splitlines()[0]} ({type(e).__name__})")
+            continue
         if suite == "sample" and not data["scenarios"]:
             issues.append("scenarios/sample.yaml: no scenarios")
         for sc in data["scenarios"]:

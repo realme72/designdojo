@@ -1,0 +1,21 @@
+- id: reputation_rules
+  keywords: [reputation, rep, points, rule, policy]
+  question: Where do reputation rules live?
+  good: A reputation policy (event -> delta) in one place; votes/accepts emit events, the policy maps them to points.
+  smells: [TYPE_SWITCH]
+  principles: [OCP, SRP]
+  patterns: [Strategy, Observer]
+- id: post_model
+  keywords: [post, question, answer, base, votes]
+  question: How are questions and answers modelled?
+  good: A Post base holding author, votes and score; Question adds tags/closed/accepted answer; Answer links to its question.
+  principles: [LSP]
+- id: vote_switching
+  keywords: [vote, switch, up, down, undo]
+  question: How is vote switching handled?
+  good: Store each user's vote per post; changing a vote reverses the old effect then applies the new one.
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are votes and reputation updated atomically?
+  good: Vote record, score and author reputation change together under one lock.
+  smells: [UNGUARDED_SHARED]
