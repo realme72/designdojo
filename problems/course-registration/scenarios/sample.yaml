@@ -1,0 +1,25 @@
+config: {max_courses: 3}
+scenarios:
+  - name: enroll_until_full_then_waitlist
+    steps:
+      - {call: add_course, args: {course_id: CS101, capacity: 2, prerequisites: []}}
+      - {call: enroll, args: {student: ann, course_id: CS101}, expect: ENROLLED}
+      - {call: enroll, args: {student: bob, course_id: CS101}, expect: ENROLLED}
+      - {call: enroll, args: {student: cat, course_id: CS101}, expect: WAITLISTED}
+      - {call: roster, args: {course_id: CS101}, expect: [ann, bob]}
+      - {call: waitlist, args: {course_id: CS101}, expect: [cat]}
+  - name: drop_promotes_waitlist
+    steps:
+      - {call: add_course, args: {course_id: CS101, capacity: 1, prerequisites: []}}
+      - {call: enroll, args: {student: ann, course_id: CS101}}
+      - {call: enroll, args: {student: bob, course_id: CS101}}
+      - {call: drop, args: {student: ann, course_id: CS101}}
+      - {call: roster, args: {course_id: CS101}, expect: [bob]}
+      - {call: waitlist, args: {course_id: CS101}, expect: []}
+  - name: prerequisites
+    steps:
+      - {call: add_course, args: {course_id: CS101, capacity: 5, prerequisites: []}}
+      - {call: add_course, args: {course_id: CS201, capacity: 5, prerequisites: [CS101]}}
+      - {call: enroll, args: {student: ann, course_id: CS201}, expect_error: MissingPrerequisite}
+      - {call: complete, args: {student: ann, course_id: CS101}}
+      - {call: enroll, args: {student: ann, course_id: CS201}, expect: ENROLLED}
