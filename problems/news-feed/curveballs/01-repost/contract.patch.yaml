@@ -1,0 +1,6 @@
+interfaces:
+  SocialNetwork:
+    repost:
+      params: {user: str, post_id: str}
+      returns: bool
+      raises: [UnknownPost]

@@ -1,0 +1,6 @@
+interfaces:
+  Broker:
+    set_retention:
+      params: {topic: str, max_messages: int}
+      returns: void
+      raises: [UnknownTopic, InvalidArgument]

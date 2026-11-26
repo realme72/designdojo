@@ -1,0 +1,10 @@
+interfaces:
+  AuctionHouse:
+    set_reserve:
+      params: {auction_id: str, reserve: long}
+      returns: void
+      raises: [UnknownAuction, AuctionClosed]
+    reserve_met:
+      params: {auction_id: str}
+      returns: bool
+      raises: [UnknownAuction]

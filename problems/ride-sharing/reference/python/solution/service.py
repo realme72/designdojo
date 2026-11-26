@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import threading
 
-from contract import (DriverStatus, DuplicateDriver, InvalidState, NoDriverAvailable, RideService, RiderBusy, Trip,
+from contract import (DriverStatus, DuplicateDriver, InvalidState, InvalidSurge, NoDriverAvailable, RideService, RiderBusy, Trip,
                       TripStatus, UnknownDriver, UnknownTrip, VehicleClass)
 
 from .matching import MatchingStrategy
@@ -23,6 +23,7 @@ class Dispatch(RideService):
         self._trips: dict[str, TripRecord] = {}
         self._active_by_rider: dict[str, str] = {}
         self._ids = itertools.count(1)
+        self._surge: dict[VehicleClass, int] = {}
         self._lock = threading.Lock()
 
     def _driver(self, driver_id: str) -> Driver:
@@ -67,7 +68,8 @@ class Dispatch(RideService):
             if d is None:
                 raise NoDriverAvailable(vehicle.name)
             d.status = DriverStatus.ON_TRIP
-            t = TripRecord(f"T{next(self._ids)}", rider, d.id, vehicle, (x, y), (dest_x, dest_y))
+            t = TripRecord(f"T{next(self._ids)}", rider, d.id, vehicle, (x, y), (dest_x, dest_y),
+                           surge=self._surge.get(vehicle, 100))
             self._trips[t.id] = t
             self._active_by_rider[rider] = t.id
             return self._view(t)
@@ -89,10 +91,16 @@ class Dispatch(RideService):
     def end_trip(self, trip_id: str) -> Trip:
         with self._lock:
             t = self._move(trip_id, T.COMPLETED)
-            t.fare = self._pricing.fare(t.vehicle, t.pickup, t.dest)
+            t.fare = self._pricing.fare(t.vehicle, t.pickup, t.dest) * t.surge // 100
             d = self._drivers[t.driver]
             d.x, d.y = t.dest
             return self._view(t)
+
+    def set_surge(self, vehicle: VehicleClass, percent: int) -> None:
+        if percent < 100:
+            raise InvalidSurge(percent)
+        with self._lock:
+            self._surge[vehicle] = percent
 
     def cancel_trip(self, trip_id: str) -> Trip:
         with self._lock:

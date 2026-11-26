@@ -1,0 +1,24 @@
+config:
+  max_radius: 10
+  base_fare: {MINI: 500, SEDAN: 800, SUV: 1200}
+  per_unit: {MINI: 100, SEDAN: 150, SUV: 200}
+scenarios:
+  - name: surge_locked_at_request
+    steps:
+      - {call: add_driver, args: {driver_id: d1, vehicle: SEDAN, x: 5, y: 5}}
+      - {call: add_driver, args: {driver_id: d2, vehicle: MINI, x: 0, y: 0}}
+      - {call: set_surge, args: {vehicle: SEDAN, percent: 150}}
+      - {call: request_ride, args: {rider: r1, vehicle: SEDAN, x: 5, y: 5, dest_x: 8, dest_y: 9}, bind: t}
+      - {call: set_surge, args: {vehicle: SEDAN, percent: 100}}
+      - {call: start_trip, args: {trip_id: $t.id}}
+      - {call: end_trip, args: {trip_id: $t.id}, expect: {fare: 2775}}
+      - {call: request_ride, args: {rider: r2, vehicle: MINI, x: 0, y: 0, dest_x: 3, dest_y: 4}, bind: m}
+      - {call: set_surge, args: {vehicle: MINI, percent: 200}}
+      - {call: start_trip, args: {trip_id: $m.id}}
+      - {call: end_trip, args: {trip_id: $m.id}, expect: {fare: 1200}}
+      - {call: request_ride, args: {rider: r3, vehicle: MINI, x: 3, y: 4, dest_x: 3, dest_y: 5}, bind: n}
+      - {call: start_trip, args: {trip_id: $n.id}}
+      - {call: end_trip, args: {trip_id: $n.id}, expect: {fare: 1200}}
+  - name: invalid_surge
+    steps:
+      - {call: set_surge, args: {vehicle: SUV, percent: 99}, expect_error: InvalidSurge}

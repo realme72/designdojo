@@ -1,0 +1,23 @@
+scenarios:
+  - name: trims_oldest
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - {call: publish, args: {topic: t, payload: m0}}
+      - {call: publish, args: {topic: t, payload: m1}}
+      - {call: publish, args: {topic: t, payload: m2}}
+      - {call: publish, args: {topic: t, payload: m3}}
+      - {call: publish, args: {topic: t, payload: m4}}
+      - {call: set_retention, args: {topic: t, max_messages: 3}}
+      - {call: lag, args: {topic: t, group: g}, expect: 3}
+      - {call: poll, args: {topic: t, group: g, max: 10}, expect: [{offset: 2, payload: m2}, {offset: 3}, {offset: 4}]}
+      - {call: seek, args: {topic: t, group: g, offset: 1}, expect_error: InvalidOffset}
+      - {call: seek, args: {topic: t, group: g, offset: 2}}
+      - {call: publish, args: {topic: t, payload: m5}, expect: 5}
+      - {call: lag, args: {topic: t, group: g}, expect: 3}
+      - {call: poll, args: {topic: t, group: g, max: 1}, expect: [{offset: 3, payload: m3}]}
+  - name: retention_errors
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: set_retention, args: {topic: t, max_messages: 0}, expect_error: InvalidArgument}
+      - {call: set_retention, args: {topic: nope, max_messages: 1}, expect_error: UnknownTopic}

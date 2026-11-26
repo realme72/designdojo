@@ -17,16 +17,16 @@ final class Subscription {
 
     synchronized List<Message> poll(int max) {
         List<Message> batch = topic.read(position, max);
-        position += batch.size();
+        if (!batch.isEmpty()) position = batch.get(batch.size() - 1).offset() + 1;
         return batch;
     }
 
     synchronized long lag() {
-        return topic.end() - position;
+        return topic.end() - Math.max(position, topic.start());
     }
 
     synchronized void seek(long offset) {
-        if (offset < 0 || offset > topic.end()) throw new InvalidOffset("offset " + offset);
+        if (offset < topic.start() || offset > topic.end()) throw new InvalidOffset("offset " + offset);
         position = offset;
     }
 }

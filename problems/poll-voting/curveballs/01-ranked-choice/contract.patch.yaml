@@ -1,0 +1,6 @@
+interfaces:
+  Polls:
+    create_ranked_poll:
+      params: {poll_id: str, options: "list[str]", closes_at: long}
+      returns: void
+      raises: [DuplicatePoll, InvalidPoll]

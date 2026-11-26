@@ -24,3 +24,4 @@ class TripRecord:
     dest: tuple[int, int]
     status: TripStatus = TripStatus.ASSIGNED
     fare: int = 0
+    surge: int = 100  # percent in force when requested

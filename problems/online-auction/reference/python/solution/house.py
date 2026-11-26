@@ -16,6 +16,7 @@ class Auction:
     ends_at: int
     bids: list[Bid] = field(default_factory=list)
     result: AuctionResult | None = None
+    reserve: int = 0
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def minimum_next(self) -> int:
@@ -61,6 +62,18 @@ class House(AuctionHouse):
                 a.ends_at = now + self._extension
             return BidResult(amount, a.ends_at)
 
+    def set_reserve(self, auction_id: str, reserve: int) -> None:
+        a = self._auction(auction_id)
+        with a.lock:
+            if a.result is not None or self._clock.now() >= a.ends_at:
+                raise AuctionClosed(auction_id)
+            a.reserve = reserve
+
+    def reserve_met(self, auction_id: str) -> bool:
+        a = self._auction(auction_id)
+        with a.lock:
+            return bool(a.bids) and a.bids[-1].amount >= a.reserve
+
     def highest(self, auction_id: str) -> Bid:
         a = self._auction(auction_id)
         with a.lock:
@@ -80,5 +93,7 @@ class House(AuctionHouse):
                 if self._clock.now() < a.ends_at:
                     raise AuctionOpen(auction_id)
                 top = a.bids[-1] if a.bids else None
+                if top and top.amount < a.reserve:
+                    top = None  # reserve not met: no sale
                 a.result = AuctionResult(top.bidder if top else "", top.amount if top else 0)
             return a.result

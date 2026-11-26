@@ -52,6 +52,12 @@ final class InMemoryBroker implements Broker {
     }
 
     @Override
+    public void setRetention(String topic, int maxMessages) {
+        if (maxMessages < 1) throw new InvalidArgument("max_messages " + maxMessages);
+        topic(topic).setRetention(maxMessages);
+    }
+
+    @Override
     public long lag(String topic, String group) {
         return sub(topic, group).lag();
     }

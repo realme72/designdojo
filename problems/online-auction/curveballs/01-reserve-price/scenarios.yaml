@@ -1,0 +1,28 @@
+config: {extension_window: 60, extension: 120}
+scenarios:
+  - name: reserve_met_sells
+    steps:
+      - {call: create_auction, args: {auction_id: a1, seller: s, starting_price: 100, min_increment: 10, ends_at: 1700001000}}
+      - {call: reserve_met, args: {auction_id: a1}, expect: false}
+      - {call: set_reserve, args: {auction_id: a1, reserve: 500}}
+      - {call: bid, args: {auction_id: a1, bidder: x, amount: 300}}
+      - {call: reserve_met, args: {auction_id: a1}, expect: false}
+      - {call: bid, args: {auction_id: a1, bidder: y, amount: 500}}
+      - {call: reserve_met, args: {auction_id: a1}, expect: true}
+      - advance_clock: 1000
+      - {call: close, args: {auction_id: a1}, expect: {winner: y, price: 500}}
+      - {call: set_reserve, args: {auction_id: a1, reserve: 1}, expect_error: AuctionClosed}
+  - name: reserve_not_met_no_sale
+    steps:
+      - {call: create_auction, args: {auction_id: a1, seller: s, starting_price: 100, min_increment: 10, ends_at: 1700001000}}
+      - {call: set_reserve, args: {auction_id: a1, reserve: 1000}}
+      - {call: bid, args: {auction_id: a1, bidder: x, amount: 900}}
+      - advance_clock: 1000
+      - {call: close, args: {auction_id: a1}, expect: {winner: "", price: 0}}
+      - {call: highest, args: {auction_id: a1}, expect: {bidder: x, amount: 900}}
+      - {call: set_reserve, args: {auction_id: zz, reserve: 1}, expect_error: UnknownAuction}
+  - name: no_reserve_set
+    steps:
+      - {call: create_auction, args: {auction_id: a1, seller: s, starting_price: 100, min_increment: 10, ends_at: 1700001000}}
+      - {call: bid, args: {auction_id: a1, bidder: x, amount: 100}}
+      - {call: reserve_met, args: {auction_id: a1}, expect: true}

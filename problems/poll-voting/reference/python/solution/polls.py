@@ -24,11 +24,57 @@ class MultiChoice(BallotPolicy):
             raise InvalidChoice(choices)
 
 
+class RankedChoice(MultiChoice):
+    """A ranking: same validity rules as multi-choice, but order matters."""
+
+
+class Tally(ABC):
+    @abstractmethod
+    def counted(self, choices: list[str]) -> list[str]:
+        """Which options a ballot adds a vote to in `results`."""
+
+    @abstractmethod
+    def winners(self, options: list[str], ballots: list[list[str]], counts: dict[str, int]) -> list[str]: ...
+
+
+class Plurality(Tally):
+    def counted(self, choices):
+        return choices
+
+    def winners(self, options, ballots, counts):
+        top = max(counts.values())
+        return [o for o in options if counts[o] == top]
+
+
+class InstantRunoff(Tally):
+    def counted(self, choices):
+        return choices[:1]
+
+    def winners(self, options, ballots, counts):
+        remaining = list(options)
+        while True:
+            tally = {o: 0 for o in remaining}
+            for b in ballots:
+                first = next((c for c in b if c in tally), None)
+                if first is not None:
+                    tally[first] += 1
+            active = sum(tally.values())
+            top = max(tally.values())
+            if active and top * 2 > active:
+                return [o for o in remaining if tally[o] == top]
+            low = min(tally.values())
+            survivors = [o for o in remaining if tally[o] != low]
+            if not survivors:
+                return remaining
+            remaining = survivors
+
+
 class Poll:
-    def __init__(self, options: list[str], closes_at: int, policy: BallotPolicy):
+    def __init__(self, options: list[str], closes_at: int, policy: BallotPolicy, tally: Tally | None = None):
         self.options = options
         self.closes_at = closes_at
         self.policy = policy
+        self.tally = tally or Plurality()
         self.counts = {o: 0 for o in options}
         self.ballots: dict[str, list[str]] = {}
         self.lock = threading.Lock()
@@ -58,6 +104,14 @@ class PollService(Polls):
                 raise DuplicatePoll(poll_id)
             self._polls[poll_id] = Poll(list(options), closes_at, MultiChoice() if multi_choice else SingleChoice())
 
+    def create_ranked_poll(self, poll_id: str, options: list[str], closes_at: int) -> None:
+        if len(options) < 2 or len(set(options)) != len(options) or closes_at <= self._clock.now():
+            raise InvalidPoll(poll_id)
+        with self._lock:
+            if poll_id in self._polls:
+                raise DuplicatePoll(poll_id)
+            self._polls[poll_id] = Poll(list(options), closes_at, RankedChoice(), InstantRunoff())
+
     def vote(self, poll_id: str, user: str, choices: list[str]) -> None:
         p = self._poll(poll_id)
         with p.lock:
@@ -67,7 +121,7 @@ class PollService(Polls):
                 raise AlreadyVoted(user)
             p.policy.validate(choices, p.options)
             p.ballots[user] = list(choices)
-            for c in choices:
+            for c in p.tally.counted(choices):
                 p.counts[c] += 1
 
     def retract(self, poll_id: str, user: str) -> None:
@@ -78,7 +132,7 @@ class PollService(Polls):
             ballot = p.ballots.pop(user, None)
             if ballot is None:
                 raise NotVoted(user)
-            for c in ballot:
+            for c in p.tally.counted(ballot):
                 p.counts[c] -= 1
 
     def results(self, poll_id: str) -> list[OptionResult]:
@@ -91,5 +145,4 @@ class PollService(Polls):
         with p.lock:
             if self._open(p):
                 raise PollOpen(poll_id)
-            top = max(p.counts.values())
-            return [o for o in p.options if p.counts[o] == top]
+            return p.tally.winners(p.options, list(p.ballots.values()), p.counts)

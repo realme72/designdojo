@@ -17,12 +17,20 @@ class Post:
     seq: int
     likers: set[str] = field(default_factory=set)
     deleted: bool = False
+    reposted_by: set[str] = field(default_factory=set)
+
+
+@dataclass(frozen=True)
+class Entry:
+    """A timeline event: an original post or a repost of one."""
+    seq: int
+    post: Post
 
 
 class Network(SocialNetwork):
     def __init__(self):
         self._posts: dict[str, Post] = {}
-        self._timelines: defaultdict[str, list[Post]] = defaultdict(list)  # oldest -> newest
+        self._timelines: defaultdict[str, list[Entry]] = defaultdict(list)  # oldest -> newest
         self._following: defaultdict[str, set[str]] = defaultdict(set)
         self._seq = itertools.count()
         self._lock = threading.Lock()
@@ -33,7 +41,7 @@ class Network(SocialNetwork):
                 raise DuplicatePost(post_id)
             p = Post(post_id, user, next(self._seq))
             self._posts[post_id] = p
-            self._timelines[user].append(p)
+            self._timelines[user].append(Entry(p.seq, p))
 
     def follow(self, follower: str, followee: str) -> None:
         if follower == followee:
@@ -56,10 +64,12 @@ class Network(SocialNetwork):
             heap = [(-tl[-1].seq, i, len(tl) - 1) for i, tl in enumerate(sources)]
             heapq.heapify(heap)
             out: list[str] = []
+            seen: set[str] = set()
             while heap and len(out) < limit:
                 _, i, j = heapq.heappop(heap)
-                p = sources[i][j]
-                if not p.deleted:
+                p = sources[i][j].post
+                if not p.deleted and p.id not in seen:
+                    seen.add(p.id)
                     out.append(p.id)
                 if j > 0:
                     heapq.heappush(heap, (-sources[i][j - 1].seq, i, j - 1))
@@ -77,6 +87,15 @@ class Network(SocialNetwork):
             if p.author != user:
                 raise NotAuthor(post_id)
             p.deleted = True
+
+    def repost(self, user: str, post_id: str) -> bool:
+        with self._lock:
+            p = self._live(post_id)
+            if user in p.reposted_by:
+                return False
+            p.reposted_by.add(user)
+            self._timelines[user].append(Entry(next(self._seq), p))
+            return True
 
     def like(self, user: str, post_id: str) -> bool:
         with self._lock:

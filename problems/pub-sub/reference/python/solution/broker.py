@@ -12,21 +12,41 @@ class Topic:
     def __init__(self, name: str):
         self.name = name
         self._log: list[str] = []
+        self._base = 0          # offset of _log[0]; earlier messages were dropped by retention
+        self._retention = 0     # 0 = keep everything
         self._lock = threading.Lock()
         self.subscriptions: dict[str, Subscription] = {}
+
+    def _trim(self) -> None:
+        if self._retention and len(self._log) > self._retention:
+            drop = len(self._log) - self._retention
+            del self._log[:drop]
+            self._base += drop
+
+    def set_retention(self, max_messages: int) -> None:
+        with self._lock:
+            self._retention = max_messages
+            self._trim()
 
     def append(self, payload: str) -> int:
         with self._lock:
             self._log.append(payload)
-            return len(self._log) - 1
+            self._trim()
+            return self._base + len(self._log) - 1
+
+    def start(self) -> int:
+        with self._lock:
+            return self._base
 
     def end(self) -> int:
         with self._lock:
-            return len(self._log)
+            return self._base + len(self._log)
 
     def read(self, start: int, count: int) -> list[Message]:
         with self._lock:
-            return [Message(i, self._log[i]) for i in range(start, min(start + count, len(self._log)))]
+            start = max(start, self._base)
+            stop = min(start + count, self._base + len(self._log))
+            return [Message(i, self._log[i - self._base]) for i in range(start, stop)]
 
 
 class Subscription:
@@ -40,16 +60,17 @@ class Subscription:
     def poll(self, max_count: int) -> list[Message]:
         with self._lock:
             batch = self.topic.read(self.position, max_count)
-            self.position += len(batch)
+            if batch:
+                self.position = batch[-1].offset + 1
             return batch
 
     def lag(self) -> int:
         with self._lock:
-            return self.topic.end() - self.position
+            return self.topic.end() - max(self.position, self.topic.start())
 
     def seek(self, offset: int) -> None:
         with self._lock:
-            if not 0 <= offset <= self.topic.end():
+            if not self.topic.start() <= offset <= self.topic.end():
                 raise InvalidOffset(offset)
             self.position = offset
 
@@ -94,6 +115,11 @@ class InMemoryBroker(Broker):
         if max < 1:
             raise InvalidArgument(max)
         return self._sub(topic, group).poll(max)
+
+    def set_retention(self, topic: str, max_messages: int) -> None:
+        if max_messages < 1:
+            raise InvalidArgument(max_messages)
+        self._topic(topic).set_retention(max_messages)
 
     def lag(self, topic: str, group: str) -> int:
         return self._sub(topic, group).lag()

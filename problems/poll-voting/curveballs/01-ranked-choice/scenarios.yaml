@@ -1,0 +1,31 @@
+scenarios:
+  - name: runoff
+    steps:
+      - {call: create_ranked_poll, args: {poll_id: p, options: [A, B, C], closes_at: 1700001000}}
+      - {call: vote, args: {poll_id: p, user: u1, choices: [A, B]}}
+      - {call: vote, args: {poll_id: p, user: u2, choices: [B, A]}}
+      - {call: vote, args: {poll_id: p, user: u3, choices: [C, B]}}
+      - {call: vote, args: {poll_id: p, user: u4, choices: [A]}}
+      - {call: vote, args: {poll_id: p, user: u5, choices: [B, C]}}
+      - {call: results, args: {poll_id: p}, expect: [{option: A, votes: 2}, {option: B, votes: 2}, {option: C, votes: 1}]}
+      - {call: winners, args: {poll_id: p}, expect_error: PollOpen}
+      - advance_clock: 1000
+      - {call: winners, args: {poll_id: p}, expect: [B]}
+  - name: ballots_and_ties
+    steps:
+      - {call: create_ranked_poll, args: {poll_id: p, options: [A, B, C], closes_at: 1700001000}}
+      - {call: vote, args: {poll_id: p, user: u1, choices: [A, A]}, expect_error: InvalidChoice}
+      - {call: vote, args: {poll_id: p, user: u1, choices: []}, expect_error: InvalidChoice}
+      - {call: vote, args: {poll_id: p, user: u1, choices: [D]}, expect_error: InvalidChoice}
+      - {call: vote, args: {poll_id: p, user: u1, choices: [A]}}
+      - {call: vote, args: {poll_id: p, user: u2, choices: [C, B]}}
+      - {call: vote, args: {poll_id: p, user: u3, choices: [B]}}
+      - {call: retract, args: {poll_id: p, user: u2}}
+      - {call: results, args: {poll_id: p}, expect: [{option: A, votes: 1}, {option: B, votes: 1}, {option: C, votes: 0}]}
+      - advance_clock: 1000
+      - {call: winners, args: {poll_id: p}, expect: [A, B]}
+  - name: invalid_ranked_poll
+    steps:
+      - {call: create_ranked_poll, args: {poll_id: p, options: [A], closes_at: 1700001000}, expect_error: InvalidPoll}
+      - {call: create_ranked_poll, args: {poll_id: q, options: [A, B], closes_at: 1700001000}}
+      - {call: create_ranked_poll, args: {poll_id: q, options: [A, B], closes_at: 1700001000}, expect_error: DuplicatePoll}

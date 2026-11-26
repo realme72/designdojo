@@ -1,0 +1,7 @@
+interfaces:
+  RideService:
+    set_surge:
+      params: {vehicle: VehicleClass, percent: int}
+      returns: void
+      raises: [InvalidSurge]
+errors: [InvalidSurge]
