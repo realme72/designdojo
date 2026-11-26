@@ -1,0 +1,19 @@
+scenarios:
+  - name: same_room_for_every_occurrence
+    steps:
+      - {call: add_room, args: {room_id: r1, capacity: 4}}
+      - {call: add_room, args: {room_id: r2, capacity: 10}}
+      - {call: book, args: {organizer: bob, attendees: 3, start: 1700090000, end: 1700091000}, expect: {room: r1}}
+      - call: book_recurring
+        args: {organizer: ann, attendees: 3, start: 1700003600, end: 1700005400, every_seconds: 86400, count: 3}
+        expect: [{room: r2, start: 1700003600, end: 1700005400}, {room: r2, start: 1700090000}, {room: r2, start: 1700176400}]
+      - {call: bookings, args: {room_id: r2}, expect: [{organizer: ann}, {organizer: ann}, {organizer: ann}]}
+      - {call: book_recurring, args: {organizer: cy, attendees: 2, start: 1700300000, end: 1700301000, every_seconds: 3600, count: 2}, expect: [{room: r1}, {room: r1}]}
+  - name: all_or_nothing
+    steps:
+      - {call: add_room, args: {room_id: r1, capacity: 4}}
+      - {call: book, args: {organizer: bob, attendees: 3, start: 1700090000, end: 1700091000}}
+      - {call: book_recurring, args: {organizer: ann, attendees: 3, start: 1700003600, end: 1700005400, every_seconds: 86400, count: 3}, expect_error: NoRoomAvailable}
+      - {call: bookings, args: {room_id: r1}, expect: [{organizer: bob}]}
+      - {call: book_recurring, args: {organizer: ann, attendees: 3, start: 1700003600, end: 1700005400, every_seconds: 86400, count: 0}, expect_error: InvalidInterval}
+      - {call: book_recurring, args: {organizer: ann, attendees: 3, start: 1700003600, end: 1700005400, every_seconds: 600, count: 2}, expect_error: InvalidInterval}

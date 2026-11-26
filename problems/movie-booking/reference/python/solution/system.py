@@ -44,7 +44,8 @@ class Cinema(BookingSystem):
             now = self._clock.now()
             if any(show.state(s, now) is not SeatState.AVAILABLE for s in seats):
                 raise SeatUnavailable(show_id)
-            hold = Hold(f"H{next(self._ids)}", show_id, user, tuple(seats), now + self._hold_seconds)
+            hold = Hold(f"H{next(self._ids)}", show_id, user, tuple(seats), now + self._hold_seconds,
+                        show.price(seats))
             for s in seats:
                 show.held[s] = hold
         with self._registry:
@@ -71,7 +72,8 @@ class Cinema(BookingSystem):
                     del show.held[s]
             if not book:
                 return None
-            booking = Booking(f"B{next(self._ids)}", hold.show_id, hold.user, sorted(hold.seats, key=seat_key))
+            booking = Booking(f"B{next(self._ids)}", hold.show_id, hold.user, sorted(hold.seats, key=seat_key),
+                              hold.total)
             for s in hold.seats:
                 show.booked[s] = booking.id
             with self._registry:
@@ -95,6 +97,12 @@ class Cinema(BookingSystem):
         with show.lock:
             for s in booking.seats:
                 show.booked.pop(s, None)
+
+    def set_row_price(self, show_id: str, row: str, price: int) -> None:
+        show = self._show(show_id)
+        show.check(f"{row}1")
+        with show.lock:
+            show.row_prices[row] = price
 
     def available(self, show_id: str) -> int:
         show = self._show(show_id)

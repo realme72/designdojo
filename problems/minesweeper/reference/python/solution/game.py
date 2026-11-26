@@ -36,6 +36,13 @@ class Game(Minesweeper):
         if (row, col) in self.mines:
             self._state = GameState.LOST
             return 0
+        opened = self._flood(row, col)
+        self.safe_left -= opened
+        if self.safe_left == 0:
+            self._state = GameState.WON
+        return opened
+
+    def _flood(self, row: int, col: int) -> int:
         opened, queue = 0, deque([(row, col)])
         self.cells[row][col] = OPEN
         while queue:  # iterative BFS: no recursion depth issues on big boards
@@ -47,6 +54,20 @@ class Game(Minesweeper):
                     if self._inside(nr, nc) and self.cells[nr][nc] == HIDDEN:
                         self.cells[nr][nc] = OPEN
                         queue.append((nr, nc))
+        return opened
+
+    def chord(self, row: int, col: int) -> int:
+        self._check(row, col)
+        if self.cells[row][col] != OPEN:
+            raise InvalidMove("chord needs an open cell")
+        around = [(row + dr, col + dc) for dr, dc in self._deltas() if self._inside(row + dr, col + dc)]
+        if sum(self.cells[r][c] == FLAGGED for r, c in around) != self.counts[row][col]:
+            raise InvalidMove("flag count does not match")
+        targets = [(r, c) for r, c in around if self.cells[r][c] == HIDDEN]
+        if any(t in self.mines for t in targets):
+            self._state = GameState.LOST
+            return 0
+        opened = sum(self._flood(r, c) for r, c in targets if self.cells[r][c] == HIDDEN)
         self.safe_left -= opened
         if self.safe_left == 0:
             self._state = GameState.WON

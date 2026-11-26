@@ -1,0 +1,6 @@
+interfaces:
+  Minesweeper:
+    chord:
+      params: {row: int, col: int}
+      returns: int
+      raises: [InvalidMove, GameOver]

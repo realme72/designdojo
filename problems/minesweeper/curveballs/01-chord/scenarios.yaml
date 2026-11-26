@@ -1,0 +1,24 @@
+config: {rows: 3, cols: 3, mines: [[0, 0]]}
+scenarios:
+  - name: chord_wins
+    steps:
+      - {call: reveal, args: {row: 1, col: 1}, expect: 1}
+      - {call: chord, args: {row: 1, col: 1}, expect_error: InvalidMove}
+      - {call: chord, args: {row: 2, col: 2}, expect_error: InvalidMove}
+      - {call: toggle_flag, args: {row: 0, col: 0}}
+      - {call: chord, args: {row: 1, col: 1}, expect: 7}
+      - {call: state, expect: WON}
+  - name: wrong_flag_loses
+    steps:
+      - {call: reveal, args: {row: 1, col: 1}}
+      - {call: toggle_flag, args: {row: 0, col: 1}}
+      - {call: chord, args: {row: 1, col: 1}, expect: 0}
+      - {call: state, expect: LOST}
+      - {call: chord, args: {row: 1, col: 1}, expect_error: GameOver}
+  - name: chord_floods_zeros
+    config: {rows: 3, cols: 5, mines: [[0, 0]]}
+    steps:
+      - {call: reveal, args: {row: 0, col: 1}, expect: 1}
+      - {call: toggle_flag, args: {row: 0, col: 0}}
+      - {call: chord, args: {row: 0, col: 1}, expect: 13}
+      - {call: view, expect: [F1000, "11000", "00000"]}

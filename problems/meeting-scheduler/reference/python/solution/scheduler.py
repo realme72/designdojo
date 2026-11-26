@@ -75,6 +75,25 @@ class Scheduler(RoomScheduler):
             self._bookings[b.id] = b
             return b
 
+    def book_recurring(self, organizer: str, attendees: int, start: int, end: int, every_seconds: int,
+                       count: int) -> list[Booking]:
+        if end <= start or start < self._clock.now() or count < 1 or every_seconds < end - start:
+            raise InvalidInterval(f"{start}..{end} every {every_seconds} x{count}")
+        slots = [(start + k * every_seconds, end + k * every_seconds) for k in range(count)]
+        with self._lock:
+            candidates = [r for r in self._rooms.values()
+                          if r.capacity >= attendees and all(r.free(s, e) for s, e in slots)]
+            if not candidates:
+                raise NoRoomAvailable(attendees)
+            room = self._policy.choose(candidates)
+            out = []
+            for s, e in slots:
+                b = Booking(f"B{next(self._ids)}", room.id, organizer, s, e)
+                bisect.insort(room.bookings, (s, e, b.id))
+                self._bookings[b.id] = b
+                out.append(b)
+            return out
+
     def cancel(self, booking_id: str) -> None:
         with self._lock:
             b = self._bookings.pop(booking_id, None)

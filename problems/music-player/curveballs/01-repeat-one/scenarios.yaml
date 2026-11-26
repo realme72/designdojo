@@ -1,0 +1,35 @@
+scenarios:
+  - name: repeat_one
+    steps:
+      - {call: add_song, args: {song_id: s1}}
+      - {call: add_song, args: {song_id: s2}}
+      - {call: add_song, args: {song_id: s3}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: s1}}
+      - {call: add_to_playlist, args: {name: p, song_id: s2}}
+      - {call: play, args: {name: p}, expect: s1}
+      - {call: set_repeat, args: {mode: ONE}}
+      - {call: next, expect: s1}
+      - {call: next, expect: s1}
+      - {call: enqueue, args: {song_id: s3}}
+      - {call: next, expect: s3}
+      - {call: next, expect: s1}
+      - {call: set_repeat, args: {mode: NONE}}
+      - {call: next, expect: s2}
+      - {call: next, expect: ""}
+  - name: previous_still_works
+    steps:
+      - {call: add_song, args: {song_id: s1}}
+      - {call: add_song, args: {song_id: s2}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: s1}}
+      - {call: add_to_playlist, args: {name: p, song_id: s2}}
+      - {call: play, args: {name: p}}
+      - {call: next, expect: s2}
+      - {call: set_repeat, args: {mode: ONE}}
+      - {call: next, expect: s2}
+      - {call: previous, expect: s2}
+      - {call: previous, expect: s1}
+      - {call: set_repeat, args: {mode: ALL}}
+      - {call: next, expect: s2}
+      - {call: next, expect: s1}

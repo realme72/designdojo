@@ -1,0 +1,7 @@
+interfaces:
+  Cache:
+    resize:
+      params: {capacity: int}
+      returns: void
+      raises: [InvalidCapacity]
+errors: [InvalidCapacity]

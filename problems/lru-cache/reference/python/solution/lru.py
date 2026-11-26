@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 
-from contract import Cache, CacheMiss
+from contract import Cache, CacheMiss, InvalidCapacity
 
 
 class _Node:
@@ -49,13 +49,23 @@ class LRUCache(Cache):
                 self._unlink(n)
                 self._push_front(n)
                 return
-            if len(self._map) >= self._capacity:
-                lru = self._tail.prev
-                self._unlink(lru)
-                del self._map[lru.key]
+            self._shrink_to(self._capacity - 1)
             n = _Node(key, value)
             self._map[key] = n
             self._push_front(n)
+
+    def _shrink_to(self, limit: int) -> None:
+        while len(self._map) > limit:
+            lru = self._tail.prev
+            self._unlink(lru)
+            del self._map[lru.key]
+
+    def resize(self, capacity: int) -> None:
+        if capacity < 1:
+            raise InvalidCapacity(capacity)
+        with self._lock:
+            self._capacity = capacity
+            self._shrink_to(capacity)
 
     def delete(self, key: str) -> bool:
         with self._lock:

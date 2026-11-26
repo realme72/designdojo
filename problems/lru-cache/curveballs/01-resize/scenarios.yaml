@@ -1,0 +1,18 @@
+config: {capacity: 3}
+scenarios:
+  - name: shrink_and_grow
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: a}, expect: "1"}
+      - {call: resize, args: {capacity: 2}}
+      - {call: keys, expect: [a, c]}
+      - {call: resize, args: {capacity: 0}, expect_error: InvalidCapacity}
+      - {call: resize, args: {capacity: 3}}
+      - {call: put, args: {key: d, value: "4"}}
+      - {call: put, args: {key: e, value: "5"}}
+      - {call: keys, expect: [e, d, a]}
+      - {call: resize, args: {capacity: 1}}
+      - {call: keys, expect: [e]}
+      - {call: size, expect: 1}

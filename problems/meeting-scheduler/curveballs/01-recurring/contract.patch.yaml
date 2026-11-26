@@ -1,0 +1,6 @@
+interfaces:
+  RoomScheduler:
+    book_recurring:
+      params: {organizer: str, attendees: int, start: long, end: long, every_seconds: long, count: int}
+      returns: "list[Booking]"
+      raises: [InvalidInterval, NoRoomAvailable]

@@ -1,0 +1,9 @@
+dtos:
+  Booking:
+    total: long
+interfaces:
+  BookingSystem:
+    set_row_price:
+      params: {show_id: str, row: str, price: long}
+      returns: void
+      raises: [UnknownShow, InvalidSeat]

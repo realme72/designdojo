@@ -1,0 +1,23 @@
+config: {hold_seconds: 300}
+scenarios:
+  - name: priced_rows
+    steps:
+      - {call: add_show, args: {show_id: s1, rows: 2, cols: 3}}
+      - {call: set_row_price, args: {show_id: s1, row: A, price: 200}}
+      - {call: set_row_price, args: {show_id: s1, row: B, price: 150}}
+      - {call: hold, args: {show_id: s1, user: u, seats: [B2, A1]}, bind: h}
+      - {call: confirm, args: {hold_id: $h}, expect: {seats: [A1, B2], total: 350}}
+  - name: price_locked_at_hold
+    steps:
+      - {call: add_show, args: {show_id: s1, rows: 2, cols: 3}}
+      - {call: set_row_price, args: {show_id: s1, row: A, price: 200}}
+      - {call: hold, args: {show_id: s1, user: u, seats: [A2]}, bind: h}
+      - {call: set_row_price, args: {show_id: s1, row: A, price: 300}}
+      - {call: confirm, args: {hold_id: $h}, expect: {total: 200}}
+      - {call: hold, args: {show_id: s1, user: v, seats: [A3, B1]}, bind: g}
+      - {call: confirm, args: {hold_id: $g}, expect: {total: 300}}
+  - name: errors
+    steps:
+      - {call: add_show, args: {show_id: s1, rows: 2, cols: 3}}
+      - {call: set_row_price, args: {show_id: s1, row: C, price: 1}, expect_error: InvalidSeat}
+      - {call: set_row_price, args: {show_id: s9, row: A, price: 1}, expect_error: UnknownShow}

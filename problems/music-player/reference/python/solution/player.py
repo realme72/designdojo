@@ -8,6 +8,8 @@ from contract import (DuplicatePlaylist, EmptyPlaylist, MusicPlayer, NoHistory, 
 
 def next_position(index: int, length: int, mode: RepeatMode) -> int | None:
     """Playback-order policy: where the playlist goes after `index` (None = stop)."""
+    if mode is RepeatMode.ONE:
+        return index
     if index + 1 < length:
         return index + 1
     return 0 if mode is RepeatMode.ALL else None

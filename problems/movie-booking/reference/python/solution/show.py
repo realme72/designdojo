@@ -21,6 +21,7 @@ class Hold:
     user: str
     seats: tuple[str, ...]
     expires_at: int
+    total: int = 0
 
 
 @dataclass
@@ -32,6 +33,10 @@ class Show:
     booked: dict[str, str] = field(default_factory=dict)   # seat -> booking id
     held: dict[str, Hold] = field(default_factory=dict)    # seat -> hold
     lock: threading.Lock = field(default_factory=threading.Lock)
+    row_prices: dict[str, int] = field(default_factory=dict)
+
+    def price(self, seats) -> int:
+        return sum(self.row_prices.get(seat_key(s)[0], 0) for s in seats)
 
     def check(self, seat: str) -> None:
         row, num = seat_key(seat)
