@@ -172,7 +172,9 @@ and a judge clock starting at 1700000000.
     - assert: {of: results, ok_count: 10, error_count: {LotFull: 40}, unique: spot_id}
 ```
 Other assertions: `assert: {distinct: [$a.id, $b.id]}`, and
-`value_count: {"true": 10}` (how many successful calls returned that JSON value).
+`value_count: {"true": 10}` (how many successful calls returned that JSON value),
+`unique: "."` (successful scalar results all differ), and for list-returning calls
+`flat_count: N` / `flat_unique: <field or ".">` over all items of all results.
 
 - **Java**: real threads spinning at a start line (not parked on a latch) so they
   hit the solution at the same instant; container gets 4 CPUs. Scenario `repeat: N`.

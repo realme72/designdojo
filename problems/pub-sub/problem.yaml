@@ -1,0 +1,7 @@
+id: pub-sub
+title: Pub-Sub Message Broker
+difficulty: medium
+category: Infrastructure & control
+time_limit_min: 60
+statement: statement.md
+tags: [observer, concurrency, queues]

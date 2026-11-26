@@ -1,0 +1,20 @@
+scenarios:
+  - name: publish_and_poll
+    steps:
+      - {call: create_topic, args: {name: orders}}
+      - {call: subscribe, args: {topic: orders, group: billing, from_beginning: true}}
+      - {call: publish, args: {topic: orders, payload: o1}, expect: 0}
+      - {call: publish, args: {topic: orders, payload: o2}, expect: 1}
+      - {call: poll, args: {topic: orders, group: billing, max: 10}, expect: [{offset: 0, payload: o1}, {offset: 1, payload: o2}]}
+      - {call: poll, args: {topic: orders, group: billing, max: 10}, expect: []}
+  - name: groups_are_independent
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: subscribe, args: {topic: t, group: a, from_beginning: true}}
+      - {call: subscribe, args: {topic: t, group: b, from_beginning: true}}
+      - {call: publish, args: {topic: t, payload: x}}
+      - {call: poll, args: {topic: t, group: a, max: 5}, expect: [{payload: x}]}
+      - {call: poll, args: {topic: t, group: b, max: 5}, expect: [{payload: x}]}
+  - name: unknown_topic
+    steps:
+      - {call: publish, args: {topic: nope, payload: x}, expect_error: UnknownTopic}

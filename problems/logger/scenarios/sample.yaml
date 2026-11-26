@@ -1,0 +1,21 @@
+config: {root_level: INFO}
+scenarios:
+  - name: root_level_filters
+    steps:
+      - {call: add_sink, args: {name: console, min_level: DEBUG, format: "[{level}] {logger}: {message}"}}
+      - {call: log, args: {logger: app, level: DEBUG, message: hidden}, expect: 0}
+      - {call: log, args: {logger: app, level: WARN, message: disk low}, expect: 1}
+      - {call: output, args: {name: console}, expect: ["[WARN] app: disk low"]}
+  - name: sink_thresholds
+    steps:
+      - {call: add_sink, args: {name: all, min_level: DEBUG, format: "{message}"}}
+      - {call: add_sink, args: {name: errors, min_level: ERROR, format: "{message}"}}
+      - {call: log, args: {logger: app, level: INFO, message: a}, expect: 1}
+      - {call: log, args: {logger: app, level: ERROR, message: b}, expect: 2}
+      - {call: output, args: {name: errors}, expect: [b]}
+  - name: time_placeholder
+    steps:
+      - {call: add_sink, args: {name: s, min_level: INFO, format: "{time} {message}"}}
+      - advance_clock: 5
+      - {call: log, args: {logger: x, level: INFO, message: hi}}
+      - {call: output, args: {name: s}, expect: ["1700000005 hi"]}

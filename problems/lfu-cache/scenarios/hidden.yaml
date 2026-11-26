@@ -1,0 +1,65 @@
+config: {capacity: 3}
+scenarios:
+  - name: update_counts_as_use
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: a, value: "2"}}
+      - {call: frequency, args: {key: a}, expect: 2}
+      - {call: get, args: {key: a}, expect: "2"}
+  - name: frequency_does_not_count
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: frequency, args: {key: a}}
+      - {call: frequency, args: {key: a}, expect: 1}
+      - {call: frequency, args: {key: zz}, expect_error: CacheMiss}
+  - name: leetcode_sequence
+    config: {capacity: 2}
+    steps:
+      - {call: put, args: {key: "1", value: "1"}}
+      - {call: put, args: {key: "2", value: "2"}}
+      - {call: get, args: {key: "1"}, expect: "1"}
+      - {call: put, args: {key: "3", value: "3"}}
+      - {call: get, args: {key: "2"}, expect_error: CacheMiss}
+      - {call: get, args: {key: "3"}, expect: "3"}
+      - {call: put, args: {key: "4", value: "4"}}
+      - {call: get, args: {key: "1"}, expect_error: CacheMiss}
+      - {call: get, args: {key: "3"}, expect: "3"}
+      - {call: get, args: {key: "4"}, expect: "4"}
+  - name: new_key_resets_min_frequency
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: a}}
+      - {call: get, args: {key: b}}
+      - {call: get, args: {key: c}}
+      - {call: put, args: {key: d, value: "4"}}
+      - {call: put, args: {key: e, value: "5"}}
+      - {call: get, args: {key: d}, expect_error: CacheMiss}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+      - {call: get, args: {key: b}, expect: "2"}
+      - {call: frequency, args: {key: e}, expect: 1}
+  - name: lru_among_equal_frequency
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: put, args: {key: c, value: "3"}}
+      - {call: get, args: {key: b}}
+      - {call: get, args: {key: a}}
+      - {call: get, args: {key: c}}
+      - {call: get, args: {key: b}}
+      - {call: put, args: {key: d, value: "4"}}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+      - {call: frequency, args: {key: b}, expect: 3}
+  - name: capacity_one
+    config: {capacity: 1}
+    steps:
+      - {call: put, args: {key: a, value: "1"}}
+      - {call: get, args: {key: a}}
+      - {call: put, args: {key: b, value: "2"}}
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+      - {call: frequency, args: {key: b}, expect: 1}
+  - name: miss_on_empty
+    steps:
+      - {call: get, args: {key: a}, expect_error: CacheMiss}
+      - {call: size, expect: 0}

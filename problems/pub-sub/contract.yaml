@@ -1,0 +1,37 @@
+dtos:
+  Message:
+    offset: long
+    payload: str
+
+interfaces:
+  Broker:
+    create_topic:
+      params: {name: str}
+      returns: void
+      raises: [DuplicateTopic]
+    publish:
+      params: {topic: str, payload: str}
+      returns: long
+      raises: [UnknownTopic]
+    subscribe:
+      params: {topic: str, group: str, from_beginning: bool}
+      returns: void
+      raises: [UnknownTopic, DuplicateSubscription]
+    poll:
+      params: {topic: str, group: str, max: int}
+      returns: "list[Message]"
+      raises: [UnknownTopic, UnknownGroup, InvalidArgument]
+    lag:
+      params: {topic: str, group: str}
+      returns: long
+      raises: [UnknownTopic, UnknownGroup]
+    seek:
+      params: {topic: str, group: str, offset: long}
+      returns: void
+      raises: [UnknownTopic, UnknownGroup, InvalidOffset]
+
+entrypoint:
+  name: create
+  returns: Broker
+
+errors: [DuplicateTopic, UnknownTopic, DuplicateSubscription, UnknownGroup, InvalidArgument, InvalidOffset]

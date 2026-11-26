@@ -1,0 +1,23 @@
+- id: log_model
+  keywords: [log, append, topic, offset, messages]
+  question: How are topics stored?
+  good: Each topic is an append-only log; consumers hold offsets into it. Messages are never copied per subscriber.
+- id: groups
+  keywords: [group, subscription, position, offset, consumer]
+  question: Where does each group's position live?
+  good: A subscription object per (topic, group) holding its offset; poll/seek/lag all go through it.
+  principles: [SRP]
+- id: delivery
+  keywords: [poll, push, observer, deliver, notify]
+  question: Is delivery pull-based and decoupled from publishing?
+  good: Publishers only append; consumers pull. (Push via observers is a valid extension, not mixed into publish.)
+  patterns: [Observer]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What guarantees gap-free offsets and exactly-once delivery within a group?
+  good: Append + offset assignment are atomic per topic; read-and-advance is atomic per subscription.
+  smells: [UNGUARDED_SHARED]
+- id: overengineering
+  question: Is anything abstracted without a reason to vary?
+  good: No speculative factories or singletons.
+  smells: [SPECULATIVE_PATTERN, GLOBAL_STATE]

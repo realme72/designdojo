@@ -273,6 +273,18 @@ class Scenario:
         for err, want in (a.get("error_count") or {}).items():
             if errs.get(err, 0) != int(want):
                 raise Failure(n, "assertion", f"wrong number of {err} errors", {"error_count": a["error_count"]}, summary)
+        if "flat_count" in a or "flat_unique" in a:
+            items = [x for o in oks if isinstance(o, list) for x in o]
+            if "flat_count" in a and len(items) != int(a["flat_count"]):
+                raise Failure(n, "assertion", "wrong total number of items across all results",
+                              {"flat_count": a["flat_count"]}, {"flat_count": len(items)})
+            if "flat_unique" in a:
+                f = a["flat_unique"]
+                vals = [json.dumps(x if f == "." else x.get(f), sort_keys=True) for x in items]
+                dups = sorted({v for v in vals if vals.count(v) > 1})
+                if dups:
+                    raise Failure(n, "assertion", f"items delivered more than once: {', '.join(dups[:5])}",
+                                  {"flat_unique": f}, {"duplicates": [json.loads(d) for d in dups[:5]]})
         if "value_count" in a:
             counts: dict[str, int] = {}
             for o in oks:
@@ -287,7 +299,7 @@ class Scenario:
             for f in fields:
                 seen = set()
                 for o in oks:
-                    v = json.dumps(o.get(f) if isinstance(o, dict) else None, sort_keys=True)
+                    v = json.dumps(o if f == "." else (o.get(f) if isinstance(o, dict) else None), sort_keys=True)
                     if v in seen:
                         raise Failure(n, "assertion", f"duplicate {f} among successful results: {json.loads(v)}",
                                       {"unique": f}, {"duplicate": json.loads(v)})

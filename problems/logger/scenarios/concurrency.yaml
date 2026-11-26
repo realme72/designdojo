@@ -1,0 +1,10 @@
+config: {root_level: DEBUG}
+scenarios:
+  - name: no_lost_lines
+    repeat: 15
+    steps:
+      - {call: add_sink, args: {name: s, min_level: DEBUG, format: "{message}"}}
+      - parallel: {threads: 100, call: log, args: {logger: app, level: INFO, message: "m{i}"}, collect: r}
+      - assert: {of: r, ok_count: 100, value_count: {"1": 100}}
+      - {call: output, args: {name: s}, bind: lines}
+      - assert: {distinct: $lines}

@@ -1,0 +1,26 @@
+- id: sinks
+  keywords: [sink, appender, handler, write, destination]
+  question: How are output destinations organised?
+  good: A Sink interface with implementations; the dispatcher iterates sinks and never knows their type.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Observer, Strategy]
+- id: filtering
+  keywords: [level, filter, min, threshold, effective]
+  question: Where does level filtering happen?
+  good: Logger-level filtering via the hierarchy first, then per-sink thresholds; each concern in one place (a chain of handlers is a fine model).
+  patterns: [Chain of Responsibility]
+- id: formatting
+  keywords: [format, template, placeholder]
+  question: Is formatting separate from writing?
+  good: A formatter parsed once when the sink is added (validating placeholders), used per record.
+  principles: [SRP]
+- id: hierarchy
+  keywords: [parent, ancestor, dot, hierarchy, inherit]
+  question: How is the effective level resolved?
+  good: Walk up the dotted name to the nearest configured ancestor; treat prefix matches carefully (app vs apple).
+- id: concurrency
+  keywords: [lock, synchronized, thread]
+  question: Are concurrent writes safe and lines never lost?
+  good: Each sink appends under a lock (or a queue), and sink registration changes don't race with logging.
+  smells: [UNGUARDED_SHARED, GLOBAL_STATE]

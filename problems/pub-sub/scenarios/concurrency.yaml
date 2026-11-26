@@ -1,0 +1,18 @@
+scenarios:
+  - name: concurrent_publish_gap_free_offsets
+    repeat: 15
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - parallel: {threads: 100, call: publish, args: {topic: t, payload: "m{i}"}, collect: r}
+      - assert: {of: r, ok_count: 100, unique: "."}
+      - {call: lag, args: {topic: t, group: g}, expect: 100}
+  - name: concurrent_consumers_no_duplicates
+    repeat: 15
+    steps:
+      - {call: create_topic, args: {name: t}}
+      - {call: subscribe, args: {topic: t, group: g, from_beginning: true}}
+      - parallel: {threads: 60, call: publish, args: {topic: t, payload: "m{i}"}, collect: p}
+      - parallel: {threads: 20, call: poll, args: {topic: t, group: g, max: 5}, collect: r}
+      - assert: {of: r, ok_count: 20, flat_count: 60, flat_unique: offset}
+      - {call: lag, args: {topic: t, group: g}, expect: 0}

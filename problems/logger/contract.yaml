@@ -1,0 +1,41 @@
+enums:
+  Level: [DEBUG, INFO, WARN, ERROR, FATAL]
+
+dtos:
+  LoggingConfig:
+    root_level: Level
+
+provided:
+  Clock:
+    now:
+      returns: long
+      doc: Current time in epoch seconds. Controlled by the judge.
+
+interfaces:
+  Logging:
+    add_sink:
+      params: {name: str, min_level: Level, format: str}
+      returns: void
+      raises: [DuplicateSink, InvalidFormat]
+    remove_sink:
+      params: {name: str}
+      returns: void
+      raises: [UnknownSink]
+    set_level:
+      params: {logger: str, level: Level}
+      returns: void
+    log:
+      params: {logger: str, level: Level, message: str}
+      returns: int
+      doc: Number of sinks that wrote the record.
+    output:
+      params: {name: str}
+      returns: "list[str]"
+      raises: [UnknownSink]
+
+entrypoint:
+  name: create
+  params: {config: LoggingConfig, clock: Clock}
+  returns: Logging
+
+errors: [DuplicateSink, InvalidFormat, UnknownSink]

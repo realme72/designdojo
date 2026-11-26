@@ -1,0 +1,15 @@
+- id: structure
+  keywords: [freq, frequency, bucket, min, node, list, ordered]
+  question: How is O(1) eviction achieved?
+  good: Key -> (value, freq) map plus freq -> ordered set of keys, and a tracked minimum frequency.
+- id: eviction_policy
+  keywords: [evict, policy, least, frequent]
+  question: Is the eviction policy isolated from storage?
+  good: Policy concerns (which key goes) are separated so LRU/LFU/TTL are swappable.
+  principles: [SRP, OCP]
+  patterns: [Strategy]
+- id: concurrency
+  keywords: [lock, synchronized, thread]
+  question: What keeps the maps consistent under concurrent use?
+  good: One lock spans each operation's updates to all structures (get mutates frequency too).
+  smells: [UNGUARDED_SHARED]
