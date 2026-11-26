@@ -1,0 +1,91 @@
+scenarios:
+  - name: previous_restores_position
+    steps:
+      - {call: add_song, args: {song_id: a}}
+      - {call: add_song, args: {song_id: b}}
+      - {call: add_song, args: {song_id: c}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: a}}
+      - {call: add_to_playlist, args: {name: p, song_id: b}}
+      - {call: add_to_playlist, args: {name: p, song_id: c}}
+      - {call: play, args: {name: p}}
+      - {call: next}
+      - {call: next, expect: c}
+      - {call: previous, expect: b}
+      - {call: previous, expect: a}
+      - {call: previous, expect_error: NoHistory}
+      - {call: next, expect: b}
+  - name: previous_through_queue
+    steps:
+      - {call: add_song, args: {song_id: a}}
+      - {call: add_song, args: {song_id: b}}
+      - {call: add_song, args: {song_id: q}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: a}}
+      - {call: add_to_playlist, args: {name: p, song_id: b}}
+      - {call: play, args: {name: p}}
+      - {call: enqueue, args: {song_id: q}}
+      - {call: next, expect: q}
+      - {call: previous, expect: a}
+      - {call: next, expect: b}
+  - name: queue_is_fifo
+    steps:
+      - {call: add_song, args: {song_id: a}}
+      - {call: add_song, args: {song_id: x}}
+      - {call: add_song, args: {song_id: y}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: a}}
+      - {call: play, args: {name: p}}
+      - {call: enqueue, args: {song_id: x}}
+      - {call: enqueue, args: {song_id: y}}
+      - {call: next, expect: x}
+      - {call: next, expect: y}
+      - {call: next, expect: ""}
+  - name: play_resets_queue_and_history
+    steps:
+      - {call: add_song, args: {song_id: a}}
+      - {call: add_song, args: {song_id: x}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: a}}
+      - {call: play, args: {name: p}}
+      - {call: enqueue, args: {song_id: x}}
+      - {call: play, args: {name: p}, expect: a}
+      - {call: previous, expect_error: NoHistory}
+      - {call: next, expect: ""}
+  - name: duplicates_in_playlist
+    steps:
+      - {call: add_song, args: {song_id: a}}
+      - {call: add_song, args: {song_id: b}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: a}}
+      - {call: add_to_playlist, args: {name: p, song_id: b}}
+      - {call: add_to_playlist, args: {name: p, song_id: a}}
+      - {call: play, args: {name: p}}
+      - {call: next, expect: b}
+      - {call: next, expect: a}
+      - {call: previous, expect: b}
+      - {call: next, expect: a}
+  - name: errors
+    steps:
+      - {call: create_playlist, args: {name: p}}
+      - {call: create_playlist, args: {name: p}, expect_error: DuplicatePlaylist}
+      - {call: play, args: {name: p}, expect_error: EmptyPlaylist}
+      - {call: play, args: {name: q}, expect_error: UnknownPlaylist}
+      - {call: add_to_playlist, args: {name: p, song_id: ghost}, expect_error: UnknownSong}
+      - {call: next, expect_error: NothingPlaying}
+      - {call: add_song, args: {song_id: s}}
+      - {call: enqueue, args: {song_id: s}, expect_error: NothingPlaying}
+  - name: repeat_off_after_wrap_mode_change
+    steps:
+      - {call: add_song, args: {song_id: a}}
+      - {call: add_song, args: {song_id: b}}
+      - {call: create_playlist, args: {name: p}}
+      - {call: add_to_playlist, args: {name: p, song_id: a}}
+      - {call: add_to_playlist, args: {name: p, song_id: b}}
+      - {call: set_repeat, args: {mode: ALL}}
+      - {call: play, args: {name: p}}
+      - {call: next, expect: b}
+      - {call: next, expect: a}
+      - {call: set_repeat, args: {mode: NONE}}
+      - {call: next, expect: b}
+      - {call: next, expect: ""}

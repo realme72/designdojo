@@ -8,3 +8,15 @@ from joinery.problems import lint_problem, list_problems
 @pytest.mark.parametrize("problem", list_problems(), ids=lambda p: p.id)
 def test_problem_lints_clean(problem):
     assert lint_problem(problem) == []
+
+
+def test_type_lint_catches_yaml_surprises():
+    from joinery.contract import parse_type
+    from joinery.problems import _type_issue, get_problem
+
+    c = get_problem("parking-lot").contract
+    kinds = {**{k: "enum" for k in c.enums}, **{k: "dto" for k in c.dtos}}
+    assert _type_issue(False, parse_type("str", kinds), c, "x")          # YAML `OFF` -> False
+    assert _type_issue("BUS", parse_type("VehicleType", kinds), c, "x")  # not an enum value
+    assert _type_issue({"small": 1}, parse_type("FloorConfig", kinds), c, "x")  # missing fields
+    assert _type_issue("$t.id", parse_type("str", kinds), c, "x") is None      # references skipped

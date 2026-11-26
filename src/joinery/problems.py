@@ -86,6 +86,46 @@ self cls""".split())
 STEP_KEYS = {"call", "args", "expect", "expect_error", "bind", "advance_clock", "parallel", "assert"}
 
 
+def _type_issue(value, t: dict, c: Contract, path: str) -> str | None:
+    """Does a scenario literal fit the contract type? (References/templates are skipped.)"""
+    if isinstance(value, str) and ("$" in value or "{i" in value):
+        return None
+    k = t["kind"]
+    if value is None:
+        return f"{path}: null for {k}"
+    if k == "str":
+        return None if isinstance(value, str) else f"{path}: expected a string, YAML gave {value!r}"
+    if k in ("int", "long"):
+        return None if isinstance(value, int) and not isinstance(value, bool) else f"{path}: expected {k}, got {value!r}"
+    if k == "bool":
+        return None if isinstance(value, bool) else f"{path}: expected bool, got {value!r}"
+    if k == "enum":
+        return None if value in c.enums[t["name"]] else f"{path}: {value!r} is not a {t['name']}"
+    if k == "list":
+        if not isinstance(value, list):
+            return f"{path}: expected a list"
+        return next((e for i, v in enumerate(value) if (e := _type_issue(v, t["of"], c, f"{path}[{i}]"))), None)
+    if k == "map":
+        if not isinstance(value, dict):
+            return f"{path}: expected a map"
+        for key, v in value.items():
+            if t["key"]["kind"] == "enum" and key not in c.enums[t["key"]["name"]]:
+                return f"{path}: key {key!r} is not a {t['key']['name']}"
+            if e := _type_issue(v, t["value"], c, f"{path}.{key}"):
+                return e
+        return None
+    if k == "dto":
+        if not isinstance(value, dict):
+            return f"{path}: expected a {t['name']} map"
+        fields = {f.name: f.type for f in c.dtos[t["name"]]}
+        missing = set(fields) - set(value)
+        extra = set(value) - set(fields)
+        if missing or extra:
+            return f"{path}: {t['name']} fields missing {sorted(missing)} / unknown {sorted(extra)}"
+        return next((e for n, v in value.items() if (e := _type_issue(v, fields[n], c, f"{path}.{n}"))), None)
+    return None
+
+
 def lint_problem(p: Problem) -> list[str]:
     """Static checks that catch authoring mistakes before anything runs."""
     issues: list[str] = []
@@ -127,6 +167,10 @@ def lint_problem(p: Problem) -> list[str]:
             for prm in entry_params:
                 if prm not in sc:
                     issues.append(f"{where}: missing entrypoint argument {prm!r}")
+                else:
+                    ptype = next(x.type for x in c.entrypoint.params if x.name == prm)
+                    if e := _type_issue(sc[prm], ptype, c, f"{where} {prm}"):
+                        issues.append(e)
             for i, st in enumerate(sc.get("steps") or [], 1):
                 unknown = set(st) - STEP_KEYS
                 if unknown:
@@ -143,6 +187,10 @@ def lint_problem(p: Problem) -> list[str]:
                     want = {x.name for x in iface[call].params}
                     if set(args) != want:
                         issues.append(f"{where} step {i}: {call} args {sorted(args)} != contract {sorted(want)}")
+                    for prm in iface[call].params:
+                        if prm.name in args and (e := _type_issue(args[prm.name], prm.type, c,
+                                                                  f"{where} step {i} {call}.{prm.name}")):
+                            issues.append(e)
                 err = st.get("expect_error")
                 if err is not None and err not in c.errors:
                     issues.append(f"{where} step {i}: unknown error {err!r}")
