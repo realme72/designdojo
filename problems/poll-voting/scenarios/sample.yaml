@@ -1,0 +1,20 @@
+scenarios:
+  - name: vote_and_results
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [tea, coffee], closes_at: 1700000100, multi_choice: false}}
+      - {call: vote, args: {poll_id: p, user: a, choices: [tea]}}
+      - {call: vote, args: {poll_id: p, user: b, choices: [coffee]}}
+      - {call: vote, args: {poll_id: p, user: c, choices: [tea]}}
+      - {call: results, args: {poll_id: p}, expect: [{option: tea, votes: 2}, {option: coffee, votes: 1}]}
+  - name: one_vote_per_user
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000100, multi_choice: false}}
+      - {call: vote, args: {poll_id: p, user: a, choices: [x]}}
+      - {call: vote, args: {poll_id: p, user: a, choices: [y]}, expect_error: AlreadyVoted}
+  - name: winners_after_close
+    steps:
+      - {call: create_poll, args: {poll_id: p, options: [x, y], closes_at: 1700000100, multi_choice: false}}
+      - {call: vote, args: {poll_id: p, user: a, choices: [y]}}
+      - {call: winners, args: {poll_id: p}, expect_error: PollOpen}
+      - advance_clock: 100
+      - {call: winners, args: {poll_id: p}, expect: [y]}

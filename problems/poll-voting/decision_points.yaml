@@ -1,0 +1,21 @@
+- id: ballot_rules
+  keywords: [single, multi, choice, rule, validate, ballot]
+  question: Where do ballot validation rules live?
+  good: A ballot policy per poll type (single/multi, later ranked) validates choices; the poll doesn't branch on its type everywhere.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: tally
+  keywords: [count, tally, votes, results, winner]
+  question: How are results computed?
+  good: Per-option counters updated with each vote/retraction, plus who voted what (to retract and prevent double votes).
+- id: lifecycle
+  keywords: [open, closed, close, clock]
+  question: How is the open/closed window enforced?
+  good: One check against the injected clock.
+  smells: [DIRECT_TIME]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: Are "has voted" and the counters updated atomically?
+  good: Check-and-record of a user's vote and the counter updates are one atomic step per poll.
+  smells: [UNGUARDED_SHARED]
