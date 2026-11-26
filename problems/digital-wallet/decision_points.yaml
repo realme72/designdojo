@@ -1,0 +1,20 @@
+- id: atomic_transfer
+  keywords: [lock, order, deadlock, atomic, transfer, synchronized]
+  question: How is a transfer made atomic without deadlocks?
+  good: Lock both wallets in a global order (e.g. by user id), or use one ledger lock; debit and credit happen together.
+  smells: [UNGUARDED_SHARED]
+- id: idempotency
+  keywords: [idempotency, key, retry, duplicate, replay]
+  question: How are retried requests handled?
+  good: A key -> (request fingerprint, result) store checked and written atomically with the transfer; mismatched fingerprints are rejected.
+- id: ledger
+  keywords: [ledger, entry, history, balance, after]
+  question: Is there an append-only ledger?
+  good: Every money movement appends entries; balances are derived from or reconciled with the ledger.
+  principles: [SRP]
+- id: validation
+  keywords: [validate, limit, amount, rule, check]
+  question: Are transfer rules organised so new ones (daily limits, KYC) slot in?
+  good: Ordered validation rules before any mutation; adding a rule is adding a check object/function.
+  patterns: [Chain of Responsibility]
+  principles: [OCP]

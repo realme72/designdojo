@@ -1,0 +1,17 @@
+scenarios:
+  - name: unique_codes_under_load
+    repeat: 15
+    steps:
+      - parallel: {threads: 100, call: shorten, args: {long_url: "https://e.com/{i}", alias: "", ttl_seconds: 0}, collect: r}
+      - assert: {of: r, ok_count: 100, unique: "."}
+  - name: no_lost_clicks
+    repeat: 15
+    steps:
+      - {call: shorten, args: {long_url: "https://e.com", alias: hot, ttl_seconds: 0}}
+      - parallel: {threads: 100, call: resolve, args: {code: hot}, collect: r}
+      - {call: clicks, args: {code: hot}, expect: 100}
+  - name: same_url_dedupes_under_load
+    repeat: 15
+    steps:
+      - parallel: {threads: 50, call: shorten, args: {long_url: "https://same.com", alias: "", ttl_seconds: 0}, collect: r}
+      - assert: {of: r, ok_count: 50, value_count: {"\"000001\"": 50}}

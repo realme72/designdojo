@@ -1,0 +1,49 @@
+enums:
+  EntryType: [DEPOSIT, WITHDRAWAL, TRANSFER_IN, TRANSFER_OUT]
+
+dtos:
+  WalletConfig:
+    max_transfer: long
+  Transaction:
+    id: str
+    from_user: str
+    to_user: str
+    amount: long
+  Entry:
+    type: EntryType
+    amount: long
+    balance_after: long
+
+interfaces:
+  WalletService:
+    create_wallet:
+      params: {user: str}
+      returns: void
+      raises: [DuplicateWallet]
+    deposit:
+      params: {user: str, amount: long}
+      returns: long
+      raises: [UnknownWallet, InvalidAmount]
+    withdraw:
+      params: {user: str, amount: long}
+      returns: long
+      raises: [UnknownWallet, InvalidAmount, InsufficientFunds]
+    transfer:
+      params: {from_user: str, to_user: str, amount: long, idempotency_key: str}
+      returns: Transaction
+      raises: [UnknownWallet, InvalidAmount, SameWallet, LimitExceeded, InsufficientFunds, IdempotencyConflict]
+    balance:
+      params: {user: str}
+      returns: long
+      raises: [UnknownWallet]
+    history:
+      params: {user: str}
+      returns: "list[Entry]"
+      raises: [UnknownWallet]
+
+entrypoint:
+  name: create
+  params: {config: WalletConfig}
+  returns: WalletService
+
+errors: [DuplicateWallet, UnknownWallet, InvalidAmount, InsufficientFunds, SameWallet, LimitExceeded, IdempotencyConflict]

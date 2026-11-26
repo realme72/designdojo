@@ -1,0 +1,57 @@
+scenarios:
+  - name: base62_rollover
+    steps:
+      - parallel: {threads: 61, call: shorten, args: {long_url: "https://e.com/{i}", alias: "", ttl_seconds: 0}, collect: r}
+      - {call: shorten, args: {long_url: "https://e.com/x", alias: "", ttl_seconds: 0}, expect: "000010"}
+  - name: letters_in_alphabet_order
+    steps:
+      - parallel: {threads: 9, call: shorten, args: {long_url: "https://e.com/{i}", alias: "", ttl_seconds: 0}, collect: r}
+      - {call: shorten, args: {long_url: "https://e.com/ten", alias: "", ttl_seconds: 0}, expect: "00000a"}
+      - parallel: {threads: 25, call: shorten, args: {long_url: "https://f.com/{i}", alias: "", ttl_seconds: 0}, collect: s}
+      - {call: shorten, args: {long_url: "https://e.com/36", alias: "", ttl_seconds: 0}, expect: "00000A"}
+  - name: alias_collision_with_future_auto_code
+    steps:
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: "000002", ttl_seconds: 0}}
+      - {call: shorten, args: {long_url: "https://e.com/b", alias: "", ttl_seconds: 0}, expect: "000001"}
+      - {call: shorten, args: {long_url: "https://e.com/c", alias: "", ttl_seconds: 0}, expect: "000003"}
+  - name: dedupe_auto_codes
+    steps:
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: "", ttl_seconds: 0}, expect: "000001"}
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: "", ttl_seconds: 0}, expect: "000001"}
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: mine, ttl_seconds: 0}, expect: mine}
+      - {call: shorten, args: {long_url: "https://e.com/b", alias: "", ttl_seconds: 0}, expect: "000002"}
+  - name: no_dedupe_to_expired_or_deleted
+    steps:
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: "", ttl_seconds: 10}, expect: "000001"}
+      - advance_clock: 10
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: "", ttl_seconds: 0}, expect: "000002"}
+      - {call: delete, args: {code: "000002"}}
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: "", ttl_seconds: 0}, expect: "000003"}
+  - name: expiry
+    steps:
+      - {call: shorten, args: {long_url: "https://e.com/a", alias: promo, ttl_seconds: 60}}
+      - advance_clock: 59
+      - {call: resolve, args: {code: promo}, expect: "https://e.com/a"}
+      - advance_clock: 1
+      - {call: resolve, args: {code: promo}, expect_error: Expired}
+      - {call: clicks, args: {code: promo}, expect: 1}
+  - name: alias_rules
+    steps:
+      - {call: shorten, args: {long_url: "https://e.com", alias: ab, ttl_seconds: 0}, expect_error: InvalidAlias}
+      - {call: shorten, args: {long_url: "https://e.com", alias: "has space", ttl_seconds: 0}, expect_error: InvalidAlias}
+      - {call: shorten, args: {long_url: "https://e.com", alias: ok_alias-1, ttl_seconds: 0}, expect: ok_alias-1}
+      - {call: shorten, args: {long_url: "https://other.com", alias: ok_alias-1, ttl_seconds: 0}, expect_error: AliasTaken}
+  - name: unknown_and_deleted
+    steps:
+      - {call: resolve, args: {code: nope}, expect_error: UnknownCode}
+      - {call: clicks, args: {code: nope}, expect_error: UnknownCode}
+      - {call: delete, args: {code: nope}, expect_error: UnknownCode}
+      - {call: shorten, args: {long_url: "http://e.com", alias: gone, ttl_seconds: 0}}
+      - {call: delete, args: {code: gone}}
+      - {call: resolve, args: {code: gone}, expect_error: UnknownCode}
+      - {call: shorten, args: {long_url: "http://e.com/2", alias: gone, ttl_seconds: 0}, expect: gone}
+  - name: url_scheme_check
+    steps:
+      - {call: shorten, args: {long_url: "example.com", alias: "", ttl_seconds: 0}, expect_error: InvalidUrl}
+      - {call: shorten, args: {long_url: "", alias: "", ttl_seconds: 0}, expect_error: InvalidUrl}
+      - {call: shorten, args: {long_url: "http://ok", alias: "", ttl_seconds: 0}, expect: "000001"}

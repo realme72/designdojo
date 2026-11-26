@@ -1,0 +1,21 @@
+- id: code_generation
+  keywords: [base62, encode, counter, sequence, code, generate]
+  question: How are short codes generated?
+  good: A code generator component (counter + base62 encoder) behind an interface, so hashing or a distributed ID service could replace it.
+  principles: [SRP, DIP]
+  patterns: [Strategy]
+- id: storage
+  keywords: [store, map, repository, mapping]
+  question: Is storage separate from the shortening logic?
+  good: A repository for code -> link records (url, expiry, clicks) that a real database could implement.
+  principles: [DIP]
+- id: expiry
+  keywords: [expire, ttl, clock, now]
+  question: How is expiry handled?
+  good: Expiry is a property of the link checked lazily against the injected clock.
+  smells: [DIRECT_TIME]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic, counter]
+  question: Are code allocation and click counting race-free?
+  good: Sequence allocation + insert are atomic; click increments are atomic (lock or atomic counter).
+  smells: [UNGUARDED_SHARED]

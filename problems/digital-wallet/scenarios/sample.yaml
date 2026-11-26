@@ -1,0 +1,23 @@
+config: {max_transfer: 100000}
+scenarios:
+  - name: deposit_transfer_balance
+    steps:
+      - {call: create_wallet, args: {user: ann}}
+      - {call: create_wallet, args: {user: bob}}
+      - {call: deposit, args: {user: ann, amount: 1000}, expect: 1000}
+      - {call: transfer, args: {from_user: ann, to_user: bob, amount: 300, idempotency_key: k1}, expect: {from_user: ann, to_user: bob, amount: 300}}
+      - {call: balance, args: {user: ann}, expect: 700}
+      - {call: balance, args: {user: bob}, expect: 300}
+  - name: insufficient_funds
+    steps:
+      - {call: create_wallet, args: {user: ann}}
+      - {call: create_wallet, args: {user: bob}}
+      - {call: transfer, args: {from_user: ann, to_user: bob, amount: 1, idempotency_key: k1}, expect_error: InsufficientFunds}
+  - name: idempotent_retry
+    steps:
+      - {call: create_wallet, args: {user: ann}}
+      - {call: create_wallet, args: {user: bob}}
+      - {call: deposit, args: {user: ann, amount: 500}}
+      - {call: transfer, args: {from_user: ann, to_user: bob, amount: 200, idempotency_key: pay-1}, bind: t1}
+      - {call: transfer, args: {from_user: ann, to_user: bob, amount: 200, idempotency_key: pay-1}, expect: {id: $t1.id}}
+      - {call: balance, args: {user: ann}, expect: 300}

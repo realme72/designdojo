@@ -1,0 +1,14 @@
+scenarios:
+  - name: auto_codes_are_sequential_base62
+    steps:
+      - {call: shorten, args: {long_url: "https://example.com/a", alias: "", ttl_seconds: 0}, expect: "000001"}
+      - {call: shorten, args: {long_url: "https://example.com/b", alias: "", ttl_seconds: 0}, expect: "000002"}
+      - {call: resolve, args: {code: "000002"}, expect: "https://example.com/b"}
+  - name: custom_alias
+    steps:
+      - {call: shorten, args: {long_url: "https://example.com/docs", alias: docs, ttl_seconds: 0}, expect: docs}
+      - {call: resolve, args: {code: docs}, expect: "https://example.com/docs"}
+      - {call: clicks, args: {code: docs}, expect: 1}
+  - name: invalid_url
+    steps:
+      - {call: shorten, args: {long_url: "ftp://x", alias: "", ttl_seconds: 0}, expect_error: InvalidUrl}

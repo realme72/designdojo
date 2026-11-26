@@ -1,0 +1,7 @@
+id: url-shortener
+title: URL Shortener
+difficulty: easy
+category: Infrastructure & control
+time_limit_min: 40
+statement: statement.md
+tags: [algorithms, concurrency]
