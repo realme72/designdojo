@@ -1,0 +1,30 @@
+config: {setup: [], to_move: WHITE}
+scenarios:
+  - name: undo_restores_capture
+    steps:
+      - {call: move, args: {from_sq: e2, to_sq: e4, promotion: ""}}
+      - {call: move, args: {from_sq: d7, to_sq: d5, promotion: ""}}
+      - {call: move, args: {from_sq: e4, to_sq: d5, promotion: ""}, expect: {captured: p}}
+      - {call: undo}
+      - {call: turn, expect: WHITE}
+      - {call: board, expect: [rnbqkbnr, ppp.pppp, "........", "...p....", "....P...", "........", PPPP.PPP, RNBQKBNR]}
+      - {call: undo}
+      - {call: undo}
+      - {call: board, expect: [rnbqkbnr, pppppppp, "........", "........", "........", "........", PPPPPPPP, RNBQKBNR]}
+      - {call: undo, expect_error: IllegalMove}
+  - name: undo_checkmate
+    steps:
+      - {call: move, args: {from_sq: f2, to_sq: f3, promotion: ""}}
+      - {call: move, args: {from_sq: e7, to_sq: e5, promotion: ""}}
+      - {call: move, args: {from_sq: g2, to_sq: g4, promotion: ""}}
+      - {call: move, args: {from_sq: d8, to_sq: h4, promotion: ""}, expect: {status: CHECKMATE}}
+      - {call: undo}
+      - {call: status, expect: IN_PROGRESS}
+      - {call: turn, expect: BLACK}
+      - {call: move, args: {from_sq: d8, to_sq: h4, promotion: ""}, expect: {status: CHECKMATE}}
+  - name: undo_promotion
+    config: {setup: ["....k...", "P.......", "........", "........", "........", "........", "........", "....K..."], to_move: WHITE}
+    steps:
+      - {call: move, args: {from_sq: a7, to_sq: a8, promotion: Q}}
+      - {call: undo}
+      - {call: board, expect: ["....k...", "P.......", "........", "........", "........", "........", "........", "....K..."]}

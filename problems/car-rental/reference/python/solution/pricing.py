@@ -12,6 +12,7 @@ class Trip:
     booked_days: int
     late_days: int
     km: int
+    insurance_per_day: int = 0
 
 
 class FeeRule(ABC):
@@ -48,10 +49,18 @@ class MileageFee(FeeRule):
         return max(0, t.km - self.free_per_day * t.booked_days) * self.per_km
 
 
+class InsuranceFee(FeeRule):
+    line = "insurance"
+
+    def amount(self, t):
+        return t.insurance_per_day * t.booked_days
+
+
 class Pricing:
     def __init__(self, rules: list[FeeRule]):
         self.rules = rules
 
     def bill(self, t: Trip) -> Bill:
         lines = {r.line: r.amount(t) for r in self.rules}
-        return Bill(lines.get("base", 0), lines.get("late_fee", 0), lines.get("mileage_fee", 0), sum(lines.values()))
+        return Bill(lines.get("base", 0), lines.get("late_fee", 0), lines.get("mileage_fee", 0), sum(lines.values()),
+                    lines.get("insurance", 0))

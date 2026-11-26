@@ -43,6 +43,15 @@ class Game(BowlingGame):
         bonus = tenth[0] == PINS or tenth[0] + tenth[1] == PINS
         return len(tenth) == (3 if bonus else 2)
 
+    def current_frame(self) -> int:
+        f = self._frames()
+        if not f:
+            return 1
+        if len(f) == FRAMES:
+            return FRAMES
+        last = f[-1]
+        return len(f) + 1 if last == [PINS] or len(last) == 2 else len(f)
+
     def is_over(self) -> bool:
         f = self._frames()
         return len(f) == FRAMES and self._tenth_done(f[-1])

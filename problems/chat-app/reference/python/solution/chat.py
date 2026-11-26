@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from contract import (Blocked, Chat, DuplicateGroup, Forbidden, InvalidMessage, Message, NotMember, Unread,
-                      UnknownGroup)
+                      UnknownGroup, UnknownMessage)
 
 
 @dataclass
@@ -35,6 +35,7 @@ class ChatService(Chat):
         self._read: defaultdict[tuple[str, str], int] = defaultdict(int)  # (user, conversation) -> last seen seq
         self._blocked: defaultdict[str, set[str]] = defaultdict(set)
         self._dm_partners: defaultdict[str, set[str]] = defaultdict(set)
+        self._by_id: dict[str, tuple[Conversation, int]] = {}  # message id -> (conversation, seq)
         self._lock = threading.Lock()
 
     # ---- helpers ----
@@ -42,6 +43,7 @@ class ChatService(Chat):
         seq = next(self._seq)
         msg = Message(f"M{seq}", sender, text)
         conv.log.append((seq, msg))
+        self._by_id[msg.id] = (conv, seq)
         return msg.id
 
     def _group(self, gid: str) -> Group:
@@ -149,6 +151,18 @@ class ChatService(Chat):
             visible = self._visible(user, conversation)
             if visible:
                 self._read[(user, conversation)] = visible[-1][0]
+
+    def delete_message(self, user: str, message_id: str) -> None:
+        with self._lock:
+            found = self._by_id.get(message_id)
+            if found is None:
+                raise UnknownMessage(message_id)
+            conv, seq = found
+            msg = next(m for s, m in conv.log if s == seq)
+            if msg.from_user != user:
+                raise Forbidden(f"{user} did not send {message_id}")
+            conv.log = [(s, m) for s, m in conv.log if s != seq]
+            del self._by_id[message_id]
 
     def block(self, user: str, other: str) -> None:
         with self._lock:

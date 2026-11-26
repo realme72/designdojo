@@ -1,0 +1,21 @@
+scenarios:
+  - name: delete_direct
+    steps:
+      - {call: send_direct, args: {from_user: a, to_user: b, text: hi}, bind: m1}
+      - {call: send_direct, args: {from_user: a, to_user: b, text: yo}}
+      - {call: delete_message, args: {user: b, message_id: $m1}, expect_error: Forbidden}
+      - {call: delete_message, args: {user: a, message_id: $m1}}
+      - {call: messages, args: {user: b, conversation: "dm:a"}, expect: [{text: yo}]}
+      - {call: unread, args: {user: b}, expect: [{conversation: "dm:a", count: 1}]}
+      - {call: delete_message, args: {user: a, message_id: $m1}, expect_error: UnknownMessage}
+      - {call: delete_message, args: {user: a, message_id: M999}, expect_error: UnknownMessage}
+  - name: delete_group
+    steps:
+      - {call: create_group, args: {group_id: g, owner: a}}
+      - {call: add_member, args: {group_id: g, by: a, user: b}}
+      - {call: send_group, args: {group_id: g, from_user: b, text: oops}, bind: m}
+      - {call: send_group, args: {group_id: g, from_user: a, text: ok}}
+      - {call: delete_message, args: {user: a, message_id: $m}, expect_error: Forbidden}
+      - {call: delete_message, args: {user: b, message_id: $m}}
+      - {call: messages, args: {user: a, conversation: "group:g"}, expect: [{text: ok}]}
+      - {call: unread, args: {user: a}, expect: []}

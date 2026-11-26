@@ -1,0 +1,5 @@
+interfaces:
+  ChessGame:
+    undo:
+      returns: void
+      raises: [IllegalMove]

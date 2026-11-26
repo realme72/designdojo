@@ -1,0 +1,28 @@
+scenarios:
+  - name: strike_and_open_frames
+    steps:
+      - {call: current_frame, expect: 1}
+      - {call: roll, args: {pins: 10}}
+      - {call: current_frame, expect: 2}
+      - {call: roll, args: {pins: 3}}
+      - {call: current_frame, expect: 2}
+      - {call: roll, args: {pins: 4}}
+      - {call: current_frame, expect: 3}
+  - name: tenth_frame_stays_current
+    steps:
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: current_frame, expect: 10}
+      - {call: roll, args: {pins: 10}}
+      - {call: roll, args: {pins: 10}}
+      - {call: current_frame, expect: 10}
+      - {call: roll, args: {pins: 10}}
+      - {call: is_over, expect: true}
+      - {call: current_frame, expect: 10}

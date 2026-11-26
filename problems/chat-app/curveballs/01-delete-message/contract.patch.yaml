@@ -1,0 +1,7 @@
+interfaces:
+  Chat:
+    delete_message:
+      params: {user: str, message_id: str}
+      returns: void
+      raises: [UnknownMessage, Forbidden]
+errors: [UnknownMessage]

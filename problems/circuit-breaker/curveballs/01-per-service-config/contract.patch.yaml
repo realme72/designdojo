@@ -1,0 +1,5 @@
+interfaces:
+  CircuitBreakers:
+    configure:
+      params: {service: str, failure_threshold: int, open_seconds: long, trial_requests: int}
+      returns: void

@@ -90,14 +90,24 @@ class BreakerRegistry(CircuitBreakers):
     def __init__(self, config: BreakerConfig, clock: Clock):
         self._cfg, self._clock = config, clock
         self._breakers: dict[str, Breaker] = {}
+        self._overrides: dict[str, BreakerConfig] = {}
         self._lock = threading.Lock()
 
     def _get(self, service: str) -> Breaker:
         with self._lock:
             b = self._breakers.get(service)
             if b is None:
-                b = self._breakers[service] = Breaker(self._cfg, self._clock)
+                b = self._breakers[service] = Breaker(self._overrides.get(service, self._cfg), self._clock)
             return b
+
+    def configure(self, service: str, failure_threshold: int, open_seconds: int, trial_requests: int) -> None:
+        cfg = BreakerConfig(failure_threshold, open_seconds, trial_requests)
+        with self._lock:
+            self._overrides[service] = cfg
+        b = self._get(service)
+        with b.lock:
+            b.cfg = cfg
+            b.go(CLOSED)
 
     def allow_request(self, service: str) -> bool:
         b = self._get(service)

@@ -1,0 +1,9 @@
+dtos:
+  Bill:
+    insurance: long
+interfaces:
+  CarRental:
+    add_insurance:
+      params: {rental_id: str, per_day: long}
+      returns: void
+      raises: [UnknownRental, InvalidState]

@@ -1,0 +1,22 @@
+config: {late_multiplier: 2, free_km_per_day: 100, per_km: 10}
+scenarios:
+  - name: insured_rental
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: blr, category: SEDAN, daily_rate: 2000, odometer: 0}}
+      - {call: reserve, args: {customer: ann, branch: blr, category: SEDAN, pickup_day: 19675, return_day: 19678}, bind: r}
+      - {call: add_insurance, args: {rental_id: $r.id, per_day: 300}}
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - {call: return_car, args: {rental_id: $r.id, odometer: 100}, expect: {base: 6000, insurance: 900, total: 6900}}
+  - name: uninsured_shows_zero
+    steps:
+      - {call: add_car, args: {car_id: c1, branch: blr, category: SUV, daily_rate: 3000, odometer: 0}}
+      - {call: reserve, args: {customer: ann, branch: blr, category: SUV, pickup_day: 19675, return_day: 19676}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - {call: return_car, args: {rental_id: $r.id, odometer: 0}, expect: {base: 3000, insurance: 0, total: 3000}}
+  - name: only_while_reserved
+    steps:
+      - {call: add_insurance, args: {rental_id: R404, per_day: 100}, expect_error: UnknownRental}
+      - {call: add_car, args: {car_id: c1, branch: blr, category: SEDAN, daily_rate: 2000, odometer: 0}}
+      - {call: reserve, args: {customer: ann, branch: blr, category: SEDAN, pickup_day: 19675, return_day: 19676}, bind: r}
+      - {call: pick_up, args: {rental_id: $r.id}}
+      - {call: add_insurance, args: {rental_id: $r.id, per_day: 100}, expect_error: InvalidState}

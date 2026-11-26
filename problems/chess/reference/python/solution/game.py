@@ -26,6 +26,7 @@ class Game(ChessGame):
         self._b: Board = [list(row) for row in reversed(rows)]
         self._turn = to_move if setup else Color.WHITE
         self._status = self._compute_status()
+        self._history: list[tuple[list[list[str]], Color, GameStatus]] = []  # memento per move
 
     # ---- rules ----
     def _mine(self, p: str, color: Color) -> bool:
@@ -79,10 +80,16 @@ class Game(ChessGame):
                 raise IllegalMove(f"cannot promote to {promotion!r}")
             piece = choice if is_white(piece) else choice.lower()
         captured = self._b[tr][tf]
+        self._history.append(([row[:] for row in self._b], self._turn, self._status))
         self._b[tr][tf], self._b[fr][ff] = piece, "."
         self._turn = Color.BLACK if self._turn is Color.WHITE else Color.WHITE
         self._status = self._compute_status()
         return MoveResult("" if captured == "." else captured, self._status)
+
+    def undo(self) -> None:
+        if not self._history:
+            raise IllegalMove("nothing to undo")
+        self._b, self._turn, self._status = self._history.pop()
 
     def turn(self) -> Color:
         return self._turn

@@ -1,0 +1,4 @@
+interfaces:
+  BowlingGame:
+    current_frame:
+      returns: int

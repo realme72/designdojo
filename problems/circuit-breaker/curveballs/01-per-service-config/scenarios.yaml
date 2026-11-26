@@ -1,0 +1,26 @@
+config: {failure_threshold: 3, open_seconds: 30, trial_requests: 2}
+scenarios:
+  - name: override_before_first_use
+    steps:
+      - {call: configure, args: {service: pay, failure_threshold: 1, open_seconds: 10, trial_requests: 1}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: search}}
+      - {call: state, args: {service: pay}, expect: OPEN}
+      - {call: state, args: {service: search}, expect: CLOSED}
+      - advance_clock: 10
+      - {call: allow_request, args: {service: pay}, expect: true}
+      - {call: allow_request, args: {service: pay}, expect: false}
+      - {call: record_success, args: {service: pay}}
+      - {call: state, args: {service: pay}, expect: CLOSED}
+  - name: configure_resets_open_breaker
+    steps:
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: state, args: {service: pay}, expect: OPEN}
+      - {call: configure, args: {service: pay, failure_threshold: 5, open_seconds: 30, trial_requests: 2}}
+      - {call: state, args: {service: pay}, expect: CLOSED}
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: record_failure, args: {service: pay}}
+      - {call: state, args: {service: pay}, expect: CLOSED}

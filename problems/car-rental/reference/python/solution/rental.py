@@ -32,6 +32,7 @@ class RentalRecord:
     end: int
     status: RentalStatus = S.RESERVED
     odometer_out: int = 0
+    insurance_per_day: int = 0
 
     def blocks(self, start: int, end: int) -> bool:
         if self.status in (S.CANCELLED, S.RETURNED):
@@ -108,9 +109,19 @@ class RentalService(CarRental):
             r = self._move(rental_id, S.RETURNED)
             if odometer < r.odometer_out:
                 raise InvalidOdometer(odometer)
-            trip = Trip(r.car.rate, r.end - r.start, max(0, self._today() - r.end), odometer - r.odometer_out)
+            trip = Trip(r.car.rate, r.end - r.start, max(0, self._today() - r.end), odometer - r.odometer_out,
+                        r.insurance_per_day)
             r.status, r.car.odometer = S.RETURNED, odometer
             return self._pricing.bill(trip)
+
+    def add_insurance(self, rental_id: str, per_day: int) -> None:
+        with self._lock:
+            r = self._rentals.get(rental_id)
+            if r is None:
+                raise UnknownRental(rental_id)
+            if r.status is not S.RESERVED:
+                raise InvalidState(f"{r.status.name}: insurance is added before pick-up")
+            r.insurance_per_day = per_day
 
     def cancel(self, rental_id: str) -> Rental:
         with self._lock:
