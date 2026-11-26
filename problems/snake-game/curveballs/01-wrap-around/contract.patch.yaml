@@ -1,0 +1,5 @@
+interfaces:
+  SnakeGame:
+    set_wrap:
+      params: {enabled: bool}
+      returns: void

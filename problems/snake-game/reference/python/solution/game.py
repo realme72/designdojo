@@ -15,13 +15,22 @@ class Game(SnakeGame):
         self.occupied = {(0, 0)}
         self._score = 0
         self.alive = True
+        self.wrap = False
+
+    def set_wrap(self, enabled: bool) -> None:
+        self.wrap = enabled
+
+    def _next_head(self, r: int, c: int, dr: int, dc: int) -> tuple[int, int]:
+        if self.wrap:
+            return (r + dr) % self.rows, (c + dc) % self.cols
+        return r + dr, c + dc
 
     def move(self, direction: Move) -> MoveResult:
         if not self.alive:
             raise GameOver()
         dr, dc = DELTA[direction]
         r, c = self.snake[0]
-        head = (r + dr, c + dc)
+        head = self._next_head(r, c, dr, dc)
         eating = bool(self.food) and head == self.food[0]
         if not eating:  # the tail leaves this cell in the same move
             self.occupied.discard(self.snake.pop())

@@ -1,0 +1,22 @@
+config: {rows: 3, cols: 3, food: [[0, 2]]}
+scenarios:
+  - name: wraps_and_eats
+    steps:
+      - {call: set_wrap, args: {enabled: true}}
+      - {call: move, args: {direction: LEFT}, expect: {score: 1, alive: true}}
+      - {call: body, expect: [[0, 2], [0, 0]]}
+      - {call: move, args: {direction: UP}, expect: {alive: true}}
+      - {call: body, expect: [[2, 2], [0, 2]]}
+      - {call: move, args: {direction: RIGHT}, expect: {alive: true}}
+      - {call: body, expect: [[2, 0], [2, 2]]}
+      - {call: set_wrap, args: {enabled: false}}
+      - {call: move, args: {direction: DOWN}, expect: {alive: false}}
+  - name: body_still_kills
+    config: {rows: 1, cols: 4, food: [[0, 1], [0, 2], [0, 3]]}
+    steps:
+      - {call: set_wrap, args: {enabled: true}}
+      - {call: move, args: {direction: RIGHT}, expect: {score: 1}}
+      - {call: move, args: {direction: RIGHT}, expect: {score: 2}}
+      - {call: move, args: {direction: RIGHT}, expect: {score: 3, alive: true}}
+      - {call: move, args: {direction: RIGHT}, expect: {alive: true}}
+      - {call: move, args: {direction: LEFT}, expect: {alive: false}}

@@ -33,6 +33,7 @@ class Question(Post):
     tags: list[str] = field(default_factory=list)
     closed: bool = False
     accepted: str | None = None
+    bounty: int = 0  # unpaid bounty, paid on the next acceptance
 
 
 @dataclass
@@ -108,6 +109,19 @@ class Site(QaSite):
             q.accepted = answer_id
             if a.author != q.author:
                 self._rep[a.author] += self._rep_rules.ACCEPTED
+            if q.bounty > 0:
+                self._rep[a.author] += q.bounty
+                q.bounty = -1  # paid; no second bounty on this question
+
+    def offer_bounty(self, user: str, question_id: str, amount: int) -> None:
+        with self._lock:
+            q = self._question(question_id)
+            if q.closed:
+                raise QuestionClosed(question_id)
+            if q.bounty or q.accepted is not None or not 1 <= amount <= self._rep[user]:
+                raise Forbidden("bounty not allowed")
+            self._rep[user] -= amount
+            q.bounty = amount
 
     def close(self, user: str, question_id: str) -> None:
         with self._lock:

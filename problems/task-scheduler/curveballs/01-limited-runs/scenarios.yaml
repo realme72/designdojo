@@ -1,0 +1,27 @@
+scenarios:
+  - name: runs_n_times
+    steps:
+      - {call: schedule_times, args: {job_id: j, start_at: 1700000010, interval_seconds: 10, times: 2}}
+      - advance_clock: 10
+      - {call: tick, expect: [j]}
+      - {call: pending, expect: [{id: j, next_run: 1700000020}]}
+      - advance_clock: 10
+      - {call: tick, expect: [j]}
+      - {call: pending, expect: []}
+      - advance_clock: 10
+      - {call: tick, expect: []}
+  - name: catch_up_counts_and_pause
+    steps:
+      - {call: schedule_times, args: {job_id: j, start_at: 1700000010, interval_seconds: 10, times: 3}}
+      - advance_clock: 100
+      - {call: tick, expect: [j]}
+      - {call: pause, args: {job_id: j}}
+      - advance_clock: 10
+      - {call: tick, expect: []}
+      - {call: resume, args: {job_id: j}}
+      - {call: tick, expect: [j]}
+      - advance_clock: 10
+      - {call: tick, expect: [j]}
+      - advance_clock: 10
+      - {call: tick, expect: []}
+      - {call: schedule_times, args: {job_id: k, start_at: 1700001000, interval_seconds: 10, times: 0}, expect_error: InvalidInterval}

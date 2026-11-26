@@ -37,3 +37,15 @@ class Every(Schedule):
 
     def on_resume(self, now, current):
         return self._slot_at_or_after(now)
+
+
+class Times(Every):
+    """Every, but at most `times` runs."""
+
+    def __init__(self, start: int, interval: int, times: int):
+        super().__init__(start, interval)
+        self.left = times
+
+    def after_run(self, now):
+        self.left -= 1
+        return super().after_run(now) if self.left > 0 else None

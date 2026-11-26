@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from contract import Clock, DuplicateJob, InvalidInterval, InvalidTime, JobInfo, Scheduler, UnknownJob
 
-from .schedules import Every, Once, Schedule
+from .schedules import Every, Once, Schedule, Times
 
 
 @dataclass
@@ -48,6 +48,11 @@ class HeapScheduler(Scheduler):
         if interval_seconds < 1:
             raise InvalidInterval(interval_seconds)
         self._add(job_id, start_at, Every(start_at, interval_seconds))
+
+    def schedule_times(self, job_id: str, start_at: int, interval_seconds: int, times: int) -> None:
+        if interval_seconds < 1 or times < 1:
+            raise InvalidInterval(f"{interval_seconds}s x{times}")
+        self._add(job_id, start_at, Times(start_at, interval_seconds, times))
 
     def tick(self) -> list[str]:
         ran: list[str] = []

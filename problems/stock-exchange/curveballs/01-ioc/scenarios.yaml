@@ -1,0 +1,16 @@
+scenarios:
+  - name: fills_then_cancels_rest
+    steps:
+      - {call: place_order, args: {trader: s, symbol: ACME, side: SELL, type: LIMIT, qty: 10, price: 100}}
+      - {call: place_order, args: {trader: s, symbol: ACME, side: SELL, type: LIMIT, qty: 5, price: 102}}
+      - call: place_order
+        args: {trader: b, symbol: ACME, side: BUY, type: IOC, qty: 12, price: 101}
+        expect: {status: CANCELLED, filled_qty: 10, trades: [{price: 100, qty: 10}]}
+      - {call: book, args: {symbol: ACME}, expect: {bids: [], asks: [{price: 102, qty: 5}]}}
+      - {call: place_order, args: {trader: b, symbol: ACME, side: BUY, type: IOC, qty: 5, price: 102}, expect: {status: FILLED, filled_qty: 5}}
+  - name: no_cross_and_invalid
+    steps:
+      - {call: place_order, args: {trader: s, symbol: ACME, side: SELL, type: LIMIT, qty: 10, price: 100}}
+      - {call: place_order, args: {trader: b, symbol: ACME, side: BUY, type: IOC, qty: 3, price: 99}, expect: {status: CANCELLED, filled_qty: 0, trades: []}}
+      - {call: book, args: {symbol: ACME}, expect: {bids: [], asks: [{price: 100, qty: 10}]}}
+      - {call: place_order, args: {trader: b, symbol: ACME, side: BUY, type: IOC, qty: 3, price: 0}, expect_error: InvalidOrder}

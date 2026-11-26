@@ -1,0 +1,35 @@
+config: {close_threshold: 50}
+scenarios:
+  - name: bounty_paid_once
+    steps:
+      - {call: ask, args: {user: ann, question_id: q1, title: Why, tags: [java]}}
+      - {call: vote, args: {user: u1, post_id: q1, up: true}}
+      - {call: vote, args: {user: u2, post_id: q1, up: true}}
+      - {call: vote, args: {user: u3, post_id: q1, up: true}}
+      - {call: vote, args: {user: u4, post_id: q1, up: true}}
+      - {call: reputation, args: {user: ann}, expect: 21}
+      - {call: offer_bounty, args: {user: ann, question_id: q1, amount: 15}}
+      - {call: reputation, args: {user: ann}, expect: 6}
+      - {call: offer_bounty, args: {user: ann, question_id: q1, amount: 1}, expect_error: Forbidden}
+      - {call: answer, args: {user: bob, question_id: q1, answer_id: a1}}
+      - {call: answer, args: {user: carl, question_id: q1, answer_id: a2}}
+      - {call: accept, args: {user: ann, answer_id: a2}}
+      - {call: reputation, args: {user: carl}, expect: 31}
+      - {call: accept, args: {user: ann, answer_id: a1}}
+      - {call: reputation, args: {user: bob}, expect: 16}
+      - {call: reputation, args: {user: carl}, expect: 16}
+  - name: bounty_rules
+    steps:
+      - {call: ask, args: {user: ann, question_id: q1, title: Why, tags: [java]}}
+      - {call: offer_bounty, args: {user: bob, question_id: q1, amount: 100}, expect_error: Forbidden}
+      - {call: offer_bounty, args: {user: bob, question_id: q1, amount: 0}, expect_error: Forbidden}
+      - {call: offer_bounty, args: {user: bob, question_id: zz, amount: 1}, expect_error: UnknownPost}
+      - {call: answer, args: {user: bob, question_id: q1, answer_id: a1}}
+      - {call: accept, args: {user: ann, answer_id: a1}}
+      - {call: offer_bounty, args: {user: bob, question_id: q1, amount: 1}, expect_error: Forbidden}
+  - name: closed_question
+    config: {close_threshold: 1}
+    steps:
+      - {call: ask, args: {user: ann, question_id: q1, title: Why, tags: [java]}}
+      - {call: close, args: {user: ann, question_id: q1}}
+      - {call: offer_bounty, args: {user: ann, question_id: q1, amount: 1}, expect_error: QuestionClosed}

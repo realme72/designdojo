@@ -6,6 +6,7 @@ from contract import (DuplicatePlayer, Game, GameOver, GameStarted, InvalidRoll,
 from .board import Board
 
 EXTRA_TURN_ROLL = 6
+MAX_EXTRA_ROLLS = 2  # the third six in a row voids the turn
 
 
 class SnakeLadderGame(Game):
@@ -16,6 +17,8 @@ class SnakeLadderGame(Game):
         self._turn = 0
         self._started = False
         self._winner = ""
+        self._streak = 0        # sixes rolled so far this turn
+        self._turn_start = 0    # position when the current turn began
 
     def add_player(self, name: str) -> None:
         if self._started:
@@ -36,14 +39,26 @@ class SnakeLadderGame(Game):
             raise InvalidRoll(roll)
         self._started = True
         start = self._pos[player]
+        if self._streak == 0:
+            self._turn_start = start
+        if roll == EXTRA_TURN_ROLL and self._streak == MAX_EXTRA_ROLLS:
+            self._pos[player] = self._turn_start
+            self._pass_turn()
+            return MoveResult(player, roll, start, self._turn_start, False, self._order[self._turn])
         end = self._board.destination(start, roll)
         self._pos[player] = end
         if end == self._board.size:
             self._winner = player
             return MoveResult(player, roll, start, end, True, "")
         if roll != EXTRA_TURN_ROLL:
-            self._turn = (self._turn + 1) % len(self._order)
+            self._pass_turn()
+        else:
+            self._streak += 1
         return MoveResult(player, roll, start, end, False, self._order[self._turn])
+
+    def _pass_turn(self) -> None:
+        self._streak = 0
+        self._turn = (self._turn + 1) % len(self._order)
 
     def position(self, player: str) -> int:
         if player not in self._pos:

@@ -1,0 +1,6 @@
+interfaces:
+  Scheduler:
+    schedule_times:
+      params: {job_id: str, start_at: long, interval_seconds: long, times: int}
+      returns: void
+      raises: [DuplicateJob, InvalidTime, InvalidInterval]

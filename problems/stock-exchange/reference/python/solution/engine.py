@@ -9,6 +9,8 @@ from contract import (BookView, Exchange, InvalidOrder, InvalidState, Level, Ord
 from .book import BookSide, Order
 
 S = OrderStatus
+NEVER_RESTS = {OrderType.MARKET, OrderType.IOC}
+PRICED = {OrderType.LIMIT, OrderType.IOC}
 
 
 def crosses(incoming: Order, resting_price: int) -> bool:
@@ -39,8 +41,8 @@ class SymbolBook:
             if resting.remaining == 0:
                 opposite.pop_best()
         if incoming.remaining:
-            if incoming.type is OrderType.MARKET:
-                incoming.status = S.CANCELLED  # market orders never rest
+            if incoming.type in NEVER_RESTS:
+                incoming.status = S.CANCELLED  # market / IOC remainders never rest
             else:
                 self.sides[incoming.side].add(incoming)
 
@@ -61,7 +63,7 @@ class MatchingEngine(Exchange):
             return self._books.setdefault(symbol, SymbolBook())
 
     def place_order(self, trader: str, symbol: str, side: Side, type: OrderType, qty: int, price: int) -> OrderResult:
-        if qty < 1 or (type is OrderType.LIMIT and price < 1):
+        if qty < 1 or (type in PRICED and price < 1):
             raise InvalidOrder(f"qty={qty} price={price}")
         book = self._book(symbol)
         with self._lock:

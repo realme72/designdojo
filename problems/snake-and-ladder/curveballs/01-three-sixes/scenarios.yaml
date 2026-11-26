@@ -1,0 +1,27 @@
+config:
+  size: 30
+  snakes: {17: 4, 27: 1}
+  ladders: {3: 22, 5: 8}
+scenarios:
+  - name: third_six_voids_turn
+    steps:
+      - {call: add_player, args: {name: a}}
+      - {call: add_player, args: {name: b}}
+      - {call: move, args: {player: a, roll: 6}, expect: {to_pos: 6, next_player: a}}
+      - {call: move, args: {player: a, roll: 6}, expect: {to_pos: 12, next_player: a}}
+      - {call: move, args: {player: a, roll: 6}, expect: {from_pos: 12, to_pos: 0, won: false, next_player: b}}
+      - {call: position, args: {player: a}, expect: 0}
+      - {call: move, args: {player: b, roll: 6}}
+      - {call: move, args: {player: b, roll: 2}, expect: {to_pos: 8, next_player: a}}
+  - name: streak_resets_each_turn
+    steps:
+      - {call: add_player, args: {name: a}}
+      - {call: add_player, args: {name: b}}
+      - {call: move, args: {player: a, roll: 6}}
+      - {call: move, args: {player: a, roll: 1}, expect: {to_pos: 7, next_player: b}}
+      - {call: move, args: {player: b, roll: 1}, expect: {to_pos: 1, next_player: a}}
+      - {call: move, args: {player: a, roll: 6}, expect: {to_pos: 13, next_player: a}}
+      - {call: move, args: {player: a, roll: 2}, expect: {to_pos: 15, next_player: b}}
+      - {call: move, args: {player: b, roll: 6}, expect: {to_pos: 7}}
+      - {call: move, args: {player: b, roll: 6}, expect: {to_pos: 13}}
+      - {call: move, args: {player: b, roll: 6}, expect: {from_pos: 13, to_pos: 1, next_player: a}}

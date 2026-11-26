@@ -1,0 +1,6 @@
+interfaces:
+  QaSite:
+    offer_bounty:
+      params: {user: str, question_id: str, amount: long}
+      returns: void
+      raises: [UnknownPost, QuestionClosed, Forbidden]
