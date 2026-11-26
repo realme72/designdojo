@@ -1,0 +1,6 @@
+interfaces:
+  TicTacToe:
+    set_win_length:
+      params: {k: int}
+      returns: void
+      raises: [InvalidMove]

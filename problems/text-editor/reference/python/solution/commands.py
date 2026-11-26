@@ -53,3 +53,16 @@ class Backspace(Command):
     def undo(self, b):
         b.insert_at(self.start, self.removed)
         b.cursor = self.end
+
+
+class ReplaceAll(Command):
+    """Snapshot command: cheap to write, exact to undo."""
+
+    def __init__(self, before: str, cursor: int, after: str):
+        self.before, self.cursor, self.after = before, cursor, after
+
+    def do(self, b):
+        b.text, b.cursor = self.after, len(self.after)
+
+    def undo(self, b):
+        b.text, b.cursor = self.before, self.cursor

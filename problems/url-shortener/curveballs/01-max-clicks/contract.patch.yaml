@@ -1,0 +1,7 @@
+interfaces:
+  Shortener:
+    set_max_clicks:
+      params: {code: str, n: long}
+      returns: void
+      raises: [UnknownCode, InvalidArgument]
+errors: [InvalidArgument]

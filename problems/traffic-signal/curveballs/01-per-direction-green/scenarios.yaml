@@ -1,0 +1,21 @@
+config: {green: 30, yellow: 5, all_red: 2}
+scenarios:
+  - name: shorter_ew_green
+    steps:
+      - {call: set_green, args: {direction: EW, seconds: 10}}
+      - advance_clock: 37
+      - {call: phase, expect: EW_GREEN}
+      - {call: remaining, expect: 10}
+      - advance_clock: 10
+      - {call: phase, expect: EW_YELLOW}
+      - advance_clock: 953
+      - {call: phase, expect: NS_GREEN}
+      - {call: remaining, expect: 2}
+  - name: current_green_extended
+    steps:
+      - advance_clock: 10
+      - {call: set_green, args: {direction: NS, seconds: 50}}
+      - {call: remaining, expect: 40}
+      - advance_clock: 40
+      - {call: phase, expect: NS_YELLOW}
+      - {call: set_green, args: {direction: NS, seconds: 0}, expect_error: InvalidDuration}

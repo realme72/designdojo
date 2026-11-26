@@ -1,0 +1,6 @@
+interfaces:
+  Editor:
+    replace_all:
+      params: {find: str, replace: str}
+      returns: int
+      raises: [InvalidArgument]

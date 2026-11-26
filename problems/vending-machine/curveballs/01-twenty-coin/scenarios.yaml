@@ -1,0 +1,23 @@
+config: {coins: {ONE: 5, TWO: 5, FIVE: 5, TEN: 5}}
+scenarios:
+  - name: accepts_and_gives_twenties
+    steps:
+      - {call: add_product, args: {code: A1, name: Chips, price: 15, quantity: 5}}
+      - {call: add_product, args: {code: B1, name: Gum, price: 10, quantity: 5}}
+      - {call: insert, args: {coin: TWENTY}, expect: 20}
+      - {call: select, args: {code: A1}, expect: {change: [FIVE]}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: select, args: {code: B1}, expect: {change: [TWENTY]}}
+      - {call: insert, args: {coin: TWENTY}}
+      - {call: insert, args: {coin: FIVE}}
+      - {call: cancel, expect: [TWENTY, FIVE]}
+  - name: no_twenties_configured
+    config: {coins: {TEN: 2}}
+    steps:
+      - {call: add_product, args: {code: A1, name: Chips, price: 10, quantity: 5}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: insert, args: {coin: TEN}}
+      - {call: select, args: {code: A1}, expect: {change: [TEN, TEN]}}

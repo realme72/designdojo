@@ -1,0 +1,18 @@
+scenarios:
+  - name: expires_after_n
+    steps:
+      - {call: shorten, args: {long_url: "https://example.com/a", alias: "", ttl_seconds: 0}, expect: "000001"}
+      - {call: set_max_clicks, args: {code: "000001", n: 2}}
+      - {call: resolve, args: {code: "000001"}, expect: "https://example.com/a"}
+      - {call: resolve, args: {code: "000001"}}
+      - {call: resolve, args: {code: "000001"}, expect_error: Expired}
+      - {call: clicks, args: {code: "000001"}, expect: 2}
+      - {call: shorten, args: {long_url: "https://example.com/a", alias: "", ttl_seconds: 0}, expect: "000002"}
+  - name: alias_and_errors
+    steps:
+      - {call: shorten, args: {long_url: "https://example.com/a", alias: promo, ttl_seconds: 0}}
+      - {call: set_max_clicks, args: {code: promo, n: 1}}
+      - {call: resolve, args: {code: promo}}
+      - {call: resolve, args: {code: promo}, expect_error: Expired}
+      - {call: set_max_clicks, args: {code: nope, n: 1}, expect_error: UnknownCode}
+      - {call: set_max_clicks, args: {code: promo, n: 0}, expect_error: InvalidArgument}

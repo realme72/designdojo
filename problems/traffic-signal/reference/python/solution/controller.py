@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from contract import Clock, Color, Direction, Mode, Phase, SignalConfig, TrafficSignal
+from contract import Clock, Color, Direction, InvalidDuration, Mode, Phase, SignalConfig, TrafficSignal
 
 G, Y, R = Color.GREEN, Color.YELLOW, Color.RED
 
@@ -30,17 +30,27 @@ class Controller(TrafficSignal):
     def __init__(self, config: SignalConfig, clock: Clock):
         self._cfg, self._clock = config, clock
         self._mode = Mode.NORMAL
+        self._greens: dict[Phase, int] = {}
         self._restart(Phase.NS_GREEN)
 
     def _restart(self, phase: Phase) -> None:
         self._phase, self._started = phase, self._clock.now()
 
     def _duration(self, phase: Phase) -> int:
+        if phase in self._greens:
+            return self._greens[phase]
         return getattr(self._cfg, TABLE[phase].timing)
+
+    def set_green(self, direction: Direction, seconds: int) -> None:
+        if seconds < 1:
+            raise InvalidDuration(seconds)
+        if self._mode is Mode.NORMAL:
+            self._advance()  # settle the phase under the old timings first
+        self._greens[GREEN_OF[direction]] = seconds
 
     def _advance(self) -> None:
         now = self._clock.now()
-        cycle = 2 * (self._cfg.green + self._cfg.yellow + self._cfg.all_red)
+        cycle = sum(self._duration(p) for p in TABLE)
         if now - self._started >= cycle:  # skip whole cycles in O(1)
             self._started += (now - self._started) // cycle * cycle
         while now >= self._started + self._duration(self._phase):

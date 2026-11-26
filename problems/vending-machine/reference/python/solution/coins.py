@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contract import Coin
 
-VALUE = {Coin.ONE: 1, Coin.TWO: 2, Coin.FIVE: 5, Coin.TEN: 10}
+VALUE = {Coin.ONE: 1, Coin.TWO: 2, Coin.FIVE: 5, Coin.TEN: 10, Coin.TWENTY: 20}
 DESC = sorted(VALUE, key=VALUE.get, reverse=True)
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contract import Editor, InvalidArgument, InvalidPosition, NothingToRedo, NothingToUndo
 
-from .commands import Backspace, Buffer, Command, Insert
+from .commands import Backspace, Buffer, Command, Insert, ReplaceAll
 
 
 class TextEditor(Editor):
@@ -29,6 +29,14 @@ class TextEditor(Editor):
         cmd = Backspace(self._buf.cursor, n)
         self._run(cmd)
         return cmd.removed
+
+    def replace_all(self, find: str, replace: str) -> int:
+        if not find:
+            raise InvalidArgument("empty find")
+        count = self._buf.text.count(find)
+        if count:
+            self._run(ReplaceAll(self._buf.text, self._buf.cursor, self._buf.text.replace(find, replace)))
+        return count
 
     def move_cursor(self, pos: int) -> None:
         if not 0 <= pos <= len(self._buf.text):

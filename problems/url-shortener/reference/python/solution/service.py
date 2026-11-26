@@ -4,7 +4,7 @@ import re
 import threading
 from dataclasses import dataclass
 
-from contract import AliasTaken, Clock, Expired, InvalidAlias, InvalidUrl, Shortener, UnknownCode
+from contract import AliasTaken, Clock, Expired, InvalidAlias, InvalidArgument, InvalidUrl, Shortener, UnknownCode
 
 from .codes import CodeGenerator
 
@@ -17,8 +17,11 @@ class Link:
     expires_at: int | None
     auto: bool
     clicks: int = 0
+    max_clicks: int = 0  # 0 = unlimited
 
     def active(self, now: int) -> bool:
+        if self.max_clicks and self.clicks >= self.max_clicks:
+            return False
         return self.expires_at is None or now < self.expires_at
 
 
@@ -60,6 +63,15 @@ class ShortenerService(Shortener):
                 raise Expired(code)
             link.clicks += 1
             return link.url
+
+    def set_max_clicks(self, code: str, n: int) -> None:
+        with self._lock:
+            link = self._links.get(code)
+            if link is None:
+                raise UnknownCode(code)
+            if n < 1:
+                raise InvalidArgument(n)
+            link.max_clicks = n
 
     def clicks(self, code: str) -> int:
         with self._lock:

@@ -1,0 +1,25 @@
+scenarios:
+  - name: one_undo_step
+    steps:
+      - {call: insert, args: {text: "cat bat cat"}}
+      - {call: move_cursor, args: {pos: 3}}
+      - {call: replace_all, args: {find: cat, replace: dog}, expect: 2}
+      - {call: content, expect: "dog bat dog"}
+      - {call: cursor, expect: 11}
+      - {call: undo}
+      - {call: content, expect: "cat bat cat"}
+      - {call: cursor, expect: 3}
+      - {call: redo}
+      - {call: content, expect: "dog bat dog"}
+      - {call: undo}
+      - {call: undo}
+      - {call: content, expect: ""}
+  - name: edge_cases
+    steps:
+      - {call: insert, args: {text: aaaa}}
+      - {call: replace_all, args: {find: aa, replace: b}, expect: 2}
+      - {call: content, expect: bb}
+      - {call: replace_all, args: {find: zz, replace: y}, expect: 0}
+      - {call: undo}
+      - {call: content, expect: aaaa}
+      - {call: replace_all, args: {find: "", replace: y}, expect_error: InvalidArgument}

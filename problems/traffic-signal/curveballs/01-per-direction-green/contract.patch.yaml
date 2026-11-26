@@ -1,0 +1,7 @@
+interfaces:
+  TrafficSignal:
+    set_green:
+      params: {direction: Direction, seconds: long}
+      returns: void
+      raises: [InvalidDuration]
+errors: [InvalidDuration]

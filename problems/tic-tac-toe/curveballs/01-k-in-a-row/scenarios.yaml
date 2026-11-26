@@ -1,0 +1,32 @@
+config: {size: 5}
+scenarios:
+  - name: four_in_a_row
+    steps:
+      - {call: set_win_length, args: {k: 4}}
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 0, col: 1}}
+      - {call: move, args: {row: 1, col: 1}}
+      - {call: move, args: {row: 0, col: 2}}
+      - {call: move, args: {row: 1, col: 2}, expect: {state: IN_PROGRESS}}
+      - {call: move, args: {row: 0, col: 3}, expect: {mark: X, state: X_WON}}
+  - name: off_centre_diagonals
+    steps:
+      - {call: set_win_length, args: {k: 4}}
+      - {call: move, args: {row: 1, col: 0}}
+      - {call: move, args: {row: 0, col: 4}}
+      - {call: move, args: {row: 2, col: 1}}
+      - {call: move, args: {row: 1, col: 3}}
+      - {call: move, args: {row: 3, col: 2}}
+      - {call: move, args: {row: 2, col: 2}}
+      - {call: move, args: {row: 4, col: 4}}
+      - {call: move, args: {row: 3, col: 1}, expect: {mark: O, state: O_WON}}
+  - name: setting_rules
+    config: {size: 3}
+    steps:
+      - {call: set_win_length, args: {k: 2}, expect_error: InvalidMove}
+      - {call: set_win_length, args: {k: 4}, expect_error: InvalidMove}
+      - {call: move, args: {row: 0, col: 0}}
+      - {call: set_win_length, args: {k: 3}, expect_error: InvalidMove}
+      - {call: reset}
+      - {call: set_win_length, args: {k: 3}}
