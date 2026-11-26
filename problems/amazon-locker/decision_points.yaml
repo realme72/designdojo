@@ -1,0 +1,22 @@
+- id: assignment
+  keywords: [assign, smallest, fit, locker, choose, policy]
+  question: Where does the locker-assignment policy live?
+  good: An assignment strategy picks from free lockers; size ordering is data (enum order), not if-chains.
+  smells: [TYPE_SWITCH]
+  principles: [OCP]
+  patterns: [Strategy]
+- id: codes
+  keywords: [code, otp, generate, random]
+  question: How do pickup codes enter the system?
+  good: Codes are generated outside (injected service / parameter) so the station is deterministic and testable.
+  principles: [DIP]
+- id: expiry
+  keywords: [expire, hold, reclaim, clock]
+  question: How is expiry handled?
+  good: Deposited time stored per package; expiry evaluated with the injected clock.
+  smells: [DIRECT_TIME]
+- id: concurrency
+  keywords: [lock, synchronized, thread, atomic]
+  question: What stops two packages landing in one locker?
+  good: Picking a free locker and occupying it is atomic.
+  smells: [UNGUARDED_SHARED]

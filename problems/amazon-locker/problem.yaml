@@ -1,0 +1,7 @@
+id: amazon-locker
+title: Package Locker (Amazon Locker)
+difficulty: easy
+category: Booking & reservations
+time_limit_min: 40
+statement: statement.md
+tags: [strategy, concurrency]
