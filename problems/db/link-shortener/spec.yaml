@@ -1,0 +1,7 @@
+schema: designed
+operations:
+  create_link: {doc: Create a short link., params: {code: text, url: text, owner: text, created_at: timestamptz, expires_at: timestamptz}, returns: one, columns: [id]}
+  resolve: {doc: Return the target URL and record a click (unless expired/unknown)., params: {code: text, at: timestamptz, country: text}, returns: one, columns: [url]}
+  top_links: {kind: query, doc: The owner's links by clicks., params: {owner: text, n: int}, returns: rows, columns: [code, clicks], ordered: true}
+  daily_clicks: {kind: query, doc: Clicks per UTC day including zero days., params: {code: text, from_day: date, to_day: date}, returns: rows, columns: [day, clicks], ordered: true}
+  countries: {kind: query, doc: Clicks per country with percentage share., params: {code: text}, returns: rows, columns: [country, clicks, share], ordered: true}

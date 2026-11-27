@@ -1,0 +1,26 @@
+scenarios:
+  - name: reuse_spots_and_vehicles
+    steps:
+      - {op: add_lot, args: {name: A}, bind: a}
+      - {op: add_lot, args: {name: B}, bind: b}
+      - {op: add_spots, args: {lot_id: $a.id, type: COMPACT, count: 2}}
+      - {op: add_spots, args: {lot_id: $b.id, type: COMPACT, count: 1}}
+      - {op: enter, args: {lot_id: $a.id, plate: X, type: COMPACT, at: "2030-01-01T10:00:00Z"}}
+      - {op: enter, args: {lot_id: $b.id, plate: X, type: COMPACT, at: "2030-01-01T10:30:00Z"}, expect_error: rejected}
+      - {op: enter, args: {lot_id: $a.id, plate: Y, type: COMPACT, at: "2030-01-01T10:00:00Z"}, expect: {spot_no: 2}}
+      - {op: exit, args: {plate: X, at: "2030-01-01T10:00:00Z"}, expect: {fee: 20}}
+      - {op: enter, args: {lot_id: $a.id, plate: Z, type: COMPACT, at: "2030-01-01T11:00:00Z"}, expect: {spot_no: 1}}
+      - {op: enter, args: {lot_id: $b.id, plate: X, type: COMPACT, at: "2030-01-01T11:00:00Z"}, expect: {spot_no: 1}}
+      - {op: exit, args: {plate: X, at: "2030-01-02T00:30:00Z"}, expect: {fee: 280}}
+      - {op: exit, args: {plate: X, at: "2030-01-02T01:00:00Z"}, expect_error: rejected}
+      - {op: revenue, args: {lot_id: $b.id, day: "2030-01-02"}, expect: 280}
+      - {op: revenue, args: {lot_id: $a.id, day: "2030-01-01"}, expect: 20}
+  - name: spot_numbering_and_types
+    steps:
+      - {op: add_lot, args: {name: A}, bind: a}
+      - {op: add_spots, args: {lot_id: $a.id, type: EV, count: 2}}
+      - {op: add_spots, args: {lot_id: $a.id, type: COMPACT, count: 1}}
+      - {op: add_spots, args: {lot_id: $a.id, type: HELI, count: 1}, expect_error: rejected}
+      - {op: enter, args: {lot_id: $a.id, plate: E1, type: COMPACT, at: "2030-01-01T10:00:00Z"}, expect: {spot_no: 3}}
+      - {op: enter, args: {lot_id: $a.id, plate: E2, type: LARGE, at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: occupancy, args: {lot_id: $a.id}, expect: [{type: COMPACT, occupied: 1, total: 1}, {type: EV, occupied: 0, total: 2}]}

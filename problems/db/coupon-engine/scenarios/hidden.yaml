@@ -1,0 +1,22 @@
+scenarios:
+  - name: coupon_shape_rules
+    steps:
+      - {op: create_coupon, args: {code: BOTH, percent_off: 10, flat_off: 5, min_order: 0, max_uses: 1, per_user: 1, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}, expect_error: rejected}
+      - {op: create_coupon, args: {code: NONE, percent_off: null, flat_off: null, min_order: 0, max_uses: 1, per_user: 1, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}, expect_error: rejected}
+      - {op: create_coupon, args: {code: BIG, percent_off: 101, flat_off: null, min_order: 0, max_uses: 1, per_user: 1, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}, expect_error: rejected}
+      - {op: create_coupon, args: {code: BACK, percent_off: 5, flat_off: null, min_order: 0, max_uses: 1, per_user: 1, valid_from: "2030-02-01T00:00:00Z", valid_to: "2030-01-01T00:00:00Z"}, expect_error: rejected}
+      - {op: create_coupon, args: {code: Dup, percent_off: 5, flat_off: null, min_order: 0, max_uses: 1, per_user: 1, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}}
+      - {op: create_coupon, args: {code: DUP, percent_off: 5, flat_off: null, min_order: 0, max_uses: 1, per_user: 1, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}, expect_error: unique_violation}
+  - name: eligibility
+    steps:
+      - {op: create_coupon, args: {code: WIN, percent_off: 25, flat_off: null, min_order: 100, max_uses: 10, per_user: 3, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}}
+      - {op: redeem, args: {code: WIN, user_id: 1, order_total: 99.99, at: "2030-01-05T00:00:00Z"}, expect_error: rejected}
+      - {op: redeem, args: {code: WIN, user_id: 1, order_total: 100, at: "2029-12-31T23:59:59Z"}, expect_error: rejected}
+      - {op: redeem, args: {code: WIN, user_id: 1, order_total: 100, at: "2030-02-01T00:00:00Z"}, expect_error: rejected}
+      - {op: redeem, args: {code: NOPE, user_id: 1, order_total: 100, at: "2030-01-05T00:00:00Z"}, expect_error: rejected}
+      - {op: redeem, args: {code: WIN, user_id: 1, order_total: 100.02, at: "2030-01-31T23:59:59Z"}, expect: {discount: 25.01}}
+      - {op: redeem, args: {code: WIN, user_id: 1, order_total: 200, at: "2030-01-10T00:00:00Z"}, expect: {discount: 50}}
+      - {op: redeem, args: {code: WIN, user_id: 1, order_total: 200, at: "2030-01-10T00:00:00Z"}}
+      - {op: redeem, args: {code: WIN, user_id: 1, order_total: 200, at: "2030-01-10T00:00:00Z"}, expect_error: rejected}
+      - {op: redeem, args: {code: WIN, user_id: 2, order_total: 400, at: "2030-01-10T00:00:00Z"}, expect: {discount: 100}}
+      - {op: usage_report, args: {}, expect: [{code: WIN, uses: 4, total_discount: 225.01}]}

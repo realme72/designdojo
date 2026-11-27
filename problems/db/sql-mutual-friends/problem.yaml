@@ -1,0 +1,8 @@
+id: sql-mutual-friends
+title: Mutual Friends & Recommendations
+difficulty: medium
+category: SQL queries
+kind: sql
+time_limit_min: 30
+statement: statement.md
+tags: [symmetric-relationship, union-all, self-join, anti-join]

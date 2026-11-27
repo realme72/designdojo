@@ -1,0 +1,11 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user (unique email)., params: {email: text}, returns: one, columns: [id]}
+  create_channel: {doc: Create the user's channel (one per user)., params: {user_id: bigint, handle: text}, returns: one, columns: [id]}
+  upload: {doc: Upload a video., params: {channel_id: bigint, title: text, duration_s: int, visibility: text, uploaded_at: timestamptz}, returns: one, columns: [id]}
+  subscribe: {doc: Subscribe to a channel (once; not your own)., params: {user_id: bigint, channel_id: bigint}, returns: none}
+  view: {doc: Record a view (user may be NULL)., params: {video_id: bigint, user_id: bigint, viewed_at: timestamptz}, returns: none}
+  trending: {kind: query, doc: Public videos by views since a time., params: {since: timestamptz, n: int}, returns: rows, columns: [title, channel, views], ordered: true}
+  channel_stats: {kind: query, doc: Subscriber count, public video count and total views., params: {channel_id: bigint}, returns: one, columns: [subscribers, videos, total_views]}
+  subscriptions_feed: {kind: query, doc: Newest public videos from subscriptions., params: {user_id: bigint, n: int}, returns: rows, columns: [title, channel], ordered: true}
+  top_video_per_channel: {kind: query, doc: Most viewed video per channel., params: {}, returns: rows, columns: [channel, title, views], ordered: true}

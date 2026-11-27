@@ -1,0 +1,21 @@
+scenarios:
+  - name: deposit_transfer_statement
+    steps:
+      - {op: open_account, args: {owner: Ann}, bind: a}
+      - {op: open_account, args: {owner: Bob}, bind: b}
+      - {op: deposit, args: {account_id: $a.id, amount: 100.00, key: d1}}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: 30.50, key: t1}}
+      - {op: balance, args: {account_id: $a.id}, expect: 69.5}
+      - {op: balance, args: {account_id: $b.id}, expect: 30.5}
+      - {op: statement, args: {account_id: $a.id}, expect: [{amount: 100, balance_after: 100}, {amount: -30.5, balance_after: 69.5}]}
+      - {op: unbalanced_transactions, args: {}, expect: []}
+  - name: no_overdraft_and_idempotent_retry
+    steps:
+      - {op: open_account, args: {owner: Ann}, bind: a}
+      - {op: open_account, args: {owner: Bob}, bind: b}
+      - {op: deposit, args: {account_id: $a.id, amount: 50, key: d1}}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: 50.01, key: t1}, expect_error: rejected}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: 20, key: t2}, bind: t}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: 20, key: t2}, expect: {txn_id: $t.txn_id}}
+      - {op: balance, args: {account_id: $a.id}, expect: 30}
+      - {op: balance, args: {account_id: $b.id}, expect: 20}

@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Would you keep subscriptions and invoices in a relational database? What would you never do with them?
+  points:
+    - text: Yes - billing needs ACID transactions, exact decimals and strong constraints (no overlaps, no double invoices).
+      keywords: [acid, transaction, decimal, numeric, constraint, relational]
+    - text: Never update or delete issued invoices; corrections are credit notes/new rows (auditability).
+      keywords: [never update, immutable, credit note, audit, append]
+    - text: Payment processing is external (Stripe etc.); store references and webhook events idempotently.
+      keywords: [stripe, payment provider, webhook, idempotent, external]
+  follow_up: A webhook from the payment provider arrives twice and out of order. How does your schema cope?
+- id: overlap
+  stage: design
+  question: How do you prevent a customer from having two active subscriptions at once, even when two signups race?
+  points:
+    - text: Model the active period as a time range and add an exclusion constraint per customer (btree_gist + tstzrange &&).
+      keywords: [exclusion, exclude, tstzrange, range, gist, overlap]
+    - text: Half-open ranges [start, end) let a plan change end and start at the same instant.
+      keywords: [half-open, "[)", same instant, back-to-back, adjacent]
+    - text: A partial unique index (customer) WHERE end IS NULL is simpler but only prevents two open-ended rows, not overlapping past periods.
+      keywords: [partial unique, where end is null, simpler]
+  follow_up: A customer may have one subscription per product. How does the constraint change?
+- id: proration
+  stage: after
+  question: A customer upgrades mid-month. How would you bill the rest of the month fairly?
+  points:
+    - text: Prorate - credit the unused part of the old plan and charge the remainder of the new plan by days or seconds.
+      keywords: [prorat, credit, unused, remainder, days]
+    - text: Keep the subscription history (old and new rows with their periods) so the calculation is reproducible.
+      keywords: [history, periods, reproducible, rows]
+    - text: Record the adjustment as invoice lines, never by editing the old invoice.
+      keywords: [invoice line, adjustment, credit note, never edit]
+  follow_up: Prices are in different currencies per customer. Where does currency live?

@@ -1,0 +1,36 @@
+scenarios:
+  - name: inbox_order_and_read_never_backwards
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: add_user, args: {name: Cy}, bind: cy}
+      - {op: start_direct, args: {user_a: $ann.id, user_b: $bob.id}, bind: ab}
+      - {op: start_direct, args: {user_a: $cy.id, user_b: $ann.id}, bind: ac}
+      - {op: create_group, args: {name: Quiet, owner_id: $ann.id}}
+      - {op: send, args: {conversation_id: $ab.conversation_id, sender_id: $bob.id, body: b1, sent_at: "2030-01-01T10:00:00Z"}, bind: b1}
+      - {op: send, args: {conversation_id: $ac.conversation_id, sender_id: $cy.id, body: c1, sent_at: "2030-01-01T10:05:00Z"}}
+      - {op: send, args: {conversation_id: $ab.conversation_id, sender_id: $bob.id, body: b2, sent_at: "2030-01-01T10:06:00Z"}, bind: b2}
+      - {op: send, args: {conversation_id: $ab.conversation_id, sender_id: $ann.id, body: a1, sent_at: "2030-01-01T10:07:00Z"}}
+      - {op: inbox, args: {user_id: $ann.id}, expect: [{title: Bob, last_message: a1, unread: 2}, {title: Cy, last_message: c1, unread: 1}]}
+      - {op: mark_read, args: {conversation_id: $ab.conversation_id, user_id: $ann.id, message_id: $b2.id}}
+      - {op: mark_read, args: {conversation_id: $ab.conversation_id, user_id: $ann.id, message_id: $b1.id}}
+      - {op: inbox, args: {user_id: $ann.id}, expect: [{title: Bob, unread: 0}, {title: Cy, unread: 1}]}
+  - name: history_keyset
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: start_direct, args: {user_a: $ann.id, user_b: $bob.id}, bind: d}
+      - {op: send, args: {conversation_id: $d.conversation_id, sender_id: $ann.id, body: m1, sent_at: "2030-01-01T10:00:00Z"}}
+      - {op: send, args: {conversation_id: $d.conversation_id, sender_id: $bob.id, body: m2, sent_at: "2030-01-01T10:01:00Z"}}
+      - {op: send, args: {conversation_id: $d.conversation_id, sender_id: $ann.id, body: m3, sent_at: "2030-01-01T10:02:00Z"}, bind: m3}
+      - {op: send, args: {conversation_id: $d.conversation_id, sender_id: $bob.id, body: m4, sent_at: "2030-01-01T10:03:00Z"}}
+      - {op: history, args: {conversation_id: $d.conversation_id, before_id: null, n: 2}, expect: [{body: m4, sender: Bob}, {body: m3, sender: Ann}]}
+      - {op: history, args: {conversation_id: $d.conversation_id, before_id: $m3.id, n: 5}, expect: [{body: m2}, {body: m1}]}
+  - name: invalid_conversations
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: start_direct, args: {user_a: $ann.id, user_b: $ann.id}, expect_error: rejected}
+      - {op: start_direct, args: {user_a: $ann.id, user_b: 999999}, expect_error: rejected}
+      - {op: create_group, args: {name: G, owner_id: $ann.id}, bind: g}
+      - {op: send, args: {conversation_id: $g.conversation_id, sender_id: $ann.id, body: "  ", sent_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: add_member, args: {conversation_id: $g.conversation_id, user_id: 999999}, expect_error: rejected}

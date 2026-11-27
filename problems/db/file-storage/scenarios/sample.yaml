@@ -1,0 +1,25 @@
+scenarios:
+  - name: tree_paths_sizes
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: null, name: Work}, bind: work}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: $work.id, name: "2030"}, bind: y}
+      - {op: upload, args: {folder_id: $y.id, name: report.pdf, size_bytes: 1000}, bind: f}
+      - {op: upload, args: {folder_id: $work.id, name: notes.txt, size_bytes: 24}}
+      - {op: path, args: {file_id: $f.id}, expect: /Work/2030/report.pdf}
+      - {op: folder_size, args: {folder_id: $work.id}, expect: 1024}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: null, name: Work}, expect_error: rejected}
+      - {op: upload, args: {folder_id: $y.id, name: report.pdf, size_bytes: 5}, expect_error: rejected}
+  - name: inherited_sharing
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: null, name: Team}, bind: team}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: $team.id, name: Deep}, bind: deep}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: null, name: Private}, bind: priv}
+      - {op: upload, args: {folder_id: $deep.id, name: plan.doc, size_bytes: 1}, bind: shared_file}
+      - {op: upload, args: {folder_id: $priv.id, name: diary.txt, size_bytes: 1}, bind: secret}
+      - {op: share, args: {folder_id: $team.id, user_id: $bob.id, role: VIEW}}
+      - {op: can_view, args: {user_id: $bob.id, file_id: $shared_file.id}, expect: true}
+      - {op: can_view, args: {user_id: $bob.id, file_id: $secret.id}, expect: false}
+      - {op: can_view, args: {user_id: $ann.id, file_id: $secret.id}, expect: true}

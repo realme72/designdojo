@@ -1,0 +1,8 @@
+id: sql-employee-salaries
+title: Employee Salaries
+difficulty: easy
+category: SQL queries
+kind: sql
+time_limit_min: 30
+statement: statement.md
+tags: [window-functions, dense-rank, nth-highest, correlated-subquery]

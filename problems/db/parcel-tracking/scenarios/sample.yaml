@@ -1,0 +1,19 @@
+scenarios:
+  - name: happy_path
+    steps:
+      - {op: create_shipment, args: {tracking_no: TRK1, origin: BLR, destination: DEL, at: "2030-01-01T08:00:00Z"}}
+      - {op: scan, args: {tracking_no: TRK1, status: PICKED_UP, location: BLR, at: "2030-01-01T10:00:00Z"}}
+      - {op: scan, args: {tracking_no: TRK1, status: IN_TRANSIT, location: BLR hub, at: "2030-01-01T18:00:00Z"}}
+      - {op: scan, args: {tracking_no: TRK1, status: IN_TRANSIT, location: DEL hub, at: "2030-01-02T08:00:00Z"}}
+      - {op: current, args: {tracking_no: TRK1}, expect: {status: IN_TRANSIT, location: DEL hub}}
+      - {op: scan, args: {tracking_no: TRK1, status: OUT_FOR_DELIVERY, location: DEL, at: "2030-01-02T09:00:00Z"}}
+      - {op: scan, args: {tracking_no: TRK1, status: DELIVERED, location: DEL, at: "2030-01-02T14:00:00Z"}}
+      - {op: track, args: {tracking_no: TRK1}, expect: [{status: CREATED, location: BLR}, {status: PICKED_UP}, {status: IN_TRANSIT}, {status: IN_TRANSIT}, {status: OUT_FOR_DELIVERY}, {status: DELIVERED}]}
+      - {op: avg_delivery_hours, args: {origin: BLR, destination: DEL}, expect: 30}
+  - name: illegal_scans
+    steps:
+      - {op: create_shipment, args: {tracking_no: TRK1, origin: BLR, destination: DEL, at: "2030-01-01T08:00:00Z"}}
+      - {op: scan, args: {tracking_no: TRK1, status: DELIVERED, location: DEL, at: "2030-01-01T09:00:00Z"}, expect_error: rejected}
+      - {op: scan, args: {tracking_no: TRK1, status: PICKED_UP, location: BLR, at: "2030-01-01T07:00:00Z"}, expect_error: rejected}
+      - {op: scan, args: {tracking_no: TRK1, status: LOST, location: BLR, at: "2030-01-01T09:00:00Z"}, expect_error: rejected}
+      - {op: current, args: {tracking_no: TRK1}, expect: {status: CREATED, location: BLR}}

@@ -1,0 +1,26 @@
+scenarios:
+  - name: order_flow
+    steps:
+      - {op: add_restaurant, args: {name: Dosa Hut}, bind: r}
+      - {op: add_item, args: {restaurant_id: $r.id, name: Masala Dosa, price: 120}, bind: d}
+      - {op: add_item, args: {restaurant_id: $r.id, name: Filter Coffee, price: 40.50}, bind: c}
+      - {op: add_customer, args: {name: Ann}, bind: u}
+      - {op: add_agent, args: {name: Ravi}, bind: a}
+      - {op: place_order, args: {customer_id: $u.id, restaurant_id: $r.id, items: [{item_id: $d.id, qty: 2}, {item_id: $c.id, qty: 1}]}, expect: {total: 280.5}, bind: o}
+      - {op: assign_agent, args: {order_id: $o.order_id, agent_id: $a.id}}
+      - {op: advance, args: {order_id: $o.order_id, status: DELIVERED}, expect_error: rejected}
+      - {op: advance, args: {order_id: $o.order_id, status: PREPARING}}
+      - {op: advance, args: {order_id: $o.order_id, status: PICKED_UP}}
+      - {op: advance, args: {order_id: $o.order_id, status: DELIVERED}}
+      - {op: restaurant_revenue, args: {restaurant_id: $r.id}, expect: 280.5}
+  - name: items_from_this_restaurant_only
+    steps:
+      - {op: add_restaurant, args: {name: A}, bind: ra}
+      - {op: add_restaurant, args: {name: B}, bind: rb}
+      - {op: add_item, args: {restaurant_id: $ra.id, name: Idli, price: 50}, bind: i}
+      - {op: add_item, args: {restaurant_id: $rb.id, name: Pizza, price: 300}, bind: p}
+      - {op: add_customer, args: {name: Ann}, bind: u}
+      - {op: place_order, args: {customer_id: $u.id, restaurant_id: $ra.id, items: [{item_id: $i.id, qty: 1}, {item_id: $p.id, qty: 1}]}, expect_error: rejected}
+      - {op: set_available, args: {item_id: $i.id, available: false}}
+      - {op: place_order, args: {customer_id: $u.id, restaurant_id: $ra.id, items: [{item_id: $i.id, qty: 1}]}, expect_error: rejected}
+      - {op: restaurant_revenue, args: {restaurant_id: $ra.id}, expect: 0}

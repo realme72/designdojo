@@ -1,0 +1,11 @@
+seed: |
+  insert into salaries values (1, 'X', 'x1', 100), (2, 'X', 'x2', 100), (3, 'X', 'x3', 300), (4, 'Y', 'y1', 50), (5, 'Y', 'y2', 51);
+scenarios:
+  - name: small_groups
+    steps:
+      - {op: median_by_company, args: {}, expect: [{company: X, median: 100}, {company: Y, median: 50.5}]}
+      - {op: above_median, args: {}, expect: [{company: X, employee: x3}, {company: Y, employee: y2}]}
+      - {op: percentile, args: {p: 0}, expect: 50}
+      - {op: percentile, args: {p: 1}, expect: 300}
+      - {op: percentile, args: {p: 0.25}, expect: 51}
+      - {op: salary_quartiles, args: {}, expect: [{employee: y1, quartile: 1}, {employee: y2, quartile: 1}, {employee: x1, quartile: 2}, {employee: x2, quartile: 3}, {employee: x3, quartile: 4}]}

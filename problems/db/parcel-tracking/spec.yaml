@@ -1,0 +1,8 @@
+schema: designed
+operations:
+  create_shipment: {doc: Create a shipment (status CREATED at origin)., params: {tracking_no: text, origin: text, destination: text, at: timestamptz}, returns: one, columns: [id]}
+  scan: {doc: Record a scan (allowed transitions, time never goes backwards)., params: {tracking_no: text, status: text, location: text, at: timestamptz}, returns: none}
+  track: {kind: query, doc: Full history oldest first., params: {tracking_no: text}, returns: rows, columns: [status, location, at], ordered: true}
+  current: {kind: query, doc: Latest status and location., params: {tracking_no: text}, returns: one, columns: [status, location]}
+  stuck: {kind: query, doc: Undelivered shipments with no event for more than :hours., params: {at: timestamptz, hours: int}, returns: rows, columns: [tracking_no, status], ordered: true}
+  avg_delivery_hours: {kind: query, doc: Average creation-to-delivery hours on a lane., params: {origin: text, destination: text}, returns: value}

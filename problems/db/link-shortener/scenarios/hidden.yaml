@@ -1,0 +1,23 @@
+scenarios:
+  - name: shares_and_ranking
+    steps:
+      - {op: create_link, args: {code: a, url: "https://a.test", owner: ann, created_at: "2030-01-01T00:00:00Z", expires_at: null}}
+      - {op: create_link, args: {code: b, url: "https://b.test", owner: ann, created_at: "2030-01-01T00:00:00Z", expires_at: null}}
+      - {op: create_link, args: {code: c, url: "https://c.test", owner: ann, created_at: "2030-01-01T00:00:00Z", expires_at: null}}
+      - {op: create_link, args: {code: z, url: "https://z.test", owner: bob, created_at: "2030-01-01T00:00:00Z", expires_at: null}}
+      - {op: resolve, args: {code: b, at: "2030-01-02T00:00:00Z", country: IN}}
+      - {op: resolve, args: {code: b, at: "2030-01-02T00:00:00Z", country: US}}
+      - {op: resolve, args: {code: b, at: "2030-01-02T00:00:00Z", country: IN}}
+      - {op: resolve, args: {code: a, at: "2030-01-02T00:00:00Z", country: DE}}
+      - {op: resolve, args: {code: z, at: "2030-01-02T00:00:00Z", country: DE}}
+      - {op: top_links, args: {owner: ann, n: 3}, expect: [{code: b, clicks: 3}, {code: a, clicks: 1}, {code: c, clicks: 0}]}
+      - {op: countries, args: {code: b}, expect: [{country: IN, clicks: 2, share: 66.7}, {country: US, clicks: 1, share: 33.3}]}
+  - name: validation
+    steps:
+      - {op: create_link, args: {code: a, url: "ftp://a.test", owner: ann, created_at: "2030-01-01T00:00:00Z", expires_at: null}, expect_error: rejected}
+      - {op: create_link, args: {code: a, url: "https://a.test", owner: ann, created_at: "2030-01-02T00:00:00Z", expires_at: "2030-01-01T00:00:00Z"}, expect_error: rejected}
+      - {op: create_link, args: {code: a, url: "https://a.test", owner: ann, created_at: "2030-01-01T00:00:00Z", expires_at: null}}
+      - {op: create_link, args: {code: a, url: "https://b.test", owner: bob, created_at: "2030-01-01T00:00:00Z", expires_at: null}, expect_error: unique_violation}
+      - {op: create_link, args: {code: A, url: "https://b.test", owner: bob, created_at: "2030-01-01T00:00:00Z", expires_at: null}}
+      - {op: resolve, args: {code: nope, at: "2030-01-02T00:00:00Z", country: IN}, expect_error: rejected}
+      - {op: countries, args: {code: a}, expect: []}

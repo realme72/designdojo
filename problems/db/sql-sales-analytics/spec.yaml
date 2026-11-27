@@ -1,0 +1,5 @@
+schema: provided
+operations:
+  monthly_revenue: {kind: query, doc: Revenue per month with growth vs previous month., params: {}, returns: rows, columns: [month, revenue, growth_pct], ordered: true}
+  running_total: {kind: query, doc: 12 months with running total., params: {year: int}, returns: rows, columns: [month, revenue, running], ordered: true}
+  top_customer_per_month: {kind: query, doc: Top customer by revenue per month., params: {}, returns: rows, columns: [month, customer, revenue], ordered: true}

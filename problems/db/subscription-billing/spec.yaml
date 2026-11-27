@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_plan: {doc: Create a plan., params: {code: text, monthly_price: numeric}, returns: one, columns: [id]}
+  add_customer: {doc: Create a customer., params: {email: text}, returns: one, columns: [id]}
+  subscribe: {doc: Start a subscription; no overlap with the customer's others., params: {customer_id: bigint, plan_code: text, start_at: timestamptz}, returns: one, columns: [subscription_id]}
+  cancel: {doc: End a subscription at end_at., params: {subscription_id: bigint, end_at: timestamptz}, returns: none}
+  change_plan: {doc: End the subscription at :at and start a new one on another plan at :at., params: {subscription_id: bigint, plan_code: text, at: timestamptz}, returns: one, columns: [subscription_id]}
+  bill: {doc: Invoice one monthly period (once only)., params: {subscription_id: bigint, period_start: date}, returns: one, columns: [amount]}
+  mrr: {kind: query, doc: Monthly recurring revenue at a moment., params: {at: timestamptz}, returns: value}
+  churned: {kind: query, doc: Customers who ended in the window and are not active at its end., params: {from: timestamptz, to: timestamptz}, returns: rows, columns: [email], ordered: true}

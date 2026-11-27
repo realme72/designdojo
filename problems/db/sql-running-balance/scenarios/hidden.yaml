@@ -1,0 +1,12 @@
+seed: |
+  insert into accounts values (7, 'Zed'), (8, 'Amy');
+  insert into transactions values
+    (10, 7, '2030-03-01 23:59:59Z', 10), (11, 7, '2030-03-02 00:00:00Z', -10), (12, 7, '2030-03-02 00:00:00Z', -0.01),
+    (13, 8, '2030-03-01 12:00Z', 5);
+scenarios:
+  - name: edges
+    steps:
+      - {op: daily_closing, args: {account_id: 7, from_day: "2030-02-28", to_day: "2030-03-02"}, expect: [{day: "2030-02-28", balance: 0}, {day: "2030-03-01", balance: 10}, {day: "2030-03-02", balance: -0.01}]}
+      - {op: first_overdraft, args: {}, expect: [{owner: Zed, posted_at: "2030-03-02T00:00:00+00:00"}]}
+      - {op: statement, args: {account_id: 7}, expect: [{balance: 10}, {balance: 0}, {balance: -0.01}]}
+      - {op: balance_as_of, args: {account_id: 8, at: "2030-03-01T12:00:00Z"}, expect: 5}

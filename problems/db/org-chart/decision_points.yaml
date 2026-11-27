@@ -1,0 +1,14 @@
+- id: adjacency
+  question: How is the hierarchy stored?
+  good: A nullable self-referencing manager_id FK (adjacency list), CHECK manager_id <> id, indexed for "direct reports" lookups.
+  smells: [MISSING_FK, FK_NOT_INDEXED]
+- id: cycles
+  question: How are cycles prevented?
+  good: A trigger that walks up from the new manager (WITH RECURSIVE) and rejects if it reaches the employee.
+- id: windows
+  question: How is "top n salaries per department" computed?
+  good: DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) <= n - DENSE_RANK keeps ties and counts distinct salaries.
+- id: stats
+  question: Are empty departments reported?
+  good: LEFT JOIN from departments with COUNT(e.id) and NULL-safe averages, rounded in numeric.
+  smells: [FLOAT_MONEY]

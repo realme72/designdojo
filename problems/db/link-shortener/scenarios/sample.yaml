@@ -1,0 +1,15 @@
+scenarios:
+  - name: resolve_and_expiry
+    steps:
+      - {op: create_link, args: {code: abc, url: "https://example.com/a", owner: ann, created_at: "2030-01-01T00:00:00Z", expires_at: "2030-01-03T00:00:00Z"}}
+      - {op: resolve, args: {code: abc, at: "2030-01-01T10:00:00Z", country: IN}, expect: {url: "https://example.com/a"}}
+      - {op: resolve, args: {code: ABC, at: "2030-01-01T10:00:00Z", country: IN}, expect_error: rejected}
+      - {op: resolve, args: {code: abc, at: "2030-01-03T00:00:00Z", country: IN}, expect_error: rejected}
+      - {op: top_links, args: {owner: ann, n: 5}, expect: [{code: abc, clicks: 1}]}
+  - name: daily_series
+    steps:
+      - {op: create_link, args: {code: x, url: "http://x.test", owner: ann, created_at: "2030-01-01T00:00:00Z", expires_at: null}}
+      - {op: resolve, args: {code: x, at: "2030-01-01T23:59:00Z", country: IN}}
+      - {op: resolve, args: {code: x, at: "2030-01-03T00:01:00Z", country: US}}
+      - {op: resolve, args: {code: x, at: "2030-01-03T05:00:00Z", country: IN}}
+      - {op: daily_clicks, args: {code: x, from_day: "2030-01-01", to_day: "2030-01-04"}, expect: [{day: "2030-01-01", clicks: 1}, {day: "2030-01-02", clicks: 0}, {day: "2030-01-03", clicks: 2}, {day: "2030-01-04", clicks: 0}]}

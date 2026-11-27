@@ -1,0 +1,14 @@
+- id: stock_rows
+  question: How is current stock stored?
+  good: stock(warehouse_id, product_id) composite PK with qty CHECK (qty >= 0), changed atomically (UPDATE qty = qty - n) in the same transaction as the movement rows.
+  smells: [NO_PRIMARY_KEY, NO_DOMAIN_CHECK]
+- id: movements
+  question: How is history kept consistent with stock?
+  good: Append-only movements with signed quantity and a constrained reason; stock = sum(movements) is an invariant (written together, verifiable).
+  smells: [UNCONSTRAINED_STATUS]
+- id: transfer
+  question: How is a transfer made atomic?
+  good: One statement/transaction updating both stock rows and inserting both movements; CHECK rejects the whole thing if the source goes negative.
+- id: reports
+  question: Are the reports complete?
+  good: LEFT JOIN products to stock so never-stocked products appear with 0; COALESCE sums.

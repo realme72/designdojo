@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: How do you pivot sales into one column per quarter in Postgres without a PIVOT keyword?
+  points:
+    - text: Conditional aggregation - SUM(...) FILTER (WHERE quarter = n) or SUM(CASE WHEN ... THEN amount END).
+      keywords: [filter, case when, conditional aggregation, sum]
+    - text: COALESCE to show 0 instead of NULL for empty quarters.
+      keywords: [coalesce, zero, null]
+    - text: crosstab (tablefunc) exists but needs fixed columns too.
+      keywords: [crosstab, tablefunc]
+  follow_up: The columns must be dynamic (one per product). What are your options?
+- id: rollup
+  stage: design
+  question: How do you add subtotals and a grand total in a single query?
+  points:
+    - text: GROUP BY ROLLUP (region, product) - or GROUPING SETS ((region, product), (region), ()).
+      keywords: [rollup, grouping sets, cube]
+    - text: GROUPING(col) distinguishes subtotal NULLs from real NULL values.
+      keywords: [grouping(, distinguish, real null]
+    - text: Order so subtotals follow their details (NULLS LAST).
+      keywords: [nulls last, order, subtotal after]
+  follow_up: When would you use CUBE instead of ROLLUP?

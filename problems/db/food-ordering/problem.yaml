@@ -1,0 +1,8 @@
+id: food-ordering
+title: Food Ordering (Swiggy)
+difficulty: hard
+category: Commerce & payments
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [composite-fk, state-machine, partial-unique-index, price-snapshot]

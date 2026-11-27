@@ -1,5 +1,5 @@
 import Editor, { type OnMount } from '@monaco-editor/react'
-import { Loader2, Lock, Play, Send, Sparkles, X, Zap } from 'lucide-react'
+import { Loader2, Lock, Network, Play, Send, Sparkles, Workflow, X, Zap } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import { Group, Panel, Separator } from 'react-resizable-panels'
@@ -9,6 +9,9 @@ import {
   EXT,
   LANG_LABEL,
   rememberLang,
+  TRACK_TITLE,
+  wsHash,
+  type Track,
   type CurveballInfo,
   type Analysis,
   type CoachStatus,
@@ -20,6 +23,9 @@ import {
 } from '../api'
 import Brand from '../components/Brand'
 import DesignPanel from '../components/DesignPanel'
+import InterviewQuestions from '../components/InterviewQuestions'
+import QueryFlow from '../components/QueryFlow'
+import SchemaView from '../components/SchemaView'
 import FileTree from '../components/FileTree'
 import ResultsPanel from '../components/ResultsPanel'
 import Timer, { interviewStart } from '../components/Timer'
@@ -57,7 +63,7 @@ function ago(ts: number) {
   return new Date(ts * 1000).toLocaleDateString()
 }
 
-export default function WorkspacePage({ problemId, lang }: { problemId: string; lang: Lang }) {
+export default function WorkspacePage({ track, problemId, lang }: { track: Track; problemId: string; lang: Lang }) {
   const [problem, setProblem] = useState<ProblemDetail | null>(null)
   const [files, setFiles] = useState<Files>({})
   const [tabs, setTabs] = useState<string[]>([])
@@ -68,8 +74,9 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
   const [elapsed, setElapsed] = useState(0)
   const [entry, setEntry] = useState<RunEntry | null>(null)
   const [history, setHistory] = useState<RunEntry[]>([])
-  const [leftTab, setLeftTab] = useState<'problem' | 'history'>('problem')
-  const [bottomTab, setBottomTab] = useState<'tests' | 'review'>('tests')
+  const [leftTab, setLeftTab] = useState<'problem' | 'questions' | 'history'>('problem')
+  const [qCount, setQCount] = useState<[number, number] | null>(null)
+  const [bottomTab, setBottomTab] = useState<'tests' | 'review' | 'flow' | 'schema'>('tests')
   const [toast, setToast] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [curveballs, setCurveballs] = useState<{ level: number; total: number; list: CurveballInfo[] }>({
@@ -78,6 +85,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     list: [],
   })
   const [unlocking, setUnlocking] = useState(false)
+  const onQCount = useCallback((a: number, t: number) => setQCount([a, t]), [])
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
@@ -423,7 +431,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
   const switchLang = async (l: Lang) => {
     if (l === lang) return
     await flushAll()
-    window.location.hash = `#/p/${problemId}/${l}`
+    window.location.hash = wsHash(track, problemId, l)
   }
 
   // ---------------------------------------------------------------- render
@@ -440,7 +448,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     return (
       <div className="loading">
         <div className="banner bad">
-          Could not open workspace: {loadError} · <a href="#/">back</a>
+          Could not open workspace: {loadError} · <a href={`#/${track}`}>back</a>
         </div>
       </div>
     )
@@ -451,6 +459,8 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
     <div className="ws">
       <header className="topbar">
         <Brand />
+        <span className="crumb-sep">/</span>
+        <a className="crumb" href={`#/${track}`}>{TRACK_TITLE[track]}</a>
         <span className="crumb-sep">/</span>
         <span className="title">{problem.title}</span>
         {problem.difficulty && <span className={`pill ${problem.difficulty}`}>{problem.difficulty}</span>}
@@ -470,14 +480,20 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
             )}
           </span>
         )}
-        <select className="lang-select" value={lang} onChange={(e) => switchLang(e.target.value as Lang)}
-                aria-label="Language">
-          {problem.langs.map((l) => (
-            <option key={l} value={l}>
-              {LANG_LABEL[l]}
-            </option>
-          ))}
-        </select>
+        {problem.langs.length > 1 ? (
+          <select className="lang-select" value={lang} onChange={(e) => switchLang(e.target.value as Lang)}
+                  aria-label="Language">
+            {problem.langs.map((l) => (
+              <option key={l} value={l}>
+                {LANG_LABEL[l]}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="engine-badge" title="Your schema and SQL run on a real PostgreSQL 17">
+            {lang === 'sql' ? 'PostgreSQL 17' : LANG_LABEL[lang]}
+          </span>
+        )}
         {problem.time_limit_min && (
           <Timer problemId={problemId} limitMin={problem.time_limit_min} onChange={setTimerStart} />
         )}
@@ -497,12 +513,23 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                 <button className={leftTab === 'problem' ? 'on' : ''} onClick={() => setLeftTab('problem')}>
                   Problem
                 </button>
+                {lang === 'sql' && (
+                  <button className={leftTab === 'questions' ? 'on' : ''} onClick={() => setLeftTab('questions')}>
+                    Interview questions
+                    {qCount && <span className="tab-badge">{qCount[0]}/{qCount[1]}</span>}
+                  </button>
+                )}
                 <button className={leftTab === 'history' ? 'on' : ''} onClick={() => setLeftTab('history')}>
                   History {history.length > 0 && <span className="tab-badge">{history.length}</span>}
                 </button>
               </div>
               <div className="pane-scroll">
-                {leftTab === 'problem' ? (
+                {lang === 'sql' && (
+                  <div style={{ display: leftTab === 'questions' ? 'block' : 'none' }}>
+                    <InterviewQuestions problemId={problemId} lang={lang} onCount={onQCount} />
+                  </div>
+                )}
+                {leftTab === 'questions' ? null : leftTab === 'problem' ? (
                   <div className="markdown">
                     <Markdown remarkPlugins={[remarkGfm]}>{problem.statement}</Markdown>
                     {curveballs.list.map((c) => (
@@ -580,7 +607,10 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                       </div>
                       {current && !current.editable && (
                         <div className="readonly-bar">
-                          <Lock size={12} /> Generated from the problem contract. Read-only; the judge calls only this API.
+                          <Lock size={12} />{' '}
+                          {lang === 'sql'
+                            ? 'Given by the problem. Read-only.'
+                            : 'Generated from the problem contract. Read-only; the judge calls only this API.'}
                         </div>
                       )}
                       <div className="editor-host">
@@ -598,7 +628,7 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                               fontFamily: "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace",
                               minimap: { enabled: false },
                               scrollBeyondLastLine: false,
-                              tabSize: 4,
+                              tabSize: lang === 'sql' ? 2 : 4,
                               automaticLayout: true,
                               padding: { top: 10 },
                               renderLineHighlight: 'line',
@@ -626,9 +656,28 @@ export default function WorkspacePage({ problemId, lang }: { problemId: string; 
                         <span className="tab-badge">{analysis.smells.filter((s) => s.level === 'warning').length}</span>
                       )}
                     </button>
+                    {lang === 'sql' && (
+                      <button className={bottomTab === 'schema' ? 'on' : ''} onClick={() => setBottomTab('schema')}>
+                        <Network size={13} /> Schema
+                      </button>
+                    )}
+                    {lang === 'sql' && (
+                      <button className={bottomTab === 'flow' ? 'on' : ''} onClick={() => setBottomTab('flow')}>
+                        <Workflow size={13} /> Query flow
+                      </button>
+                    )}
                   </div>
                   <div className="pane-scroll">
-                    {bottomTab === 'tests' ? (
+                    {bottomTab === 'schema' ? (
+                      <SchemaView
+                        problemId={problemId}
+                        lang={lang}
+                        dark={dark}
+                        schemaVersion={(files['solution/schema.sql'] ?? files['contract/schema.sql'])?.saved ?? ''}
+                      />
+                    ) : bottomTab === 'flow' ? (
+                      <QueryFlow problemId={problemId} lang={lang} entry={entry} dark={dark} running={!!running} />
+                    ) : bottomTab === 'tests' ? (
                       <ResultsPanel
                         entry={entry}
                         running={running}

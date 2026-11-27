@@ -27,7 +27,7 @@ from .results import public_view, totals
 WORK_DIR = Path(os.environ.get("DOJO_WORK_DIR", REPO_ROOT / "work"))
 WEB_DIST = REPO_ROOT / "web" / "dist"
 HISTORY_FILE = ".dojo-history.jsonl"
-EXTENSIONS = {"java": ".java", "python": ".py"}
+EXTENSIONS = {"java": ".java", "python": ".py", "sql": ".sql"}
 MAX_FILE_BYTES = 200_000
 MODES = ("run", "submit")
 
@@ -51,7 +51,7 @@ def _problem(problem_id: str):
 
 
 def _lang(lang: str) -> str:
-    if lang not in codegen.LANGS:
+    if lang not in EXTENSIONS:
         raise HTTPException(404, f"unsupported language {lang!r}")
     return lang
 
@@ -59,7 +59,13 @@ def _lang(lang: str) -> str:
 def _workspace(problem_id: str, lang: str) -> Workspace:
     """Open the workspace, scaffolding it on first use; always refresh the generated contract."""
     problem, lang = _problem(problem_id), _lang(lang)
-    root = WORK_DIR / f"{problem.id}-{lang}"
+    if lang not in problem.langs:
+        raise HTTPException(404, f"{problem.id} is solved in {', '.join(problem.langs)}")
+    root = WORK_DIR / problem.track / f"{problem.id}-{lang}"
+    legacy = WORK_DIR / f"{problem.id}-{lang}"  # before tracks: work/<id>-<lang>
+    if legacy.is_dir() and not root.exists():
+        root.parent.mkdir(parents=True, exist_ok=True)
+        legacy.rename(root)
     scaffold(problem, lang, root)  # idempotent: rewrites contract/, keeps existing solution files
     return Workspace.open(root)
 
@@ -94,8 +100,19 @@ def _files(ws: Workspace) -> list[dict]:
 # ------------------------------------------------------------------ problems
 
 
+@app.get("/api/tracks")
+def tracks():
+    from .problems import TRACKS
+
+    return [{"id": t, **info, "count": len(list_problems(t))} for t, info in TRACKS.items()]
+
+
 @app.get("/api/problems")
-def problems():
+def problems(track: str | None = None):
+    from .problems import TRACKS
+
+    if track is not None and track not in TRACKS:
+        raise HTTPException(404, f"unknown track {track!r}")
     return [
         {
             "id": p.id,
@@ -104,9 +121,14 @@ def problems():
             "category": p.meta.get("category", "Other"),
             "time_limit_min": p.meta.get("time_limit_min"),
             "tags": p.meta.get("tags", []),
-            "started": [lang for lang in codegen.LANGS if (WORK_DIR / f"{p.id}-{lang}" / ".dojo.json").exists()],
+            "track": p.track,
+            "kind": p.kind,
+            "langs": list(p.langs),
+            "started": [lang for lang in p.langs
+                        if (WORK_DIR / p.track / f"{p.id}-{lang}" / ".dojo.json").exists()
+                        or (WORK_DIR / f"{p.id}-{lang}" / ".dojo.json").exists()],
         }
-        for p in list_problems()
+        for p in list_problems(track)
     ]
 
 
@@ -120,7 +142,9 @@ def problem(problem_id: str):
         "time_limit_min": p.meta.get("time_limit_min"),
         "tags": p.meta.get("tags", []),
         "statement": p.statement,
-        "langs": list(codegen.LANGS),
+        "track": p.track,
+        "kind": p.kind,
+        "langs": list(p.langs),
     }
 
 
@@ -144,7 +168,12 @@ class PathBody(BaseModel):
 @app.get("/api/ws/{problem_id}/{lang}")
 def workspace(problem_id: str, lang: str):
     ws = _workspace(problem_id, lang)
-    entry = "solution/Solution.java" if lang == "java" else "solution/__init__.py"
+    if ws.problem.kind == "sql":
+        from .sql.scaffold import entry_file
+
+        entry = entry_file(ws.problem.sql_spec)
+    else:
+        entry = "solution/Solution.java" if lang == "java" else "solution/__init__.py"
     return {
         "root": str(ws.root), "entry": entry, "files": _files(ws),
         "level": ws.level, "curveballs_total": len(ws.problem.curveballs),
@@ -276,6 +305,81 @@ def run_judge(problem_id: str, lang: str, body: JudgeBody):
     with (ws.root / HISTORY_FILE).open("a") as f:
         f.write(json.dumps(entry) + "\n")
     return entry
+
+
+class AnswersBody(BaseModel):
+    answers: dict[str, str]
+
+
+def _sql_ws(problem_id: str, lang: str) -> Workspace:
+    ws = _workspace(problem_id, lang)
+    if ws.problem.kind != "sql":
+        raise HTTPException(404, "interview questions are part of the database-design track")
+    return ws
+
+
+@app.get("/api/ws/{problem_id}/{lang}/questions")
+def questions(problem_id: str, lang: str):
+    from .sql.questions import public_questions, read_answers
+
+    ws = _sql_ws(problem_id, lang)
+    return {"questions": public_questions(ws.problem), "answers": read_answers(ws.root)}
+
+
+@app.put("/api/ws/{problem_id}/{lang}/answers")
+def save_answers_api(problem_id: str, lang: str, body: AnswersBody):
+    from .sql.questions import load_questions, save_answers
+
+    ws = _sql_ws(problem_id, lang)
+    known = {q["id"] for q in load_questions(ws.problem)}
+    save_answers(ws.root, {k: v for k, v in body.answers.items() if k in known})
+    return {"ok": True}
+
+
+class GradeBody(BaseModel):
+    force: bool = False
+
+
+@app.post("/api/ws/{problem_id}/{lang}/answers/grade")
+def grade_answers(problem_id: str, lang: str, body: GradeBody):
+    from .sql.questions import grade
+
+    ws = _sql_ws(problem_id, lang)
+    lock = _lock(ws)
+    if not lock.acquire(blocking=False):
+        raise HTTPException(409, "something else is running for this workspace")
+    try:
+        return grade(ws, force=body.force)
+    finally:
+        lock.release()
+
+
+class ConsoleBody(BaseModel):
+    sql: str
+    scenario: str | None = None
+
+
+@app.get("/api/ws/{problem_id}/{lang}/console")
+def console_info(problem_id: str, lang: str):
+    from .sql.console import scenarios
+
+    ws = _workspace(problem_id, lang)
+    if ws.problem.kind != "sql":
+        raise HTTPException(404, "the SQL console is for database-design problems")
+    return {"scenarios": scenarios(ws)}
+
+
+@app.post("/api/ws/{problem_id}/{lang}/console")
+def console_run(problem_id: str, lang: str, body: ConsoleBody):
+    from .sql.console import run_console
+
+    ws = _workspace(problem_id, lang)
+    if ws.problem.kind != "sql":
+        raise HTTPException(404, "the SQL console is for database-design problems")
+    try:
+        return run_console(ws, body.sql, body.scenario)
+    except JudgeError as e:
+        raise HTTPException(500, str(e)) from None
 
 
 @app.get("/api/ws/{problem_id}/{lang}/history")

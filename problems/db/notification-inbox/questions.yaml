@@ -1,0 +1,48 @@
+- id: storage_choice
+  stage: before
+  question: Where would you store in-app notifications for 100 million users, and why?
+  points:
+    - text: Notifications are append-heavy, per-user, read newest-first - a natural fit for a store partitioned by user (Cassandra/DynamoDB) at large scale.
+      keywords: [partition, by user, cassandra, dynamo, wide-column, append]
+    - text: A relational database with an index on (user, created_at) works well at moderate scale and gives uniqueness/idempotency easily.
+      keywords: [relational, postgres, index, unique, moderate]
+    - text: Old notifications can expire (TTL/partition dropping) - nobody reads year-old notifications.
+      keywords: [ttl, expire, retention, drop partition, archive]
+    - text: Delivery (push, email) goes through queues; storage is just the inbox.
+      keywords: [queue, push, kafka, delivery, worker]
+  follow_up: How would you partition the table so deleting notifications older than 90 days is instant?
+- id: idempotency
+  stage: design
+  question: The producer retries after a timeout, so the same notification may arrive twice. How do you make sure the user sees it once?
+  points:
+    - text: Every notification carries an idempotency key from the producer.
+      keywords: [idempotency key, key, dedup id, request id, unique key]
+    - text: A unique constraint on (user, key) and INSERT ... ON CONFLICT DO NOTHING.
+      keywords: [unique, on conflict, constraint]
+    - text: Return the existing row on conflict, so the retry gets the same id (idempotent response).
+      keywords: [return existing, same id, idempotent response, select existing]
+    - text: Checking "does it exist?" first is a race between two concurrent retries.
+      keywords: [race, check-then, concurren]
+  follow_up: How long do you keep keys, and what happens if a retry arrives after you cleaned them up?
+- id: fanout
+  stage: after
+  question: A system announcement goes to 50 million users. Insert 50 million rows?
+  points:
+    - text: Fan-out on write for broadcasts is expensive; store the broadcast once and merge it at read time (fan-out on read).
+      keywords: [fan-out on read, broadcast table, store once, merge at read, pull]
+    - text: Track per-user read state only for broadcasts the user has seen (or a "seen up to" watermark).
+      keywords: [watermark, read state, seen up to, per-user]
+    - text: If fan-out on write is needed, do it asynchronously in batches via a queue.
+      keywords: [queue, batch, async, background]
+  follow_up: Users can delete a broadcast from their own inbox. Where does that live?
+- id: unread_count
+  stage: design
+  question: The bell icon shows the unread count on every page load. How do you make that cheap?
+  points:
+    - text: A partial index on the user's unread notifications (WHERE read_at IS NULL) makes COUNT an index-only scan.
+      keywords: [partial index, where read_at is null, index-only, unread index]
+    - text: Or a maintained unread counter per user, updated with inserts and reads.
+      keywords: [counter, maintained, denormal]
+    - text: Cache the count and accept slight staleness.
+      keywords: [cache, stale, redis]
+  follow_up: "Mark-all-read on 10,000 unread rows: what does that cost, and how can it be cheaper?"

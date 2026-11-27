@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: How would you compute a view -> cart -> purchase funnel where order matters?
+  points:
+    - text: Work per user - find each user's first view, then the first cart at/after it, then a purchase at/after that.
+      keywords: [per user, first view, at or after, sequence, order]
+    - text: Counting users with each event type independently overcounts (a purchase without a prior view).
+      keywords: [overcount, independent, without prior]
+    - text: Conditional aggregation (MIN(at) FILTER (WHERE type = ...)) or self-joins per step.
+      keywords: [filter, conditional aggregation, min, self-join]
+  follow_up: Funnels must be within 24 hours of the first view. What changes?
+- id: scale
+  stage: after
+  question: The events table has 5 billion rows. How do you run funnels interactively?
+  points:
+    - text: A columnar analytics store (ClickHouse/BigQuery) partitioned by date - not the OLTP database.
+      keywords: [columnar, clickhouse, bigquery, warehouse, olap, partition]
+    - text: Pre-aggregate per user per day, or use specialized funnel functions (windowFunnel).
+      keywords: [pre-aggregate, rollup, windowfunnel, per day]
+    - text: Sampling users gives fast approximate answers.
+      keywords: [sampl, approximate]
+  follow_up: How do you keep the funnel consistent when events arrive late?

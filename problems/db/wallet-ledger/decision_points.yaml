@@ -1,0 +1,13 @@
+- id: double_entry
+  question: How is "money is never created or lost" guaranteed?
+  good: Transactions with entries that sum to zero, enforced by a DEFERRABLE constraint trigger checked at commit (or written together in one statement and verified); an external/system account for money entering.
+- id: no_overdraft
+  question: How is the balance kept non-negative under concurrency?
+  good: A balances row per account with CHECK (balance >= 0) updated atomically (balance = balance - x) in the same transaction as the entries - the row lock serializes concurrent debits; or SELECT ... FOR UPDATE.
+- id: idempotency
+  question: How are retries made safe?
+  good: UNIQUE idempotency key on transactions; INSERT ... ON CONFLICT DO NOTHING and only post entries when the insert happened; return the existing txn otherwise.
+- id: append_only
+  question: How is history protected?
+  good: No UPDATE/DELETE on entries (revoke, or a trigger that rejects them); corrections are new reversing transactions. numeric money, never float.
+  smells: [FLOAT_MONEY]

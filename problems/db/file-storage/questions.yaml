@@ -1,0 +1,35 @@
+- id: storage_choice
+  stage: before
+  question: Where would you store file contents, the folder tree and permissions for a Drive-like product?
+  points:
+    - text: File bytes in object storage (S3/GCS), chunked and deduplicated by hash; the database stores metadata and pointers.
+      keywords: [object storage, s3, gcs, blob, chunk, hash, metadata]
+    - text: The folder tree and sharing are relational metadata with integrity rules.
+      keywords: [relational, metadata, tree, integrity]
+    - text: Permission checks are hot - cached or served by a dedicated authorization system (Zanzibar-style).
+      keywords: [cache, zanzibar, authorization, acl]
+  follow_up: A user uploads a 10 GB file over a flaky connection. What does the metadata need to support resumable uploads?
+- id: tree_model
+  stage: design
+  question: Adjacency list, materialized path, nested sets or closure table for the folder tree? Why?
+  points:
+    - text: Adjacency list (parent_id) - simple writes and moves; subtree queries need recursion.
+      keywords: [adjacency, parent_id, simple, recursive]
+    - text: Materialized path / ltree - fast subtree reads, but a move rewrites every descendant's path.
+      keywords: [materialized path, ltree, rewrite, descendants]
+    - text: Closure table - fast ancestor/descendant queries, more storage and maintenance on moves.
+      keywords: [closure table, ancestor, descendant, maintenance]
+    - text: Nested sets are bad for frequent writes.
+      keywords: [nested set, writes]
+  follow_up: Users move big folders often. Which model hurts most, and why?
+- id: inherited_acl
+  stage: design
+  question: Sharing a folder must grant access to everything inside it. How do you check "can user X view file Y"?
+  points:
+    - text: Walk up the file's ancestor folders and check for a share (or ownership) on any of them.
+      keywords: [ancestor, walk up, recursive, share on any]
+    - text: Precompute effective access (closure table or denormalized ACL) when reads dominate.
+      keywords: [precompute, closure, denormal, effective]
+    - text: Revocation must invalidate any caches.
+      keywords: [revoke, invalidate, cache]
+  follow_up: How do you list "everything shared with me" efficiently?

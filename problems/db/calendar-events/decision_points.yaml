@@ -1,0 +1,10 @@
+- id: attendees
+  question: How are invitations stored?
+  good: attendees(event_id, user_id, response) - a many-to-many with attributes, composite PK, response CHECK.
+  smells: [NO_PRIMARY_KEY, UNCONSTRAINED_STATUS]
+- id: respond_invited_only
+  question: How is "only invited users respond" enforced?
+  good: respond is an UPDATE of the existing attendee row; zero rows updated means not invited (or a FK from responses to attendees).
+- id: overlap_query
+  question: How are conflicts found?
+  good: Self-join of the user's accepted events on overlapping ranges with a.id < b.id ordering to avoid duplicates; index on (starts_at) / range.

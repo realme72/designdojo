@@ -1,0 +1,4 @@
+schema: provided
+operations:
+  cancellation_rate: {kind: query, doc: Daily cancellation rate excluding banned users., params: {from_day: date, to_day: date}, returns: rows, columns: [day, rate], ordered: true}
+  worst_drivers: {kind: query, doc: Drivers by how often they cancel., params: {min_trips: int}, returns: rows, columns: [driver_id, cancel_rate], ordered: true}

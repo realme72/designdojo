@@ -1,0 +1,14 @@
+- id: idempotency
+  question: How are producer retries deduplicated?
+  good: UNIQUE (user_id, idempotency_key) with INSERT ... ON CONFLICT DO NOTHING, then select the existing row - atomic, race-free.
+- id: types
+  question: How is the set of types constrained?
+  good: A CHECK, an enum, or a notification_types lookup table that mutes also reference.
+  smells: [UNCONSTRAINED_STATUS]
+- id: unread
+  question: How is the unread count kept cheap?
+  good: A partial index WHERE read_at IS NULL (or a counter); read state as a nullable read_at timestamp.
+- id: mutes
+  question: How are mutes stored?
+  good: mutes(user_id, type) composite PK; notify checks it in the same statement.
+  smells: [NO_PRIMARY_KEY]

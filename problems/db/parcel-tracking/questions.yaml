@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Billions of scan events per year - where do they go, and how do customers' "where is my parcel" lookups stay fast?
+  points:
+    - text: Scans are an append-only event stream - partitioned tables by time, or a wide-column/time-series store.
+      keywords: [append, event, partition, time, cassandra, time-series]
+    - text: Keep the current status per shipment as a small, indexed (or cached) record for fast lookups.
+      keywords: [current status, cache, materialized, latest, snapshot]
+    - text: Old events move to cheaper storage after delivery (archival).
+      keywords: [archive, cold storage, retention, ttl]
+  follow_up: How would you partition the events table so queries on recent shipments stay fast?
+- id: event_sourcing
+  stage: design
+  question: Store only the current status on the shipment, or a history of events? Why?
+  points:
+    - text: An event history gives the full timeline, audit trail, and lets you recompute state.
+      keywords: [history, timeline, audit, recompute, event sourcing]
+    - text: The current status is derived from the latest event (or cached alongside, updated in the same transaction).
+      keywords: [derived, latest event, cache, same transaction]
+    - text: Validation of a new event depends on the previous one (state machine and time order).
+      keywords: [previous, state machine, transition, order]
+  follow_up: A scanner was offline and uploads 20 scans an hour late, out of order. What does your rule do?
+- id: latest_per_group
+  stage: after
+  question: How do you get each shipment's latest event efficiently in SQL?
+  points:
+    - text: DISTINCT ON (shipment) ORDER BY shipment, at DESC (Postgres) or ROW_NUMBER() OVER (PARTITION BY shipment ORDER BY at DESC) = 1.
+      keywords: [distinct on, row_number, window, partition by]
+    - text: An index on (shipment_id, at DESC) makes it cheap per shipment.
+      keywords: [index, (shipment_id, at)]
+    - text: For dashboards over all shipments, a cached current_status column avoids scanning events.
+      keywords: [cached, current_status, column, denormal]
+  follow_up: Which of those breaks ties if two scans have the same timestamp?

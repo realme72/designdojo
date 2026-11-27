@@ -1,0 +1,14 @@
+- id: isolation
+  question: How is cross-tenant referencing made impossible?
+  good: Every tenant-owned table carries tenant_id, has UNIQUE (tenant_id, id), and references others with composite FKs (tenant_id, x_id) - the database rejects cross-tenant links. Row-level security can add read isolation.
+  smells: [MISSING_FK]
+- id: per_tenant_unique
+  question: How are per-tenant uniqueness rules expressed?
+  good: UNIQUE (tenant_id, email) and UNIQUE (tenant_id, name) - not global UNIQUE.
+- id: plan_limit
+  question: How is the FREE plan limit enforced under concurrency?
+  good: A trigger that locks the tenant row (FOR UPDATE) then counts projects, or a project counter on the tenant with CHECK tied to plan.
+- id: plans
+  question: How is the plan constrained?
+  good: CHECK (plan IN ('FREE', 'PRO')) or a plans table with limits as data.
+  smells: [UNCONSTRAINED_STATUS]

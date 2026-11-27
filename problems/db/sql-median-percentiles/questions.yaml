@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: How do you compute a median in SQL, and what's the difference between percentile_cont and percentile_disc?
+  points:
+    - text: percentile_cont(0.5) WITHIN GROUP (ORDER BY x) interpolates - average of the two middle values for even counts.
+      keywords: [percentile_cont, interpolat, average, within group]
+    - text: percentile_disc returns an actual value from the data (the lower middle).
+      keywords: [percentile_disc, actual value, lower]
+    - text: Without those, use ROW_NUMBER and COUNT to pick the middle row(s) and average them.
+      keywords: [row_number, count, middle, average]
+  follow_up: Why might you prefer the median over the average for salaries?
+- id: scale
+  stage: after
+  question: Exact percentiles over billions of rows are expensive. What do analytics systems do?
+  points:
+    - text: Approximate quantile sketches (t-digest, KLL, HDR histograms) with bounded error.
+      keywords: [t-digest, sketch, approximate, kll, hdr, histogram]
+    - text: Sketches merge across partitions/time windows, so they can be precomputed.
+      keywords: [merge, precompute, partition, mergeable]
+    - text: Exact percentiles need a full sort or selection per group.
+      keywords: [sort, exact, selection]
+  follow_up: Your p99 latency dashboard shows the average of per-minute p99s. Why is that wrong?

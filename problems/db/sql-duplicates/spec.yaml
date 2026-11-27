@@ -1,0 +1,6 @@
+schema: provided
+operations:
+  duplicate_groups: {kind: query, doc: Normalized emails with more than one row., params: {}, returns: rows, columns: [email, copies], ordered: true}
+  rows_to_delete: {kind: query, doc: All but the earliest row per normalized email., params: {}, returns: rows, columns: [id], ordered: true}
+  dedupe: {doc: Delete the duplicates and return their ids., params: {}, returns: rows, columns: [id], ordered: true}
+  remaining: {kind: query, doc: Rows left., params: {}, returns: value}

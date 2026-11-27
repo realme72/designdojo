@@ -1,0 +1,8 @@
+id: microblog
+title: Microblog (Twitter)
+difficulty: medium
+category: Social & content
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [m2m-tags, retweets, self-reference, regex, top-n]

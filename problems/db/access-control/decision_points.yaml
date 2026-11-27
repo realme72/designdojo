@@ -1,0 +1,14 @@
+- id: junctions
+  question: How are the many-to-many relationships stored?
+  good: user_roles, role_permissions and role_parents junction tables with composite primary keys and FKs.
+  smells: [NO_PRIMARY_KEY, MISSING_FK]
+- id: hierarchy
+  question: How is inheritance resolved?
+  good: WITH RECURSIVE from the user's roles up through role_parents (UNION to dedupe), then join role_permissions.
+- id: cycles
+  question: How are cycles prevented?
+  good: A trigger on role_parents that walks up from the parent (recursive CTE) and rejects if it reaches the child; CHECK role_id <> parent_id.
+- id: natural_keys
+  question: Which natural keys are unique?
+  good: UNIQUE role name and UNIQUE (resource, action).
+  smells: [NO_NATURAL_KEY]

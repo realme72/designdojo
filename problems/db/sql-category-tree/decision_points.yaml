@@ -1,0 +1,7 @@
+- id: recursion
+  question: How are ancestors and descendants traversed?
+  good: WITH RECURSIVE - upward for paths (accumulating names), downward for subtrees; a sort path array for depth-first output.
+- id: leaves
+  question: How are leaves found?
+  good: NOT EXISTS (child with parent_id = c.id) - avoid NOT IN on a nullable parent_id column (it returns nothing).
+  smells: [NOT_IN_SUBQUERY]

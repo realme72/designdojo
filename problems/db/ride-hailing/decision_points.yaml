@@ -1,0 +1,13 @@
+- id: one_active
+  question: How are "one active trip per driver/rider" enforced?
+  good: Partial unique indexes on trips (driver_id) and (rider_id) WHERE status = 'ACCEPTED'.
+- id: dispatch
+  question: How is the nearest driver picked without two riders getting the same driver?
+  good: ORDER BY distance LIMIT 1 FOR UPDATE SKIP LOCKED over online, free drivers of the class; the partial unique index is the safety net. At scale, geospatial index (PostGIS/geohash) instead of scanning.
+- id: fares
+  question: Where do fare rules live?
+  good: A vehicle_classes table (base, per_km) referenced by drivers and trips; fare stored on the trip.
+  smells: [UNCONSTRAINED_STATUS, FLOAT_MONEY]
+- id: locations
+  question: How is location stored?
+  good: On the driver row (latest only) or a separate driver_locations table; history goes elsewhere (time-series).

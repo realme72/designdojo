@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: Walk through the query for daily cancellation rate excluding banned users. Where can it go wrong?
+  points:
+    - text: Join trips to users twice - once for the client, once for the driver - both unbanned.
+      keywords: [join twice, two joins, client, driver, alias]
+    - text: Filter before grouping by day; count cancelled with a conditional (FILTER/CASE) over all counted trips.
+      keywords: [filter, case, conditional, group by day]
+    - text: Integer division truncates - cast to numeric before dividing, then round.
+      keywords: [integer division, cast, numeric, round]
+  follow_up: Why might joining users only once (on client) give a wrong answer?
+- id: indexes
+  stage: after
+  question: Which indexes make this fast on 100 million trips?
+  points:
+    - text: An index on trips(request_at) for the date range.
+      keywords: [request_at, date, range, index]
+    - text: Users are joined by primary key; a partial index or small banned-user set helps exclusion.
+      keywords: [primary key, banned, partial]
+    - text: For dashboards, precompute daily aggregates.
+      keywords: [precompute, rollup, daily]
+  follow_up: Would you partition trips? By what?

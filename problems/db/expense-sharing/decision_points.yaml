@@ -1,0 +1,14 @@
+- id: membership_fk
+  question: How is "only group members take part" enforced?
+  good: Composite FKs (group_id, user_id) REFERENCES members for the payer, shares (via the expense's group) and settlements.
+  smells: [MISSING_FK]
+- id: shares_sum
+  question: How do you guarantee shares add up to the amount?
+  good: A deferred constraint trigger summing shares per expense at commit, or computing and validating in one statement; money in numeric.
+  smells: [FLOAT_MONEY]
+- id: rounding
+  question: How are equal splits rounded?
+  good: Work in integer cents - base = cents / n, the first cents % n participants get one extra cent - so shares sum exactly.
+- id: balances
+  question: How are balances derived?
+  good: From expenses, shares and settlements with separate aggregates (no join fan-out), LEFT JOIN so members with no activity show 0.

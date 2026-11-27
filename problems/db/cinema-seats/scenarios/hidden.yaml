@@ -1,0 +1,25 @@
+scenarios:
+  - name: wrong_screen_and_unknown_seats
+    steps:
+      - {op: add_screen, args: {name: Small, rows: 1, seats_per_row: 2}, bind: small}
+      - {op: add_screen, args: {name: Big, rows: 2, seats_per_row: 5}, bind: big}
+      - {op: add_show, args: {screen_id: $small.id, movie: Dune, starts_at: "2030-01-01T18:00:00Z", ends_at: "2030-01-01T21:00:00Z"}, bind: sh}
+      - {op: book, args: {show_id: $sh.id, customer: ann, seats: [B5]}, expect_error: rejected}
+      - {op: book, args: {show_id: $sh.id, customer: ann, seats: [A1, Z9]}, expect_error: rejected}
+      - {op: book, args: {show_id: $sh.id, customer: ann, seats: []}, expect_error: rejected}
+      - {op: book, args: {show_id: 999999, customer: ann, seats: [A1]}, expect_error: rejected}
+      - {op: available, args: {show_id: $sh.id}, expect: 2}
+  - name: cancel_frees_and_occupancy
+    steps:
+      - {op: add_screen, args: {name: S, rows: 2, seats_per_row: 2}, bind: s}
+      - {op: add_screen, args: {name: T, rows: 1, seats_per_row: 3}, bind: t}
+      - {op: add_show, args: {screen_id: $s.id, movie: Dune, starts_at: "2030-01-02T18:00:00Z", ends_at: "2030-01-02T21:00:00Z"}, bind: late}
+      - {op: add_show, args: {screen_id: $t.id, movie: Dune, starts_at: "2030-01-01T18:00:00Z", ends_at: "2030-01-01T21:00:00Z"}, bind: early}
+      - {op: add_show, args: {screen_id: $s.id, movie: Up, starts_at: "2030-01-01T10:00:00Z", ends_at: "2030-01-01T12:00:00Z"}, bind: up}
+      - {op: book, args: {show_id: $late.id, customer: ann, seats: [A1, B2, B1]}, bind: b1}
+      - {op: book, args: {show_id: $up.id, customer: bob, seats: [A1]}}
+      - {op: book, args: {show_id: $early.id, customer: bob, seats: [A3]}}
+      - {op: occupancy, args: {movie: Dune}, expect: [{booked: 1, capacity: 3}, {booked: 3, capacity: 4}]}
+      - {op: cancel, args: {booking_id: $b1.booking_id}}
+      - {op: book, args: {show_id: $late.id, customer: cy, seats: [B2]}}
+      - {op: row_map, args: {show_id: $late.id, row: B}, expect: [{seat: B1, taken: false}, {seat: B2, taken: true}]}

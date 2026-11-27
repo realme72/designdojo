@@ -1,0 +1,8 @@
+id: subscription-billing
+title: Subscription Billing
+difficulty: hard
+category: Commerce & payments
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [exclusion-constraint, ranges, idempotent-billing, mrr]

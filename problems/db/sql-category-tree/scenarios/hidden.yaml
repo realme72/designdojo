@@ -1,0 +1,11 @@
+seed: |
+  insert into categories values (10, null, 'Root'), (11, 10, 'A'), (12, 11, 'B'), (13, 12, 'C'), (14, 13, 'D');
+  insert into products values (1, 14, 'deep', 10), (2, 11, 'mid', 20);
+scenarios:
+  - name: deep_chain
+    steps:
+      - {op: path, args: {category_id: 14}, expect: Root > A > B > C > D}
+      - {op: subtree_products, args: {category_id: 10}, expect: {products: 2, avg_price: 15}}
+      - {op: subtree_products, args: {category_id: 13}, expect: {products: 1, avg_price: 10}}
+      - {op: leaf_categories, args: {}, expect: [{name: D}]}
+      - {op: outline, args: {}, expect: [{name: Root, depth: 0}, {name: A, depth: 1}, {name: B, depth: 2}, {name: C, depth: 3}, {name: D, depth: 4}]}

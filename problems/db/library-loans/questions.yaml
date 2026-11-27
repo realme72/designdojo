@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: A library system - is a relational database the obvious choice? What would make you reconsider?
+  points:
+    - text: Yes - small, highly relational data with integrity rules (one loan per copy, member limits) and transactions.
+      keywords: [relational, integrity, transaction, small, constraint]
+    - text: Catalog search (title/author/subject) benefits from full-text search (Postgres FTS or a search engine).
+      keywords: [search, full-text, tsvector, elasticsearch]
+    - text: Nothing here needs NoSQL scale - choosing it would trade away constraints for no benefit.
+      keywords: [no need, overkill, scale, trade]
+  follow_up: A consortium of 2,000 libraries shares one catalog. What changes?
+- id: active_loan
+  stage: design
+  question: How do you guarantee a copy isn't lent twice, while keeping the loan history?
+  points:
+    - text: Keep all loans as rows (history) with a returned_at that is NULL while active.
+      keywords: [history, returned_at, null while active]
+    - text: A partial unique index on copy_id WHERE returned_at IS NULL.
+      keywords: [partial unique, partial index, where returned_at is null]
+    - text: A boolean "is_lent" on copies would need extra code to stay in sync and races.
+      keywords: [flag, sync, race, boolean]
+  follow_up: Members can reserve a book that's out. How would holds work?
+- id: limits
+  stage: design
+  question: How do you enforce "at most 3 active loans per member" correctly when two checkouts race?
+  points:
+    - text: Counting then inserting races - two concurrent checkouts both see 2.
+      keywords: [race, count then, both see, concurren]
+    - text: Lock the member row (SELECT ... FOR UPDATE) before counting, or keep a counter column with a CHECK (<= 3) updated atomically.
+      keywords: [for update, lock, counter, check]
+    - text: SERIALIZABLE isolation also works, with retries.
+      keywords: [serializable, retry]
+  follow_up: Premium members get 10 loans. Where does the limit live?

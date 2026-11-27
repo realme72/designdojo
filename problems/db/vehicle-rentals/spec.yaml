@@ -1,0 +1,8 @@
+schema: designed
+operations:
+  add_vehicle: {doc: Create a vehicle., params: {plate: text, category: text, daily_rate: numeric}, returns: one, columns: [id]}
+  add_customer: {doc: Create a customer., params: {licence: text, name: text}, returns: one, columns: [id]}
+  reserve: {doc: Book the free vehicle of the category with the lowest plate., params: {customer_id: bigint, category: text, from_day: date, to_day: date}, returns: one, columns: [rental_id, plate]}
+  cancel: {doc: Cancel a rental., params: {rental_id: bigint}, returns: none}
+  return_vehicle: {doc: Close the rental and compute the charge., params: {rental_id: bigint, km: int}, returns: one, columns: [charge]}
+  utilization: {kind: query, doc: Rented days within a window per vehicle., params: {from_day: date, to_day: date}, returns: rows, columns: [plate, days], ordered: true}

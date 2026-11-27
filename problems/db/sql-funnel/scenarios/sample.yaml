@@ -1,0 +1,13 @@
+seed: |
+  insert into events values
+    (1, 'VIEW', '2030-01-01 10:00Z'), (1, 'CART', '2030-01-01 10:05Z'), (1, 'PURCHASE', '2030-01-01 10:10Z'),
+    (2, 'VIEW', '2030-01-01 11:00Z'), (2, 'CART', '2030-01-01 11:05Z'),
+    (3, 'CART', '2030-01-02 09:00Z'), (3, 'VIEW', '2030-01-02 09:05Z'), (3, 'PURCHASE', '2030-01-02 09:10Z'),
+    (4, 'VIEW', '2030-01-02 12:00Z'),
+    (5, 'PURCHASE', '2030-01-02 12:00Z');
+scenarios:
+  - name: ordered_funnel
+    steps:
+      - {op: funnel, args: {from: "2030-01-01T00:00:00Z", to: "2030-01-03T00:00:00Z"}, expect: {viewed: 4, carted: 2, purchased: 1}}
+      - {op: conversion, args: {from: "2030-01-01T00:00:00Z", to: "2030-01-03T00:00:00Z"}, expect: {view_to_cart_pct: 50, cart_to_purchase_pct: 50, overall_pct: 25}}
+      - {op: daily_funnel, args: {from: "2030-01-01T00:00:00Z", to: "2030-01-03T00:00:00Z"}, expect: [{day: "2030-01-01", viewed: 2, purchased: 1}, {day: "2030-01-02", viewed: 2, purchased: 0}]}

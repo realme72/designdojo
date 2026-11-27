@@ -1,0 +1,84 @@
+- id: storage_choice
+  stage: before
+  question: Would you use a relational database (e.g. PostgreSQL) or a NoSQL store for this system? Why?
+  points:
+    - text: Placing an order changes several rows (order, its lines, stock) that must succeed or fail together - multi-row ACID transactions.
+      keywords: [acid, transaction, atomic, all or nothing, rollback, consisten]
+    - text: The data is highly relational (customers -> orders -> lines -> products) and the reports need joins and aggregations.
+      keywords: [join, relational, relationship, foreign key, aggregat, report]
+    - text: Integrity rules (unique email/SKU, stock never negative) can be enforced declaratively by constraints.
+      keywords: [constraint, unique, integrity, check]
+    - text: The shape of the data is known and stable up front, so a flexible schema buys little.
+      keywords: [schema, structured, stable, fixed, well-defined]
+    - text: NoSQL can still fit parts of it - carts/sessions in a key-value store, a varied product catalog or search in a document store/search engine.
+      keywords: [redis, cart, session, catalog, document, mongo, elasticsearch, search, key-value, cache]
+  follow_up: The catalog grows to 5 million products whose attributes differ wildly per category. Does your answer change?
+- id: entities
+  stage: design
+  question: What are the core entities and how are they related? Call out the cardinalities and how you'd enforce them.
+  points:
+    - text: Customer 1:N Order (an order belongs to exactly one customer; a NOT NULL foreign key).
+      keywords: [one-to-many, 1:n, 1-n, one to many, belongs to, has many]
+    - text: Order and Product are many-to-many, resolved by an order line (order_items) table carrying quantity.
+      keywords: [many-to-many, m:n, many to many, junction, order_item, line, bridge, associative]
+    - text: A composite primary key (order_id, product_id) or a UNIQUE pair enforces one line per product per order.
+      keywords: [composite, primary key, unique]
+    - text: Status is a closed set, enforced by a CHECK, an enum type or a lookup table.
+      keywords: [status, enum, check, lookup]
+  follow_up: Customers can now have several shipping addresses and choose one per order. Where does the address go, and what if the customer later edits it?
+- id: price_history
+  stage: design
+  question: A product's price changes after someone ordered it. What should their order show, and how do you model that?
+  points:
+    - text: Copy the unit price onto the order line at order time; the order shows what was actually charged.
+      keywords: [unit_price, unit price, snapshot, copy, at the time, at order time]
+    - text: That copy is a deliberate historical fact (or controlled denormalization), not a normalization mistake.
+      keywords: [denormal, histor, normaliz, 3nf, fact]
+    - text: Order totals derive from the lines (or are stored and kept consistent with them).
+      keywords: [total, sum, derive]
+    - text: An alternative is a price-history table with validity periods, joined by order time - more flexible, more complex.
+      keywords: [price_history, price history, valid_from, effective, validity]
+  follow_up: Marketing wants to know the revenue lost to discounts last month. What would you need to have stored?
+- id: overselling
+  stage: design
+  question: Two customers try to buy the last unit at the same moment. How does your design prevent overselling?
+  points:
+    - text: Reading the stock, deciding in the application, then writing is a race (check-then-act).
+      keywords: [race, concurrent, check-then, check then, read then write, lost update]
+    - text: Decrement atomically in one statement - UPDATE ... SET stock = stock - qty WHERE id = ... AND stock >= qty - and check the affected row count.
+      keywords: [atomic, where stock, row count, conditional, single statement, stock - ]
+    - text: A CHECK (stock >= 0) constraint is the last line of defence; the violation aborts the whole order transaction.
+      keywords: [check, constraint, stock >= 0, negative]
+    - text: Alternatives - SELECT ... FOR UPDATE row locks or SERIALIZABLE isolation with retries - and their trade-offs.
+      keywords: [for update, lock, serializable, isolation, retry]
+    - text: Lock or update products in a consistent order (e.g. by id) to avoid deadlocks between multi-item orders.
+      keywords: [deadlock, consistent order, sorted]
+  follow_up: A flash sale puts 50,000 people on the same product in one minute. Where does this design hurt, and what would you change?
+- id: indexes
+  stage: after
+  question: Which indexes would you add, and why? Which would you deliberately not add?
+  points:
+    - text: Primary keys and UNIQUE constraints (sku, lower(email)) already create indexes.
+      keywords: [primary key, unique, lower]
+    - text: Index foreign keys used in joins and deletes - orders(customer_id), order_items(product_id); Postgres doesn't do it automatically.
+      keywords: [foreign key, customer_id, product_id, join, fk]
+    - text: Composite indexes that match access paths, e.g. orders(customer_id, created_at) for a customer's order history.
+      keywords: [composite, created_at, multi-column, access path]
+    - text: Every index slows writes and costs space; low-selectivity columns like status alone rarely deserve one (a partial index might).
+      keywords: [write, cost, selectiv, partial, cardinality, status]
+  follow_up: How would you find out whether an index you added is actually being used?
+- id: scale
+  stage: after
+  question: Traffic grows 100x and the top-customers report becomes slow. What do you do, in what order?
+  points:
+    - text: Measure first - EXPLAIN (ANALYZE) the query to see where time goes before changing anything.
+      keywords: [explain, plan, measure, profile]
+    - text: Move reporting off the primary - read replicas or a separate analytics store.
+      keywords: [replica, read, warehouse, analytics, olap]
+    - text: Precompute - a materialized view or summary table maintained incrementally or on a schedule.
+      keywords: [materialized, summary, precompute, rollup, aggregate table]
+    - text: Partition or archive large tables (e.g. orders by month) so hot data stays small.
+      keywords: [partition, archive, shard]
+    - text: Cache results where staleness is acceptable.
+      keywords: [cache, redis, stale]
+  follow_up: The report must now be real-time (under 1 second old). What does that rule out?

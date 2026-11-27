@@ -1,0 +1,8 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  request: {doc: Send a connection request., params: {from_id: bigint, to_id: bigint}, returns: none}
+  accept: {doc: to_id accepts the pending request from from_id., params: {from_id: bigint, to_id: bigint}, returns: none}
+  connections: {kind: query, doc: The user's connections by name., params: {user_id: bigint}, returns: rows, columns: [name], ordered: true}
+  mutual: {kind: query, doc: People connected to both users., params: {a_id: bigint, b_id: bigint}, returns: rows, columns: [name], ordered: true}
+  degree: {kind: query, doc: Shortest connection distance (1..3) or NULL., params: {from_id: bigint, to_id: bigint}, returns: value}

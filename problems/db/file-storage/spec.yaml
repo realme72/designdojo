@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  create_folder: {doc: Create a folder (parent NULL = top level)., params: {owner_id: bigint, parent_id: bigint, name: text}, returns: one, columns: [id]}
+  upload: {doc: Add a file to a folder., params: {folder_id: bigint, name: text, size_bytes: bigint}, returns: one, columns: [id]}
+  move_folder: {doc: Move a folder (no cycles)., params: {folder_id: bigint, new_parent_id: bigint}, returns: none}
+  share: {doc: Share a folder with a user as VIEW or EDIT., params: {folder_id: bigint, user_id: bigint, role: text}, returns: none}
+  can_view: {kind: query, doc: Owner or any share on an ancestor folder., params: {user_id: bigint, file_id: bigint}, returns: value}
+  folder_size: {kind: query, doc: Total bytes in the subtree., params: {folder_id: bigint}, returns: value}
+  path: {kind: query, doc: Full path of a file., params: {file_id: bigint}, returns: value}

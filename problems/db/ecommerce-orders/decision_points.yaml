@@ -1,0 +1,26 @@
+- id: line_items
+  question: How are orders and products related?
+  good: A junction table of order lines (order, product, quantity) resolves the many-to-many; a composite primary key (order_id, product_id) or a UNIQUE pair enforces one line per product.
+  smells: [REPEATING_GROUP, NO_PRIMARY_KEY]
+- id: price_snapshot
+  question: What price does an old order show after a price change?
+  good: The line stores unit_price copied at order time. It is a deliberate historical snapshot, not a normalization violation; totals are computed from lines.
+- id: integrity
+  question: Which rules does the database itself enforce?
+  good: Foreign keys on every reference, UNIQUE sku, case-insensitive unique email (unique index on lower(email) or citext), CHECKs on price >= 0, stock >= 0, quantity > 0, and a constrained status (CHECK IN, enum or lookup table).
+  smells: [MISSING_FK, NO_DOMAIN_CHECK, UNCONSTRAINED_STATUS, NO_NATURAL_KEY]
+- id: stock_race
+  question: How do you stop two concurrent orders from overselling?
+  good: Decrement atomically in the order's statement/transaction (UPDATE ... SET stock = stock - qty with CHECK (stock >= 0), or WHERE stock >= qty and verify the row count). Never read stock, decide in the app, then write.
+- id: money_types
+  question: How is money stored?
+  good: numeric(p,2) (or integer cents); never float/double.
+  smells: [FLOAT_MONEY]
+- id: indexes
+  question: Which access paths need an index?
+  good: Index foreign keys used in joins and deletes (orders.customer_id, order_items.product_id); the primary key of order_items covers lookups by order.
+  smells: [FK_NOT_INDEXED]
+- id: queries
+  question: Are the reports correct and NULL-safe?
+  good: Explicit JOINs, aggregates grouped by the customer key, cancelled orders filtered in the join or WHERE, NOT EXISTS (or LEFT JOIN ... IS NULL) for "never ordered".
+  smells: [NOT_IN_SUBQUERY, COMMA_JOIN, SELECT_STAR]

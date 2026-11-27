@@ -1,0 +1,25 @@
+scenarios:
+  - name: several_auctions
+    steps:
+      - {op: add_user, args: {name: Sam}, bind: s}
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: list_item, args: {seller_id: $s.id, title: Vase, start_price: 5, ends_at: "2030-01-05T00:00:00Z"}, bind: v}
+      - {op: list_item, args: {seller_id: $s.id, title: Chair, start_price: 5, ends_at: "2030-01-06T00:00:00Z"}, bind: c}
+      - {op: list_item, args: {seller_id: $s.id, title: Unsold, start_price: 5, ends_at: "2030-01-04T00:00:00Z"}}
+      - {op: bid, args: {item_id: $v.id, bidder_id: $a.id, amount: 5, at: "2030-01-01T00:00:00Z"}}
+      - {op: bid, args: {item_id: $v.id, bidder_id: $b.id, amount: 6, at: "2030-01-01T00:00:00Z"}}
+      - {op: bid, args: {item_id: $v.id, bidder_id: $a.id, amount: 7.5, at: "2030-01-01T00:00:00Z"}}
+      - {op: bid, args: {item_id: $c.id, bidder_id: $b.id, amount: 100, at: "2030-01-01T00:00:00Z"}}
+      - {op: results, args: {at: "2030-01-07T00:00:00Z"}, expect: [{title: Chair, winner: Bob, price: 100}, {title: Vase, winner: Ann, price: 7.5}]}
+      - {op: wins, args: {user_id: $b.id, at: "2030-01-05T12:00:00Z"}, expect: 0}
+      - {op: wins, args: {user_id: $b.id, at: "2030-01-06T00:00:00Z"}, expect: 1}
+  - name: listing_rules
+    steps:
+      - {op: add_user, args: {name: Sam}, bind: s}
+      - {op: list_item, args: {seller_id: $s.id, title: Free, start_price: 0, ends_at: "2030-01-05T00:00:00Z"}, expect_error: rejected}
+      - {op: list_item, args: {seller_id: 999999, title: Ghost, start_price: 1, ends_at: "2030-01-05T00:00:00Z"}, expect_error: rejected}
+      - {op: list_item, args: {seller_id: $s.id, title: Ok, start_price: 1, ends_at: "2030-01-05T00:00:00Z"}, bind: i}
+      - {op: bid, args: {item_id: $i.id, bidder_id: 999999, amount: 2, at: "2030-01-01T00:00:00Z"}, expect_error: rejected}
+      - {op: bid, args: {item_id: 999999, bidder_id: $s.id, amount: 2, at: "2030-01-01T00:00:00Z"}, expect_error: rejected}
+      - {op: bid_history, args: {item_id: $i.id}, expect: []}

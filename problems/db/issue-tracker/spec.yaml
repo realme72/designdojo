@@ -1,0 +1,11 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  create_project: {doc: Create a project with a unique key., params: {key: text, name: text}, returns: one, columns: [id]}
+  add_member: {doc: Add a member., params: {project_id: bigint, user_id: bigint}, returns: none}
+  create_issue: {doc: Create the project's next issue., params: {project_id: bigint, title: text, reporter_id: bigint}, returns: one, columns: [issue_key]}
+  assign: {doc: Assign an issue to a member., params: {issue_key: text, user_id: bigint}, returns: none}
+  move: {doc: Change status along the workflow (audited)., params: {issue_key: text, status: text, at: timestamptz}, returns: none}
+  board: {kind: query, doc: Issues by status and number., params: {project_id: bigint}, returns: rows, columns: [status, issue_key, assignee], ordered: true}
+  history: {kind: query, doc: Status changes in order., params: {issue_key: text}, returns: rows, columns: [from_status, to_status], ordered: true}
+  workload: {kind: query, doc: Open assigned issues per member., params: {project_id: bigint}, returns: rows, columns: [name, open], ordered: true}

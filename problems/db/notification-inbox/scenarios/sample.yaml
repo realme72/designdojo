@@ -1,0 +1,18 @@
+scenarios:
+  - name: retries_are_idempotent
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: u}
+      - {op: notify, args: {user_id: $u.id, type: LIKE, text: Bob liked your post, key: k1, created_at: "2030-01-01T10:00:00Z"}, bind: n}
+      - {op: notify, args: {user_id: $u.id, type: LIKE, text: Bob liked your post, key: k1, created_at: "2030-01-01T10:00:05Z"}, expect: [{id: "$n[0].id"}]}
+      - {op: unread_count, args: {user_id: $u.id}, expect: 1}
+      - {op: notify, args: {user_id: $u.id, type: COMMENT, text: Cy commented, key: k2, created_at: "2030-01-01T11:00:00Z"}}
+      - {op: inbox, args: {user_id: $u.id, n: 10}, expect: [{type: COMMENT, read: false}, {type: LIKE, read: false}]}
+  - name: mute_and_read
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: u}
+      - {op: mute, args: {user_id: $u.id, type: FOLLOW}}
+      - {op: notify, args: {user_id: $u.id, type: FOLLOW, text: Dee followed you, key: f1, created_at: "2030-01-01T10:00:00Z"}, expect: []}
+      - {op: notify, args: {user_id: $u.id, type: SYSTEM, text: Welcome, key: s1, created_at: "2030-01-01T10:00:00Z"}, bind: s}
+      - {op: mark_read, args: {notification_id: "$s[0].id"}}
+      - {op: unread_count, args: {user_id: $u.id}, expect: 0}
+      - {op: notify, args: {user_id: $u.id, type: SPAM, text: x, key: x1, created_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}

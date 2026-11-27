@@ -1,0 +1,8 @@
+id: forum-votes
+title: Forum with Votes (Reddit)
+difficulty: medium
+category: Social & content
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [upsert, composite-fk, recursive-cte, aggregation]

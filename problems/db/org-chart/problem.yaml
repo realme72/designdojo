@@ -1,0 +1,8 @@
+id: org-chart
+title: Org Chart & Salaries
+difficulty: medium
+category: SaaS & productivity
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [self-reference, recursive-cte, window-functions, cycle-prevention]

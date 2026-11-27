@@ -1,0 +1,8 @@
+schema: designed
+operations:
+  add_lot: {doc: Create a lot., params: {name: text}, returns: one, columns: [id]}
+  add_spots: {doc: Add count spots of a type, numbered after existing ones., params: {lot_id: bigint, type: text, count: int}, returns: none}
+  enter: {doc: Park in the lowest free spot of the type., params: {lot_id: bigint, plate: text, type: text, at: timestamptz}, returns: one, columns: [spot_no]}
+  exit: {doc: Close the vehicle's open session and charge it., params: {plate: text, at: timestamptz}, returns: one, columns: [fee]}
+  occupancy: {kind: query, doc: Occupied and total spots per type., params: {lot_id: bigint}, returns: rows, columns: [type, occupied, total], ordered: true}
+  revenue: {kind: query, doc: Fees of sessions exiting that UTC day., params: {lot_id: bigint, day: date}, returns: value}

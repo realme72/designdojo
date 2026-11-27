@@ -1,0 +1,22 @@
+- id: storage_choice
+  stage: before
+  question: Course catalog, enrolments, progress and video - where does each go?
+  points:
+    - text: Enrolments, payments and progress are relational with integrity rules.
+      keywords: [relational, enrol, progress, integrity]
+    - text: Videos live in object storage behind a CDN.
+      keywords: [object storage, cdn, s3, video]
+    - text: Fine-grained events (video watch positions every few seconds) go to an event/time-series pipeline, summarised into progress.
+      keywords: [event, watch position, time-series, stream, summar]
+  follow_up: Progress must sync across phone and laptop within seconds. What do you store, and where?
+- id: integrity
+  stage: design
+  question: How do you stop progress being recorded for a lesson of a course the student isn't enrolled in?
+  points:
+    - text: A composite foreign key to enrollments (student, course).
+      keywords: [composite foreign key, composite fk, enrollments, (student_id, course_id)]
+    - text: Another composite FK ties the lesson to that same course (course_id, lesson_id).
+      keywords: [(course_id, id), lesson belongs, same course]
+    - text: Store course_id on the completion row so both keys can be enforced.
+      keywords: [store course_id, carry, denormal]
+  follow_up: A lesson is moved to another course. What happens to existing completions?

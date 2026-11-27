@@ -1,0 +1,27 @@
+scenarios:
+  - name: overdue_report
+    steps:
+      - {op: add_book, args: {isbn: "1", title: Alpha}, bind: a}
+      - {op: add_book, args: {isbn: "2", title: Beta}, bind: b}
+      - {op: add_copy, args: {book_id: $a.id, barcode: A1}}
+      - {op: add_copy, args: {book_id: $b.id, barcode: B1}}
+      - {op: add_copy, args: {book_id: $b.id, barcode: B2}}
+      - {op: add_member, args: {name: Zed}, bind: z}
+      - {op: add_member, args: {name: Ann}, bind: n}
+      - {op: checkout, args: {barcode: A1, member_id: $z.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: checkout, args: {barcode: B1, member_id: $n.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: checkout, args: {barcode: B2, member_id: $n.id, at: "2030-01-10T10:00:00Z"}}
+      - {op: overdue, args: {at: "2030-01-15T10:00:00Z"}, expect: []}
+      - {op: overdue, args: {at: "2030-01-17T11:00:00Z"}, expect: [{member: Ann, title: Beta, days_overdue: 3}, {member: Zed, title: Alpha, days_overdue: 3}]}
+      - {op: return_copy, args: {barcode: A1, at: "2030-01-16T10:00:01Z"}, expect: {fine: 20}}
+  - name: catalog_rules
+    steps:
+      - {op: add_book, args: {isbn: "1", title: Alpha}, bind: a}
+      - {op: add_book, args: {isbn: "1", title: Again}, expect_error: unique_violation}
+      - {op: add_copy, args: {book_id: $a.id, barcode: A1}}
+      - {op: add_copy, args: {book_id: $a.id, barcode: A1}, expect_error: unique_violation}
+      - {op: add_copy, args: {book_id: 999999, barcode: Z9}, expect_error: rejected}
+      - {op: add_member, args: {name: Ann}, bind: m}
+      - {op: checkout, args: {barcode: NOPE, member_id: $m.id, at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: available_copies, args: {isbn: "1"}, expect: 1}
+      - {op: available_copies, args: {isbn: "404"}, expect: 0}

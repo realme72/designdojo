@@ -1,0 +1,7 @@
+schema: designed
+operations:
+  add_table: {doc: Create a table., params: {label: text, seats: int}, returns: one, columns: [id]}
+  reserve: {doc: Assign the smallest free table that fits, for 2 hours., params: {guest: text, party_size: int, starts_at: timestamptz}, returns: one, columns: [reservation_id, table_label]}
+  cancel: {doc: Cancel a reservation., params: {reservation_id: bigint}, returns: none}
+  free_tables: {kind: query, doc: Tables free at a moment., params: {at: timestamptz}, returns: rows, columns: [label, seats], ordered: true}
+  covers: {kind: query, doc: Guests booked to start that day., params: {day: date}, returns: value}

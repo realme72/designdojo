@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Uber-scale - trips, payments, and driver locations updating every 4 seconds. What storage for each?
+  points:
+    - text: Trips and payments are transactional - relational (sharded by city/region at scale).
+      keywords: [relational, transaction, trip, payment, shard, city]
+    - text: Live driver locations are high-frequency, ephemeral writes - an in-memory geo index (Redis GEO, in-memory quadtree/H3 service).
+      keywords: [redis, geo, in-memory, h3, geohash, quadtree, ephemeral]
+    - text: Location history goes to a time-series/analytics store, not the trips database.
+      keywords: [time-series, history, analytics, kafka, cassandra]
+  follow_up: 1 million online drivers, one update every 4 s. Estimate the write rate and pick a design.
+- id: nearest
+  stage: design
+  question: How do you find the nearest available driver efficiently?
+  points:
+    - text: A spatial index (PostGIS GiST, geohash/H3 cells) to search nearby cells instead of scanning every driver.
+      keywords: [spatial, postgis, gist, geohash, h3, cell, index]
+    - text: Filter by availability and class first; compute exact distance only for candidates.
+      keywords: [filter, candidates, availability, class]
+    - text: Plain lat/lng ORDER BY distance is fine for small data but scans everything.
+      keywords: [scan, small data, order by distance]
+  follow_up: How do you handle a driver who sits exactly on the border of two geohash cells?
+- id: double_dispatch
+  stage: design
+  question: Two riders request at the same moment and the same driver is nearest to both. What happens?
+  points:
+    - text: Lock the chosen driver with SELECT ... FOR UPDATE SKIP LOCKED so the second request takes the next driver.
+      keywords: [skip locked, for update, lock]
+    - text: A partial unique index on active trips per driver guarantees no double assignment even if code is wrong.
+      keywords: [partial unique, constraint, safety net]
+    - text: Real systems often make the driver accept an offer (with timeout) rather than assigning outright.
+      keywords: [offer, accept, timeout, driver accepts]
+  follow_up: The driver doesn't respond within 10 seconds. What does the data model need for re-offering?

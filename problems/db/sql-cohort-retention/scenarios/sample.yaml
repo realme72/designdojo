@@ -1,0 +1,13 @@
+seed: |
+  insert into users values (1, '2030-01-05Z'), (2, '2030-01-20Z'), (3, '2030-01-31 23:00Z'), (4, '2030-02-10Z');
+  insert into activity values
+    (1, '2030-01-05'), (1, '2030-01-06'), (2, '2030-01-20'), (3, '2030-01-31'),
+    (1, '2030-02-02'), (3, '2030-02-15'), (3, '2030-02-16'), (4, '2030-02-10'),
+    (1, '2030-03-01'), (4, '2030-03-05');
+scenarios:
+  - name: matrix
+    steps:
+      - {op: cohort_sizes, args: {}, expect: [{cohort: "2030-01-01", users: 3}, {cohort: "2030-02-01", users: 1}]}
+      - {op: retention, args: {max_offset: 2}, expect: [{cohort: "2030-01-01", month_offset: 0, retained: 3, pct: 100}, {cohort: "2030-01-01", month_offset: 1, retained: 2, pct: 66.7}, {cohort: "2030-01-01", month_offset: 2, retained: 1, pct: 33.3}, {cohort: "2030-02-01", month_offset: 0, retained: 1, pct: 100}, {cohort: "2030-02-01", month_offset: 1, retained: 1, pct: 100}, {cohort: "2030-02-01", month_offset: 2, retained: 0, pct: 0}]}
+      - {op: returning_users, args: {month: "2030-02-01"}, expect: 2}
+      - {op: returning_users, args: {month: "2030-03-01"}, expect: 2}

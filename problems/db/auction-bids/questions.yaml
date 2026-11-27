@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: An auction site in its final minute gets thousands of bids per second on one item. What storage and design would you use?
+  points:
+    - text: The authoritative bid acceptance needs serialization per item - a relational row lock or a single-writer per item.
+      keywords: [serializ, row lock, single writer, per item, lock]
+    - text: Hot items can be handled by an in-memory store (Redis with Lua/atomic ops) or a per-item queue, persisting accepted bids to the database.
+      keywords: [redis, lua, queue, in-memory, actor, partition by item]
+    - text: Bids are an append-only log - good for audit and replay.
+      keywords: [append, log, audit, event, immutable]
+  follow_up: How would you handle "sniping" (bids in the last second) fairly?
+- id: race
+  stage: design
+  question: Two bidders submit 101.00 at the same instant when the high bid is 100.00. How do you accept exactly one?
+  points:
+    - text: Reading the current max then inserting races - both see 100 and both insert.
+      keywords: [race, read then, max then insert, both]
+    - text: A single conditional UPDATE on the item (current_price = new WHERE new >= current_price + increment) - only one wins; the loser matches no row.
+      keywords: [conditional update, current_price, where, atomic, row lock]
+    - text: Alternatively lock the item row (SELECT ... FOR UPDATE) or use SERIALIZABLE and retry.
+      keywords: [for update, serializable, retry, lock]
+  follow_up: Which design lets you show the loser a helpful error ("someone outbid you at 101")?
+- id: proxy
+  stage: after
+  question: eBay supports "proxy bidding" (bid automatically up to a maximum). How would that change the schema?
+  points:
+    - text: Store each bidder's hidden maximum (proxy bid) separately from the visible price.
+      keywords: [maximum, max bid, proxy, hidden]
+    - text: The visible price is the second-highest maximum plus the increment, recomputed when a new proxy arrives.
+      keywords: [second-highest, second highest, increment, recompute]
+    - text: The recomputation must happen atomically per item, like normal bids.
+      keywords: [atomic, same transaction, per item, lock]
+  follow_up: Two proxies have the same maximum. Who wins?

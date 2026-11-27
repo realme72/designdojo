@@ -1,0 +1,46 @@
+- id: storage_choice
+  stage: before
+  question: Relational database or a document store for a Q&A site? Why?
+  points:
+    - text: Questions, answers, votes and users reference each other with integrity rules (accepted answer belongs to the question, one vote per user) that a relational database enforces.
+      keywords: [relational, foreign key, constraint, integrity, reference]
+    - text: Reputation and vote changes must be transactional.
+      keywords: [transaction, acid, atomic, consisten]
+    - text: Full-text search over questions belongs in a search engine (or Postgres full-text search), not LIKE queries.
+      keywords: [search, full-text, elasticsearch, tsvector, inverted]
+    - text: A document per question (with embedded answers) is tempting for reads but makes votes, reputation and cross-question queries hard.
+      keywords: [document, embed, mongo, denormal, hard to query]
+  follow_up: Stack Overflow famously ran on a few SQL Server machines. What made that possible?
+- id: votes_model
+  stage: design
+  question: Users vote on both questions and answers. How do you model votes, and why not a single votes(post_type, post_id) table?
+  points:
+    - text: A polymorphic (post_type, post_id) reference can't have a foreign key - integrity is lost.
+      keywords: [polymorphic, foreign key, can't, cannot, integrity, no fk]
+    - text: Separate vote tables per target with real FKs, or a common posts supertable (questions and answers share a posts id) that votes reference.
+      keywords: [separate, two tables, supertable, posts table, inheritance, shared id]
+    - text: Composite primary key (user, post) gives one vote per user; upsert changes it.
+      keywords: [composite, primary key, upsert, on conflict]
+  follow_up: You add comments, which can also be voted on. Which design scales to a third votable type?
+- id: accepted
+  stage: design
+  question: How do you make sure the accepted answer actually belongs to the question?
+  points:
+    - text: A composite foreign key from (question id, accepted answer id) to answers (question_id, id).
+      keywords: [composite foreign key, composite fk, (question_id, id), (id, accepted]
+    - text: Answers need UNIQUE (question_id, id) to be the referenced key.
+      keywords: [unique (question_id, id), unique]
+    - text: Alternatively an is_accepted flag with a partial unique index (one per question) plus the same-question guarantee from the row itself.
+      keywords: [is_accepted, flag, partial unique]
+  follow_up: Which of those two designs makes "un-accept" and "switch accepted answer" simpler?
+- id: reputation
+  stage: after
+  question: Reputation shows on every page. Compute it on read or store it? What can go wrong?
+  points:
+    - text: Computing from votes on every read is correct but expensive at scale.
+      keywords: [compute, expensive, every read, aggregate]
+    - text: Store it and update it in the same transaction as each vote/accept - or keep a reputation event ledger and sum/cached-sum it.
+      keywords: [store, counter, same transaction, ledger, event, cache]
+    - text: Changed or removed votes must reverse their effect; a periodic recompute repairs drift.
+      keywords: [reverse, change, undo, recompute, drift, reconcile]
+  follow_up: Vote fraud is detected a week later and 500 votes are removed. How does reputation get corrected?

@@ -13,14 +13,14 @@ from ..analyzer import analyze
 import httpx
 
 from .offline import offline_review
-from .prompt import MAX_COMMENTS, MAX_OUTPUT_TOKENS, PROMPT_VERSION, SYSTEM, build, read_solution
+from .prompt import MAX_COMMENTS, MAX_OUTPUT_TOKENS, PROMPT_VERSION, build, read_solution, system_for
 from .provider import CoachError, CoachUnavailable, Provider, default_provider
 
 __all__ = ["review", "latest", "validate", "CoachError", "CoachUnavailable"]
 
 log = logging.getLogger("designdojo.coach")
 
-EXT = {"java": ".java", "python": ".py"}
+EXT = {"java": ".java", "python": ".py", "sql": ".sql"}
 KINDS = {"suggestion", "praise", "warning", "overengineering"}
 DP_STATUS = {"good", "partial", "missed", "not_applicable"}
 CACHE_DIR = ".dojo-cache/coach"
@@ -151,10 +151,11 @@ def review(ws, *, last_run: dict | None = None, provider: Provider | None = None
     dps = problem.decision_points
     from ..judge import problem_text
 
-    user, meta = build(title=problem.title, statement=problem_text(problem, ws.level), decision_points=dps,
+    system = system_for(lang)
+    user, meta = build(system=system, title=problem.title, statement=problem_text(problem, ws.level), decision_points=dps,
                        analysis=analysis, files=files, tests=_tests_summary(last_run))
 
-    key = hashlib.sha256(f"{PROMPT_VERSION}\n{SYSTEM}\n{user}".encode()).hexdigest()[:24]
+    key = hashlib.sha256(f"{PROMPT_VERSION}\n{system}\n{user}".encode()).hexdigest()[:24]
     cache = ws.root / CACHE_DIR
     cached = cache / f"{key}.json"
     if cached.exists() and not force:
@@ -166,7 +167,7 @@ def review(ws, *, last_run: dict | None = None, provider: Provider | None = None
     t0 = time.monotonic()
     try:
         provider = provider or default_provider()
-        completion = provider.complete(SYSTEM, user, MAX_OUTPUT_TOKENS)
+        completion = provider.complete(system, user, MAX_OUTPUT_TOKENS)
         raw = _parse_json(completion.text)
     except (CoachError, CoachUnavailable, httpx.HTTPError) as e:
         if not allow_offline:

@@ -1,0 +1,46 @@
+- id: storage_choice
+  stage: before
+  question: Would you build this on a relational database or a NoSQL store? Which parts, and why?
+  points:
+    - text: Core entities (users, follows, posts, likes) are relational with integrity rules (unique likes, valid references) that a relational DB enforces well.
+      keywords: [relational, foreign key, constraint, integrity, unique, join]
+    - text: At large scale the feed is read-heavy; precomputed timelines often live in a wide-column/key-value store (Cassandra, Redis) rather than being joined on every read.
+      keywords: [cassandra, redis, timeline, precompute, cache, read-heavy, key-value, wide-column]
+    - text: Media files go to object storage (S3) and a CDN, with only metadata in the database.
+      keywords: [s3, object storage, cdn, blob, media]
+    - text: The choice is per component - polyglot persistence - not one database for everything.
+      keywords: [polyglot, per component, both, hybrid, depends]
+  follow_up: A celebrity with 50 million followers posts a photo. What happens to your feed design?
+- id: follow_graph
+  stage: design
+  question: How do you model the follow relationship, and which indexes does it need?
+  points:
+    - text: A self-referencing many-to-many - a follows table with follower_id and followee_id, both foreign keys to users.
+      keywords: [self-referenc, many-to-many, m:n, junction, follower_id, followee_id, follows table]
+    - text: Composite primary key (follower_id, followee_id) prevents duplicates; CHECK prevents self-follow.
+      keywords: [composite, primary key, unique, check, self]
+    - text: The PK serves "whom do I follow"; a second index on (followee_id, follower_id) serves "who follows me".
+      keywords: [index, followee_id, reverse, both directions, who follows]
+  follow_up: Twitter-style follow is one-way; Facebook friendship is mutual. How would you store mutual friendship?
+- id: feed_counts
+  stage: design
+  question: Your feed shows like and comment counts per post. How do you compute them correctly and cheaply?
+  points:
+    - text: Joining likes and comments to posts at once multiplies rows (2 likes x 3 comments = 6), so aggregate each separately (subquery/LATERAL/CTE).
+      keywords: [fan-out, multipl, cartesian, separately, subquery, lateral, cte, double count]
+    - text: At scale, store denormalized counters on the post and update them in the same transaction as the like.
+      keywords: [counter, denormal, like_count, cached count]
+    - text: Hot counters cause row contention; shard counters or batch increments asynchronously.
+      keywords: [contention, hot row, shard, batch, async, eventual]
+  follow_up: Two users like the same post at the same instant. Can your counter lose an update?
+- id: fan_out
+  stage: after
+  question: Fan-out on write or fan-out on read for the home feed? When would you choose each?
+  points:
+    - text: Fan-out on write pushes each new post into followers' timelines - fast reads, expensive for accounts with huge followings.
+      keywords: [fan-out on write, push, write time, timeline per user, precompute]
+    - text: Fan-out on read merges followed users' posts at read time - cheap writes, slower reads.
+      keywords: [fan-out on read, pull, read time, merge, query time]
+    - text: Hybrid - push for normal users, pull for celebrities at read time.
+      keywords: [hybrid, celebrit, both, mix]
+  follow_up: How would you rank the feed by relevance instead of time, and where does that computation run?

@@ -1,0 +1,15 @@
+- id: hashtags
+  question: How are hashtags stored?
+  good: A tags table (unique lower-case name) and a tweet_tags junction with a composite PK - not a comma-separated column or array you can't index and count well.
+  smells: [REPEATING_GROUP, NO_PRIMARY_KEY]
+- id: replies
+  question: How are replies modelled?
+  good: A nullable self-referencing reply_to FK on tweets (adjacency list), walked with WITH RECURSIVE.
+  smells: [MISSING_FK]
+- id: retweet_rules
+  question: How are retweet rules enforced?
+  good: retweets(user_id, tweet_id) composite PK for once-only; "not your own" needs the author - a trigger, or a composite FK including the author, or an INSERT ... SELECT that refuses it.
+- id: text_rules
+  question: Which domain rules live in the schema?
+  good: CHECK (length(body) between 1 and 280), unique handle, FKs.
+  smells: [NO_NATURAL_KEY, NO_DOMAIN_CHECK]

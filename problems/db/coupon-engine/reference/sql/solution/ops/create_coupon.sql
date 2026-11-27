@@ -1,0 +1,1 @@
+insert into coupons (code, percent_off, flat_off, min_order, max_uses, per_user, valid_from, valid_to) values (:code, :percent_off, :flat_off, :min_order, :max_uses, :per_user, :valid_from, :valid_to) returning id;

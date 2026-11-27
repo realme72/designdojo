@@ -1,0 +1,14 @@
+- id: credits
+  question: How are track artists modelled?
+  good: A track_artists junction with a credit position (PK (track_id, artist_id), UNIQUE (track_id, position)) - not artist1/artist2 columns.
+  smells: [REPEATING_GROUP, NO_PRIMARY_KEY]
+- id: ordering
+  question: How is playlist order stored and changed?
+  good: playlist_entries with a surrogate id (duplicates allowed) and an integer position, UNIQUE (playlist_id, position) DEFERRABLE so a move can shift rows in one statement; or fractional/gap ranks to avoid renumbering.
+- id: plays
+  question: How is listening history stored and validated?
+  good: An append-only plays table (user, track, played_at timestamptz, seconds) with CHECK seconds >= 0 and a trigger or check against duration; indexed by (track_id) and (user_id, played_at).
+  smells: [FK_NOT_INDEXED, TIMESTAMP_NO_TZ]
+- id: reporting
+  question: Are the reports correct?
+  good: Count only qualifying plays (>= 30 s), LEFT JOIN so unplayed tracks show 0, day boundaries in UTC (played_at >= day and < day + 1).

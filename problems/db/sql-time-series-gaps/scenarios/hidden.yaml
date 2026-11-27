@@ -1,0 +1,12 @@
+seed: |
+  insert into sensors values (5, 'roof');
+  insert into readings values (5, '2030-06-30 22:00Z', 1), (5, '2030-07-01 02:00Z', 3);
+scenarios:
+  - name: across_midnight
+    steps:
+      - {op: outages, args: {sensor_id: 5, from: "2030-06-30T22:00:00Z", to: "2030-07-01T03:00:00Z"}, expect: [{started: "2030-06-30T23:00:00+00:00", ended: "2030-07-01T02:00:00+00:00", hours: 3}]}
+      - {op: missing_hours, args: {sensor_id: 5, from: "2030-07-01T02:00:00Z", to: "2030-07-01T03:00:00Z"}, expect: []}
+      - {op: outages, args: {sensor_id: 5, from: "2030-07-02T00:00:00Z", to: "2030-07-02T02:00:00Z"}, expect: [{hours: 2}]}
+      - {op: rolling_avg, args: {sensor_id: 5}, expect: [{avg3: 1}, {avg3: 2}]}
+      - {op: hourly_max, args: {day: "2030-07-01"}, expect: [{sensor: roof, peak: 3}]}
+      - {op: hourly_max, args: {day: "2030-07-02"}, expect: []}

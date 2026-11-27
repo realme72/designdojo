@@ -1,0 +1,10 @@
+seed: |
+  insert into sales values
+    (1, 'East', 'A', '2030-03-31', 10), (2, 'East', 'B', '2030-04-01', 10), (3, 'West', 'A', '2030-12-31', 5),
+    (4, 'East', 'C', '2029-12-31', 100);
+scenarios:
+  - name: boundaries_and_ties
+    steps:
+      - {op: quarterly, args: {year: 2030}, expect: [{region: East, q1: 10, q2: 10, q3: 0, q4: 0, total: 20}, {region: West, q1: 0, q2: 0, q3: 0, q4: 5, total: 5}]}
+      - {op: best_product_share, args: {year: 2030}, expect: [{region: East, product: A, share_pct: 50}, {region: West, product: A, share_pct: 100}]}
+      - {op: quarterly, args: {year: 2031}, expect: []}

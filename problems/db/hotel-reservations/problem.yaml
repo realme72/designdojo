@@ -1,0 +1,8 @@
+id: hotel-reservations
+title: Hotel Reservations
+difficulty: hard
+category: Booking & reservations
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [exclusion-constraint, date-ranges, left-join, aggregation]

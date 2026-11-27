@@ -1,0 +1,13 @@
+- id: open_sessions
+  question: How are "one open session per spot" and "per vehicle" enforced?
+  good: Two partial unique indexes on sessions (spot_id) and (vehicle_id) WHERE exited_at IS NULL.
+- id: rates
+  question: Where do rates live?
+  good: A rates lookup table keyed by spot type (FK from spots.type), and the computed fee stored on the session at exit.
+  smells: [UNCONSTRAINED_STATUS, FLOAT_MONEY]
+- id: allocation
+  question: How is the lowest free spot chosen safely?
+  good: INSERT ... SELECT the first free spot ORDER BY number LIMIT 1 FOR UPDATE SKIP LOCKED; the partial unique index is the safety net.
+- id: spots
+  question: How are spots numbered?
+  good: UNIQUE (lot_id, number), numbered set-based with generate_series from the current max.

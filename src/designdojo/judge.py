@@ -60,6 +60,8 @@ class Workspace:
 
     @property
     def contract(self):
+        if self.problem.kind == "sql":
+            raise JudgeError("SQL problems have no code contract")
         return self.problem.contract_at(self.level)
 
     @property
@@ -80,8 +82,8 @@ def problem_text(problem: Problem, level: int) -> str:
 
 def scaffold(problem: Problem, lang: str, dest: Path, level: int | None = None) -> list[Path]:
     """Create or refresh a workspace. Keeps the existing curveball level unless one is given."""
-    if lang not in codegen.LANGS:
-        raise JudgeError(f"unsupported language {lang!r} (choose: {', '.join(codegen.LANGS)})")
+    if lang not in problem.langs:
+        raise JudgeError(f"{problem.id} is solved in {', '.join(problem.langs)}, not {lang!r}")
     dest.mkdir(parents=True, exist_ok=True)
     migrate_legacy(dest)
     current = 0
@@ -91,12 +93,19 @@ def scaffold(problem: Problem, lang: str, dest: Path, level: int | None = None) 
             raise JudgeError(f"{dest} is already a workspace for {existing}")
         current = int(existing.get("curveball", 0))
     level = current if level is None else level
-    contract = problem.contract_at(level)
     meta = {"problem": problem.id, "lang": lang}
     if level:
         meta["curveball"] = level
-    written = codegen.write_files(dest, codegen.contract_files(contract, lang))
-    written += codegen.write_files(dest, codegen.stub_files(problem.contract, lang), overwrite=False)
+    if problem.kind == "sql":
+        from .sql import scaffold as sql_scaffold
+
+        spec = problem.sql_spec
+        written = codegen.write_files(dest, sql_scaffold.contract_files(problem, spec))
+        written += codegen.write_files(dest, sql_scaffold.stub_files(spec), overwrite=False)
+    else:
+        contract = problem.contract_at(level)
+        written = codegen.write_files(dest, codegen.contract_files(contract, lang))
+        written += codegen.write_files(dest, codegen.stub_files(problem.contract, lang), overwrite=False)
     written += codegen.write_files(dest, {"PROBLEM.md": problem_text(problem, level),
                                           WORKSPACE_META: json.dumps(meta, indent=2) + "\n"})
     return written
@@ -146,6 +155,10 @@ def judge(ws: Workspace, suites: list[str]) -> dict:
     """Run the given suites; returns the runner's result dict (status + suites)."""
     if not ws.solution_dir.is_dir():
         raise JudgeError(f"{ws.solution_dir} does not exist")
+    if ws.problem.kind == "sql":
+        from .sql.judge import run
+
+        return run(ws, suites)
     problem, lang = ws.problem, ws.lang
     image = ensure_image(lang)
     docker = docker_bin()

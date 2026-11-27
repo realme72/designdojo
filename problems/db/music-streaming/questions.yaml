@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Catalog, playlists and billions of play events - one database or several? Which kinds?
+  points:
+    - text: Catalog and playlists are relational and transactional - a relational database fits.
+      keywords: [relational, catalog, playlist, transaction]
+    - text: Play events are high-volume append-only time series - a log/stream (Kafka) into a columnar warehouse or wide-column store.
+      keywords: [kafka, stream, event, time-series, columnar, warehouse, cassandra, append]
+    - text: Search over catalog uses a search engine; recommendations use offline pipelines.
+      keywords: [search, elasticsearch, recommend, offline, batch]
+  follow_up: Artists want a real-time play counter on their dashboard. Where does that number come from?
+- id: playlist_order
+  stage: design
+  question: How would you store a playlist's order so users can drag tracks around cheaply?
+  points:
+    - text: An integer position per entry with UNIQUE (playlist_id, position); a move shifts the range between old and new position.
+      keywords: [position, shift, unique, range]
+    - text: The unique constraint must be DEFERRABLE (or use a two-step update) because shifting temporarily duplicates positions.
+      keywords: [deferrable, deferred, two-step, temporarily]
+    - text: Alternatives - gaps/fractional ranks or lexicographic keys avoid renumbering on every move.
+      keywords: [fractional, gap, lexorank, rank, float, between]
+  follow_up: Two devices reorder the same playlist offline and sync later. What do you do?
+- id: credits
+  stage: design
+  question: A track can feature several artists. How do you model credits and "the primary artist"?
+  points:
+    - text: A junction table track_artists(track_id, artist_id) - many-to-many.
+      keywords: [junction, many-to-many, track_artists, m:n]
+    - text: A position/role column orders credits; the primary artist is position 1 (or a role).
+      keywords: [position, role, order, primary, credit]
+    - text: Not artist1/artist2 columns - that caps the number of artists and breaks 1NF.
+      keywords: [1nf, artist1, columns, cap]
+  follow_up: How do you find all tracks where two given artists appear together?

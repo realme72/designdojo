@@ -1,0 +1,9 @@
+- id: new_session_flag
+  question: How are session boundaries found?
+  good: LAG(viewed_at) OVER (PARTITION BY user ORDER BY viewed_at, id); a view starts a session if the previous is NULL or more than 30 minutes earlier.
+- id: numbering
+  question: How are sessions numbered?
+  good: A running SUM of the new-session flag over the same window gives the session number; then aggregate per (user, session).
+- id: first_row
+  question: How is the landing page picked?
+  good: The row where the flag is set (or FIRST_VALUE / DISTINCT ON per session).

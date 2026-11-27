@@ -1,0 +1,46 @@
+- id: storage_choice
+  stage: before
+  question: Would you store chat messages in a relational database or something else at WhatsApp scale? Why?
+  points:
+    - text: Messages are append-heavy, accessed by conversation and time - a natural fit for a wide-column store (Cassandra/HBase) partitioned by conversation.
+      keywords: [cassandra, hbase, wide-column, partition, append, time-series]
+    - text: Users, contacts and group membership need integrity and fit a relational store.
+      keywords: [relational, membership, integrity, users]
+    - text: Delivery uses persistent connections and queues; the database is not the transport.
+      keywords: [websocket, queue, kafka, connection, push, transport]
+    - text: For a moderate scale, Postgres with good indexes and partitioning works fine - choose by scale and access pattern.
+      keywords: [partition, index, scale, depends, moderate]
+  follow_up: A group has 100,000 members. How does sending one message work end to end?
+- id: direct_unique
+  stage: design
+  question: How do you guarantee only one direct conversation exists between two users, even if both start a chat at the same moment?
+  points:
+    - text: Store the pair in a canonical order (smaller id first) with a UNIQUE constraint.
+      keywords: [canonical, least, greatest, smaller, order the pair, sorted]
+    - text: Get-or-create with INSERT ... ON CONFLICT DO NOTHING followed by a SELECT (or DO UPDATE ... RETURNING).
+      keywords: [on conflict, upsert, get-or-create]
+    - text: Check-then-insert would race and create duplicates.
+      keywords: [race, check-then, concurren, duplicate]
+  follow_up: How would you list all direct chats of a user efficiently with this design?
+- id: read_receipts
+  stage: design
+  question: How do you model read state and unread counts?
+  points:
+    - text: Store a last-read message id per member rather than a row per message per reader.
+      keywords: [last_read, read position, cursor, per member, watermark]
+    - text: Unread = messages with id greater than the read position, excluding the member's own messages.
+      keywords: [greater than, id >, excluding own, sender <>]
+    - text: Updates are monotonic (GREATEST) so out-of-order client acks can't move it back.
+      keywords: [greatest, monotonic, never backwards, max]
+  follow_up: Group chats need "seen by" lists for each message. Does the watermark still work?
+- id: pagination
+  stage: after
+  question: How do you load older messages as the user scrolls up, efficiently?
+  points:
+    - text: Keyset pagination - WHERE id < last_seen ORDER BY id DESC LIMIT n.
+      keywords: [keyset, cursor, seek, before_id, id <]
+    - text: OFFSET gets slower the deeper you go and shifts when new messages arrive.
+      keywords: [offset, slow, shift, skip]
+    - text: An index on (conversation_id, id) makes each page an index range scan.
+      keywords: [index, (conversation_id, id), composite]
+  follow_up: Messages can be edited and deleted. How do clients learn about changes to messages they already loaded?

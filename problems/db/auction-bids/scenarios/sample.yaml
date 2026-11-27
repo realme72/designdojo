@@ -1,0 +1,23 @@
+scenarios:
+  - name: bidding_rules
+    steps:
+      - {op: add_user, args: {name: Sam}, bind: s}
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: list_item, args: {seller_id: $s.id, title: Lamp, start_price: 10, ends_at: "2030-01-10T00:00:00Z"}, bind: i}
+      - {op: bid, args: {item_id: $i.id, bidder_id: $a.id, amount: 9.99, at: "2030-01-01T00:00:00Z"}, expect_error: rejected}
+      - {op: bid, args: {item_id: $i.id, bidder_id: $a.id, amount: 10, at: "2030-01-01T00:00:00Z"}}
+      - {op: bid, args: {item_id: $i.id, bidder_id: $b.id, amount: 10.99, at: "2030-01-02T00:00:00Z"}, expect_error: rejected}
+      - {op: bid, args: {item_id: $i.id, bidder_id: $b.id, amount: 11, at: "2030-01-02T00:00:00Z"}}
+      - {op: bid, args: {item_id: $i.id, bidder_id: $s.id, amount: 50, at: "2030-01-03T00:00:00Z"}, expect_error: rejected}
+      - {op: bid_history, args: {item_id: $i.id}, expect: [{bidder: Bob, amount: 11}, {bidder: Ann, amount: 10}]}
+  - name: winner_after_end
+    steps:
+      - {op: add_user, args: {name: Sam}, bind: s}
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: list_item, args: {seller_id: $s.id, title: Lamp, start_price: 10, ends_at: "2030-01-10T00:00:00Z"}, bind: i}
+      - {op: bid, args: {item_id: $i.id, bidder_id: $a.id, amount: 25, at: "2030-01-09T23:59:59Z"}}
+      - {op: bid, args: {item_id: $i.id, bidder_id: $a.id, amount: 40, at: "2030-01-10T00:00:00Z"}, expect_error: rejected}
+      - {op: results, args: {at: "2030-01-09T00:00:00Z"}, expect: []}
+      - {op: results, args: {at: "2030-01-10T00:00:00Z"}, expect: [{title: Lamp, winner: Ann, price: 25}]}
+      - {op: wins, args: {user_id: $a.id, at: "2030-02-01T00:00:00Z"}, expect: 1}

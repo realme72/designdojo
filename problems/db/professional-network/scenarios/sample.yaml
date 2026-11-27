@@ -1,0 +1,28 @@
+scenarios:
+  - name: request_accept_connect
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: add_user, args: {name: Cy}, bind: c}
+      - {op: request, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: request, args: {from_id: $b.id, to_id: $a.id}, expect_error: rejected}
+      - {op: accept, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: request, args: {from_id: $b.id, to_id: $a.id}, expect_error: rejected}
+      - {op: connections, args: {user_id: $b.id}, expect: [{name: Ann}]}
+      - {op: connections, args: {user_id: $c.id}, expect: []}
+  - name: degrees_and_mutuals
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: add_user, args: {name: Cy}, bind: c}
+      - {op: add_user, args: {name: Dee}, bind: d}
+      - {op: request, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: accept, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: request, args: {from_id: $c.id, to_id: $b.id}}
+      - {op: accept, args: {from_id: $c.id, to_id: $b.id}}
+      - {op: request, args: {from_id: $c.id, to_id: $d.id}}
+      - {op: accept, args: {from_id: $c.id, to_id: $d.id}}
+      - {op: degree, args: {from_id: $a.id, to_id: $b.id}, expect: 1}
+      - {op: degree, args: {from_id: $a.id, to_id: $c.id}, expect: 2}
+      - {op: degree, args: {from_id: $a.id, to_id: $d.id}, expect: 3}
+      - {op: mutual, args: {a_id: $a.id, b_id: $c.id}, expect: [{name: Bob}]}

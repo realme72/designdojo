@@ -1,0 +1,8 @@
+id: sql-top-rated
+title: Top Rated with Ties
+difficulty: medium
+category: SQL queries
+kind: sql
+time_limit_min: 30
+statement: statement.md
+tags: [having, distinct-on, rank, bayesian-average]

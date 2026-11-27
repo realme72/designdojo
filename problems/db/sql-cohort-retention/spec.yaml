@@ -1,0 +1,5 @@
+schema: provided
+operations:
+  cohort_sizes: {kind: query, doc: Users per signup month., params: {}, returns: rows, columns: [cohort, users], ordered: true}
+  retention: {kind: query, doc: Retention matrix including zero cells., params: {max_offset: int}, returns: rows, columns: [cohort, month_offset, retained, pct], ordered: true}
+  returning_users: {kind: query, doc: Active this month and last month., params: {month: date}, returns: value}

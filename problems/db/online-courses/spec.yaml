@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_course: {doc: Create a course., params: {title: text}, returns: one, columns: [id]}
+  add_student: {doc: Create a student., params: {name: text}, returns: one, columns: [id]}
+  add_lesson: {doc: Append a lesson to a course., params: {course_id: bigint, title: text}, returns: one, columns: [id]}
+  enroll: {doc: Enrol a student in a course., params: {student_id: bigint, course_id: bigint}, returns: none}
+  complete: {doc: Mark a lesson complete (enrolled only; idempotent)., params: {student_id: bigint, lesson_id: bigint, at: timestamptz}, returns: none}
+  progress: {kind: query, doc: Completed lessons out of total., params: {student_id: bigint, course_id: bigint}, returns: one, columns: [done, total, percent]}
+  next_lesson: {kind: query, doc: First incomplete lesson., params: {student_id: bigint, course_id: bigint}, returns: rows, columns: [title], ordered: true}
+  completion_board: {kind: query, doc: Completion per enrolled student., params: {course_id: bigint}, returns: rows, columns: [student, percent], ordered: true}

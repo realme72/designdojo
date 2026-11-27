@@ -1,0 +1,19 @@
+scenarios:
+  - name: lowest_free_seat
+    steps:
+      - {op: add_flight, args: {code: AI101, origin: BLR, destination: DEL, departs_at: "2030-01-01T06:00:00Z", arrives_at: "2030-01-01T08:45:00Z"}, bind: f}
+      - {op: add_seats, args: {flight_id: $f.id, class: BUSINESS, first_no: 1, last_no: 2}}
+      - {op: add_seats, args: {flight_id: $f.id, class: ECONOMY, first_no: 3, last_no: 5}}
+      - {op: book, args: {flight_id: $f.id, class: ECONOMY, passenger: Ann, pnr: P1}, expect: {seat_no: 3}}
+      - {op: book, args: {flight_id: $f.id, class: ECONOMY, passenger: Bob, pnr: P2}, expect: {seat_no: 4}}
+      - {op: book, args: {flight_id: $f.id, class: BUSINESS, passenger: Cy, pnr: P3}, expect: {seat_no: 1}}
+      - {op: cancel, args: {pnr: P1}}
+      - {op: book, args: {flight_id: $f.id, class: ECONOMY, passenger: Dee, pnr: P4}, expect: {seat_no: 3}}
+      - {op: load_factor, args: {flight_id: $f.id}, expect: {booked: 3, capacity: 5}}
+  - name: connections
+    steps:
+      - {op: add_flight, args: {code: A1, origin: BLR, destination: DEL, departs_at: "2030-01-01T06:00:00Z", arrives_at: "2030-01-01T09:00:00Z"}}
+      - {op: add_flight, args: {code: B1, origin: DEL, destination: LHR, departs_at: "2030-01-01T09:30:00Z", arrives_at: "2030-01-01T18:00:00Z"}}
+      - {op: add_flight, args: {code: B2, origin: DEL, destination: LHR, departs_at: "2030-01-01T11:00:00Z", arrives_at: "2030-01-01T20:00:00Z"}}
+      - {op: add_flight, args: {code: B3, origin: DEL, destination: LHR, departs_at: "2030-01-01T16:00:00Z", arrives_at: "2030-01-02T01:00:00Z"}}
+      - {op: connections, args: {origin: BLR, destination: LHR}, expect: [{first: A1, second: B2, layover_min: 120}]}

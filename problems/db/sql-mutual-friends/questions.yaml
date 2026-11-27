@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: Friendships are stored once per pair (smaller id first). How do you list someone's friends correctly?
+  points:
+    - text: Look in both columns - WHERE user_a = x (take user_b) UNION ALL WHERE user_b = x (take user_a).
+      keywords: [both columns, union all, user_a, user_b, either]
+    - text: Build a bidirectional view/CTE once and use it everywhere.
+      keywords: [view, cte, bidirectional, reuse]
+    - text: Index both directions (PK covers user_a; add an index on user_b).
+      keywords: [index, user_b, both directions]
+  follow_up: What's the trade-off versus storing both directions as two rows?
+- id: recommendations
+  stage: design
+  question: How do you compute "people you may know", and what makes it expensive at scale?
+  points:
+    - text: Friends of friends - join the friend relation to itself, group by candidate, count mutuals.
+      keywords: [friends of friends, self-join, group by, count, mutual]
+    - text: Exclude the person and existing friends with NOT EXISTS.
+      keywords: [not exists, exclude, anti-join]
+    - text: Fan-out explodes (500 friends x 500 friends) - precompute offline or sample in a graph service.
+      keywords: [fan-out, explod, precompute, offline, graph, batch]
+  follow_up: How would you add "went to the same college" as a second signal?

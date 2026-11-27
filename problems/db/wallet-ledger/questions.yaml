@@ -1,0 +1,50 @@
+- id: storage_choice
+  stage: before
+  question: Relational database or NoSQL for a payments ledger? Why?
+  points:
+    - text: Money movement needs ACID transactions - debit and credit commit together or not at all.
+      keywords: [acid, transaction, atomic, together, both or neither]
+    - text: Strong consistency and constraints (no negative balance, balanced entries) are enforced by the database.
+      keywords: [consisten, constraint, check, integrity]
+    - text: Auditability - append-only history, exact decimal arithmetic.
+      keywords: [audit, append-only, history, decimal, numeric, exact]
+    - text: Scale by sharding accounts and keeping cross-shard transfers rare or handled with a two-phase/saga protocol.
+      keywords: [shard, saga, two-phase, 2pc, partition]
+  follow_up: A transfer crosses two shards. What can go wrong and how do you make it safe?
+- id: double_entry
+  stage: design
+  question: Why double-entry bookkeeping instead of just a balance column per account?
+  points:
+    - text: Every movement is recorded as entries that sum to zero, so money can't appear or vanish.
+      keywords: [sum to zero, balanced, debit, credit, conserv]
+    - text: The full history explains every balance - audit trail, reconciliation, statements.
+      keywords: [history, audit, reconcil, statement, trail]
+    - text: Balances can be derived (or cached and verified) from entries.
+      keywords: [derive, derived, cache, sum of entries, materialized]
+    - text: Corrections are new reversing entries; past entries are never edited.
+      keywords: [revers, never edit, immutable, append]
+  follow_up: How do you check, every night, that cached balances still match the entries?
+- id: overdraft_race
+  stage: design
+  question: Two transfers from the same wallet run at the same time and together exceed the balance. How do you stop the overdraft?
+  points:
+    - text: Atomic conditional debit - UPDATE balances SET balance = balance - x WHERE account = ... (with CHECK balance >= 0, or WHERE balance >= x).
+      keywords: [atomic, update, check, balance >= 0, conditional]
+    - text: The row lock taken by the UPDATE serializes concurrent debits on the same account.
+      keywords: [row lock, lock, serializ, for update]
+    - text: Reading the balance, checking in the app, then writing is a race (lost update).
+      keywords: [race, lost update, check-then, read then write]
+    - text: Lock accounts in a consistent order (e.g. by id) to avoid deadlocks.
+      keywords: [deadlock, consistent order, sorted, ordering]
+  follow_up: Which isolation level would make the read-check-write version safe, and what does it cost?
+- id: idempotency
+  stage: after
+  question: The client times out and retries a transfer. How do you avoid moving the money twice?
+  points:
+    - text: A client-generated idempotency key, unique in the database.
+      keywords: [idempotency key, unique, client-generated, request id]
+    - text: The transaction row and its entries commit together; a retry hits the unique key and returns the original result.
+      keywords: [same transaction, on conflict, return original, same result]
+    - text: Keys are kept long enough to cover retries (TTL) and should be tied to the same request parameters.
+      keywords: [ttl, retention, same parameters, mismatch]
+  follow_up: The retry has the same key but a different amount. What should happen?

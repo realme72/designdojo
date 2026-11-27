@@ -1,0 +1,13 @@
+seed: |
+  insert into signups values
+    (10, 'z@y.io', 'A', '2030-05-01Z'),
+    (9, 'Z@Y.IO', 'B', '2030-05-01Z'),
+    (8, '  z@y.io', 'C', '2030-04-30Z'),
+    (20, 'solo@y.io', 'S', '2030-01-01Z');
+scenarios:
+  - name: ties_on_time
+    steps:
+      - {op: rows_to_delete, args: {}, expect: [{id: 9}, {id: 10}]}
+      - {op: dedupe, args: {}, expect: [{id: 9}, {id: 10}]}
+      - {op: dedupe, args: {}, expect: []}
+      - {op: remaining, args: {}, expect: 2}

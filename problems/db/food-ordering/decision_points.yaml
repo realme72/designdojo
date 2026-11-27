@@ -1,0 +1,15 @@
+- id: same_restaurant
+  question: How is "items must belong to the order's restaurant" enforced?
+  good: order_items carries restaurant_id with composite FKs (order_id, restaurant_id) -> orders (id, restaurant_id) and (restaurant_id, item_id) -> menu_items (restaurant_id, id).
+  smells: [MISSING_FK]
+- id: state_machine
+  question: How are status transitions enforced?
+  good: An allowed_transitions table (or CHECK in a trigger) consulted by a BEFORE UPDATE trigger; status CHECK/enum.
+  smells: [UNCONSTRAINED_STATUS]
+- id: one_active_order
+  question: How is "one active order per agent" enforced?
+  good: A partial unique index on orders (agent_id) WHERE status IN ('PLACED','PREPARING','PICKED_UP') - race-free.
+- id: price_snapshot
+  question: What price does an order keep?
+  good: unit_price copied to order_items at order time; total derived or stored consistently.
+  smells: [FLOAT_MONEY]

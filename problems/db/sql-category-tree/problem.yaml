@@ -1,0 +1,8 @@
+id: sql-category-tree
+title: Category Tree
+difficulty: medium
+category: SQL queries
+kind: sql
+time_limit_min: 35
+statement: statement.md
+tags: [recursive-cte, paths, subtree-aggregation, depth]

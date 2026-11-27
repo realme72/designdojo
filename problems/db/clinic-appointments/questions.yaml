@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Doctor appointment booking - relational or NoSQL? What's the deciding requirement?
+  points:
+    - text: The no-overlap rule must hold under concurrency - a relational database can enforce it with exclusion constraints or locking.
+      keywords: [overlap, exclusion, constraint, concurren, consisten]
+    - text: Medical data needs integrity, auditability and access control.
+      keywords: [audit, integrity, access, privacy, hipaa, compliance]
+    - text: Availability search can be cached; the booking itself is authoritative in the database.
+      keywords: [cache, search, authoritative]
+  follow_up: Doctors work at several clinics on different days. How does the model change?
+- id: overlap
+  stage: design
+  question: How do you prevent a patient from double-booking two different doctors at the same time?
+  points:
+    - text: A second exclusion constraint keyed on patient_id over the appointment's time range.
+      keywords: [exclusion, patient_id, second, range, gist]
+    - text: Only booked appointments count - make it partial (WHERE status = 'BOOKED').
+      keywords: [partial, where status, booked, cancelled]
+    - text: Half-open ranges so back-to-back appointments don't conflict.
+      keywords: [half-open, "[)", back-to-back]
+  follow_up: Emergency appointments may overlap normal ones. How would you allow that without dropping the rule?
+- id: slots
+  stage: after
+  question: How would you produce a doctor's free slots for a day?
+  points:
+    - text: Generate candidate slots with generate_series over working hours.
+      keywords: [generate_series, candidate, working hours]
+    - text: Remove slots overlapping booked appointments (NOT EXISTS with range overlap &&).
+      keywords: [not exists, overlap, "&&", anti-join]
+    - text: Working hours belong in a schedule table (per weekday, per doctor), not hard-coded.
+      keywords: [schedule, working hours table, per weekday, availability table]
+  follow_up: Doctors in different time zones - where does the conversion happen?

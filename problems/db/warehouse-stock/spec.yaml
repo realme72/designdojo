@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_product: {doc: Create a product., params: {sku: text}, returns: one, columns: [id]}
+  add_warehouse: {doc: Create a warehouse., params: {code: text}, returns: one, columns: [id]}
+  receive: {doc: Add stock., params: {warehouse_id: bigint, product_id: bigint, qty: int}, returns: none}
+  ship: {doc: Remove stock (never below zero)., params: {warehouse_id: bigint, product_id: bigint, qty: int}, returns: none}
+  transfer: {doc: Move stock between warehouses atomically., params: {from_id: bigint, to_id: bigint, product_id: bigint, qty: int}, returns: none}
+  stock_by_warehouse: {kind: query, doc: Stock of a product per warehouse., params: {product_id: bigint}, returns: rows, columns: [warehouse, qty], ordered: true}
+  low_stock: {kind: query, doc: Products whose total is below threshold., params: {threshold: int}, returns: rows, columns: [sku, total], ordered: true}
+  history: {kind: query, doc: Signed movements of a product in order., params: {product_id: bigint}, returns: rows, columns: [warehouse, change, reason], ordered: true}

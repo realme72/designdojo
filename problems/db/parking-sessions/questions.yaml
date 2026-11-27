@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: A city-wide parking app with gates in 500 lots - where would you keep live occupancy and sessions?
+  points:
+    - text: Sessions and payments are transactional facts - a relational database.
+      keywords: [relational, transaction, session, payment]
+    - text: Gates must keep working offline - local state at the lot, synced to the central database.
+      keywords: [offline, local, edge, sync]
+    - text: Live availability counts can be cached/pushed (Redis/pub-sub) for the app.
+      keywords: [cache, redis, pub/sub, push, live]
+  follow_up: The network to one lot is down for an hour. What happens at its gates, and how do you reconcile later?
+- id: invariants
+  stage: design
+  question: How do you guarantee a spot isn't given to two cars, and a car isn't "inside" twice?
+  points:
+    - text: Partial unique index on spot_id over open sessions.
+      keywords: [partial unique, spot_id, where exited_at is null, open]
+    - text: Another partial unique index on vehicle_id over open sessions.
+      keywords: [vehicle_id, second index, per vehicle]
+    - text: Use SKIP LOCKED when picking a free spot so concurrent entries don't collide.
+      keywords: [skip locked, for update]
+  follow_up: A car exits without a session (sensor missed its entry). What should the data allow?
+- id: fees
+  stage: after
+  question: Rates change next month. How do you make sure old sessions still show what was charged?
+  points:
+    - text: Store the fee on the session at exit - a snapshot.
+      keywords: [store, snapshot, at exit, fee column]
+    - text: Or keep rate history with validity periods and compute from the rate in force.
+      keywords: [rate history, valid_from, effective, period]
+    - text: Money in numeric, fees computed from started hours (ceil).
+      keywords: [numeric, ceil, started hour]
+  follow_up: Night rates are cheaper from 22:00 to 06:00. How would you compute a fee for a session spanning both?

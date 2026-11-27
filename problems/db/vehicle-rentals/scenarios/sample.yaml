@@ -1,0 +1,18 @@
+scenarios:
+  - name: reserve_and_return
+    steps:
+      - {op: add_vehicle, args: {plate: KA02, category: SUV, daily_rate: 3000}}
+      - {op: add_vehicle, args: {plate: KA01, category: SUV, daily_rate: 2500}}
+      - {op: add_customer, args: {licence: DL1, name: Ann}, bind: c}
+      - {op: reserve, args: {customer_id: $c.id, category: SUV, from_day: "2030-01-01", to_day: "2030-01-03"}, expect: {plate: KA01}, bind: r1}
+      - {op: reserve, args: {customer_id: $c.id, category: SUV, from_day: "2030-01-02", to_day: "2030-01-04"}, expect: {plate: KA02}}
+      - {op: reserve, args: {customer_id: $c.id, category: SUV, from_day: "2030-01-02", to_day: "2030-01-03"}, expect_error: rejected}
+      - {op: return_vehicle, args: {rental_id: $r1.rental_id, km: 450}, expect: {charge: 5400}}
+  - name: back_to_back_and_cancel
+    steps:
+      - {op: add_vehicle, args: {plate: KA01, category: HATCH, daily_rate: 1000}}
+      - {op: add_customer, args: {licence: DL1, name: Ann}, bind: c}
+      - {op: reserve, args: {customer_id: $c.id, category: HATCH, from_day: "2030-01-01", to_day: "2030-01-03"}, bind: r}
+      - {op: reserve, args: {customer_id: $c.id, category: HATCH, from_day: "2030-01-03", to_day: "2030-01-04"}, expect: {plate: KA01}}
+      - {op: cancel, args: {rental_id: $r.rental_id}}
+      - {op: reserve, args: {customer_id: $c.id, category: HATCH, from_day: "2030-01-01", to_day: "2030-01-02"}, expect: {plate: KA01}}

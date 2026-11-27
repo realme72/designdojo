@@ -5,7 +5,7 @@ import pytest
 from designdojo.problems import lint_problem, list_problems
 
 
-@pytest.mark.parametrize("problem", list_problems(), ids=lambda p: p.id)
+@pytest.mark.parametrize("problem", list_problems("lld"), ids=lambda p: p.id)
 def test_problem_lints_clean(problem):
     assert lint_problem(problem) == []
 

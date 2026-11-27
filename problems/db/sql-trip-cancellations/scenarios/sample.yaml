@@ -1,0 +1,15 @@
+seed: |
+  insert into users values (1, 'client', false), (2, 'client', true), (3, 'client', false), (4, 'client', false),
+    (10, 'driver', false), (11, 'driver', false), (12, 'driver', false), (13, 'driver', true);
+  insert into trips values
+    (1, 1, 10, 'completed', '2013-10-01'), (2, 2, 11, 'cancelled_by_driver', '2013-10-01'),
+    (3, 3, 12, 'completed', '2013-10-01'), (4, 4, 13, 'cancelled_by_client', '2013-10-01'),
+    (5, 1, 10, 'completed', '2013-10-02'), (6, 2, 11, 'completed', '2013-10-02'),
+    (7, 3, 12, 'completed', '2013-10-02'), (8, 2, 12, 'completed', '2013-10-03'),
+    (9, 3, 10, 'completed', '2013-10-03'), (10, 4, 13, 'cancelled_by_driver', '2013-10-03'),
+    (11, 1, 11, 'cancelled_by_driver', '2013-10-03'), (12, 4, 12, 'cancelled_by_client', '2013-10-03');
+scenarios:
+  - name: leetcode_classic
+    steps:
+      - {op: cancellation_rate, args: {from_day: "2013-10-01", to_day: "2013-10-03"}, expect: [{day: "2013-10-01", rate: 0}, {day: "2013-10-02", rate: 0}, {day: "2013-10-03", rate: 0.67}]}
+      - {op: worst_drivers, args: {min_trips: 1}, expect: [{driver_id: 11, cancel_rate: 1}, {driver_id: 10, cancel_rate: 0}, {driver_id: 12, cancel_rate: 0}]}

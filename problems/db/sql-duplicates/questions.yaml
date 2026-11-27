@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: How would you find and remove duplicate users while keeping the original?
+  points:
+    - text: Define the duplicate key precisely (normalized email) before writing SQL.
+      keywords: [normaliz, lower, trim, key, define]
+    - text: Number rows per key with ROW_NUMBER ordered by created_at (and id as tie-breaker) and delete rn > 1.
+      keywords: [row_number, partition by, order by created_at, rn > 1, tie]
+    - text: Re-point foreign keys (orders etc.) to the kept row before deleting.
+      keywords: [foreign key, re-point, reassign, references, merge]
+  follow_up: After cleaning up, how do you stop duplicates coming back?
+- id: prevention
+  stage: after
+  question: How do you prevent duplicates permanently?
+  points:
+    - text: A unique index on the normalized expression - lower(trim(email)) - or citext with a CHECK on trimming.
+      keywords: [unique index, lower, expression, citext]
+    - text: Normalize on write (store trimmed, lower-case) so the index and data agree.
+      keywords: [normalize on write, store, trimmed]
+    - text: Use INSERT ... ON CONFLICT for idempotent signups.
+      keywords: [on conflict, upsert, idempotent]
+  follow_up: Gmail ignores dots in addresses. Would you normalize that too?

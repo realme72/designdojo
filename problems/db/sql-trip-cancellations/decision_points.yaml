@@ -1,0 +1,6 @@
+- id: banned
+  question: How are banned users excluded?
+  good: Join users twice (client and driver) with banned = false on both, or NOT EXISTS - excluded before aggregating.
+- id: rate
+  question: How is the rate computed?
+  good: avg((status <> 'completed')::int) or count(*) filter (...) / count(*), as numeric, rounded to 2.

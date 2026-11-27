@@ -1,0 +1,34 @@
+scenarios:
+  - name: members_only
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: add_user, args: {name: Out}, bind: o}
+      - {op: create_group, args: {name: G}, bind: g}
+      - {op: create_group, args: {name: H}, bind: h}
+      - {op: add_member, args: {group_id: $g.id, user_id: $a.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $b.id}}
+      - {op: add_member, args: {group_id: $h.id, user_id: $o.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $a.id}, expect_error: rejected}
+      - {op: add_expense_equal, args: {group_id: $g.id, paid_by: $o.id, amount: 10, description: x, participants: [$a.id]}, expect_error: rejected}
+      - {op: add_expense_equal, args: {group_id: $g.id, paid_by: $a.id, amount: 10, description: x, participants: [$a.id, $o.id]}, expect_error: rejected}
+      - {op: settle, args: {group_id: $g.id, from_id: $a.id, to_id: $o.id, amount: 5}, expect_error: rejected}
+      - {op: settle, args: {group_id: $g.id, from_id: $a.id, to_id: $a.id, amount: 5}, expect_error: rejected}
+      - {op: add_expense_equal, args: {group_id: $g.id, paid_by: $a.id, amount: 0, description: x, participants: [$a.id]}, expect_error: rejected}
+      - {op: balances, args: {group_id: $g.id}, expect: [{name: Ann, balance: 0}, {name: Bob, balance: 0}]}
+  - name: several_expenses_net_out
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: add_user, args: {name: Cy}, bind: c}
+      - {op: add_user, args: {name: Dee}, bind: d}
+      - {op: create_group, args: {name: G}, bind: g}
+      - {op: add_member, args: {group_id: $g.id, user_id: $a.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $b.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $c.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $d.id}}
+      - {op: add_expense_equal, args: {group_id: $g.id, paid_by: $a.id, amount: 10.01, description: snacks, participants: [$a.id, $b.id, $c.id, $d.id]}, bind: e}
+      - {op: expense_shares, args: {expense_id: $e.id}, expect: [{name: Ann, share: 2.51}, {name: Bob, share: 2.5}, {name: Cy, share: 2.5}, {name: Dee, share: 2.5}]}
+      - {op: add_expense_equal, args: {group_id: $g.id, paid_by: $c.id, amount: 6, description: taxi, participants: [$a.id, $c.id]}}
+      - {op: settle, args: {group_id: $g.id, from_id: $d.id, to_id: $a.id, amount: 2.5}}
+      - {op: balances, args: {group_id: $g.id}, expect: [{name: Ann, balance: 2}, {name: Bob, balance: -2.5}, {name: Cy, balance: 0.5}, {name: Dee, balance: 0}]}

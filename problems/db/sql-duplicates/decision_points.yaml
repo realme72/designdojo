@@ -1,0 +1,9 @@
+- id: normalize
+  question: How are emails compared?
+  good: lower(trim(email)) in every grouping/partition - the same expression everywhere.
+- id: keep_one
+  question: How is "keep the earliest" expressed?
+  good: ROW_NUMBER() OVER (PARTITION BY lower(trim(email)) ORDER BY created_at, id) > 1 - deterministic with a tie-breaker.
+- id: delete
+  question: How are duplicates deleted?
+  good: DELETE ... WHERE id IN (SELECT id FROM ranked WHERE rn > 1) RETURNING id (or DELETE ... USING); then prevent recurrence with a unique index on lower(trim(email)).

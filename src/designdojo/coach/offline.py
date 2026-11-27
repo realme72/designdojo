@@ -11,6 +11,85 @@ import re
 
 # smell id -> (kind, title, principle, pattern, [nudge, principle, shape]) ; {sym} / {ev} interpolated
 TEMPLATES: dict[str, tuple[str, str, str | None, str | None, list[str]]] = {
+    # ---- database design (sql problems)
+    "NO_PRIMARY_KEY": (
+        "warning", "Table has no primary key", "Entity integrity", None,
+        ["How would you update or delete exactly one row of `{symbol}`?",
+         "Without a primary key, duplicates are possible and nothing can reference a row reliably.",
+         "Add a PRIMARY KEY: a surrogate `id bigint GENERATED ALWAYS AS IDENTITY`, or the natural/composite key."],
+    ),
+    "MISSING_FK": (
+        "warning", "Reference without a foreign key", "Referential integrity", None,
+        ["What stops `{symbol}` from pointing at a row that doesn't exist (or was deleted)?",
+         "Referential integrity belongs in the database: application checks race and get bypassed.",
+         "Declare `REFERENCES parent(id)` and decide ON DELETE (RESTRICT, CASCADE or SET NULL)."],
+    ),
+    "FK_NOT_INDEXED": (
+        "suggestion", "Foreign key without an index", "Indexing", None,
+        ["Which queries join or filter on `{symbol}`?",
+         "Postgres indexes primary keys, not foreign keys: joins and parent deletes scan the child table.",
+         "CREATE INDEX on the FK column(s), or make them the leading columns of a composite index you need anyway."],
+    ),
+    "FLOAT_MONEY": (
+        "warning", "Money stored as floating point", "Exactness", None,
+        ["What is 0.1 + 0.2 in a double?",
+         "Binary floating point can't represent most decimal fractions: totals drift by cents.",
+         "Use numeric(12,2), or integer cents."],
+    ),
+    "NO_DOMAIN_CHECK": (
+        "suggestion", "Range not enforced", "Domain integrity", None,
+        ["Can `{symbol}` be negative or zero today?",
+         "The database is the last line of defence: a CHECK keeps bad values out whatever the caller does.",
+         "Add e.g. `CHECK ({sym} > 0)` (or >= 0, whatever the rule says)."],
+    ),
+    "UNCONSTRAINED_STATUS": (
+        "suggestion", "Status is free text", "Domain integrity", None,
+        ["What stops someone writing 'shiped' into `{symbol}`?",
+         "A closed set of values should be enforced, not hoped for.",
+         "CHECK (col IN (...)), an enum type, or a small lookup table with a foreign key."],
+    ),
+    "NO_NATURAL_KEY": (
+        "suggestion", "Natural identifier isn't unique", "Uniqueness", None,
+        ["Can two rows have the same `{symbol}`?",
+         "A surrogate id doesn't make the natural key go away: duplicates still break the domain.",
+         "Add UNIQUE (consider a case-insensitive unique index for emails: lower(email))."],
+    ),
+    "REPEATING_GROUP": (
+        "warning", "Repeating group of columns", "1NF", "Child table",
+        ["What happens when there's one more than you have columns for?",
+         "Numbered columns are a list squeezed into a row: hard to query, capped, and break 1NF.",
+         "Move them to a child table with a foreign key back (one row per item)."],
+    ),
+    "SERIAL_TYPE": (
+        "suggestion", "serial instead of identity", None, None,
+        ["Is this column's sequence owned and protected?",
+         "Identity columns are the SQL-standard replacement for serial, with clearer ownership and permissions.",
+         "`id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY`."],
+    ),
+    "TIMESTAMP_NO_TZ": (
+        "suggestion", "Timestamp without time zone", None, None,
+        ["Which time zone is `{symbol}` in?",
+         "timestamp without time zone stores a wall-clock reading, not an instant.",
+         "Use timestamptz for points in time; keep date for calendar days."],
+    ),
+    "SELECT_STAR": (
+        "suggestion", "SELECT * in an operation", None, None,
+        ["What happens to this result when someone adds a column?",
+         "Explicit columns make the result shape a contract and avoid fetching what you don't need.",
+         "List the columns, with AS aliases matching what the operation must return."],
+    ),
+    "NOT_IN_SUBQUERY": (
+        "warning", "NOT IN with a subquery", "Three-valued logic", None,
+        ["What does `x NOT IN (1, NULL)` evaluate to?",
+         "One NULL in the subquery makes NOT IN return no rows at all.",
+         "Use NOT EXISTS (correlated) or LEFT JOIN ... WHERE right.id IS NULL."],
+    ),
+    "COMMA_JOIN": (
+        "suggestion", "Implicit comma join", None, None,
+        ["If a WHERE condition is forgotten, what does FROM a, b return?",
+         "Explicit JOIN ... ON keeps join conditions next to the join and makes cross joins deliberate.",
+         "Rewrite as `FROM a JOIN b ON b.a_id = a.id`."],
+    ),
     "TYPE_SWITCH": (
         "suggestion", "Behaviour chosen by branching on a kind", "Open/Closed", "Strategy",
         ["What would you have to edit here to support one more kind?",
@@ -135,7 +214,7 @@ def offline_review(analysis: dict, files: dict[str, str], dps: list[dict], *, re
             "kind": kind, "principle": principle, "pattern": pattern,
             "decision_point": dp["id"] if dp else None,
             "title": f"{title}: {s['evidence']}" if len(s["evidence"]) < 70 else title,
-            "hints": [h.format(sym=sym, ev=s["evidence"].rstrip(".")) for h in hints],
+            "hints": [h.format(sym=sym, symbol=s["symbol"], ev=s["evidence"].rstrip(".")) for h in hints],
             "example": None,
             "why_here": (f"In this problem, good looks like: {dp['good']}" if dp else None),
             "confidence": 0.35 if info else 0.7,

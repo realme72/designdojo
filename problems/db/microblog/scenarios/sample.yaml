@@ -1,0 +1,18 @@
+scenarios:
+  - name: hashtags_and_trending
+    steps:
+      - {op: add_user, args: {handle: ann}, bind: ann}
+      - {op: post, args: {user_id: $ann.id, body: "Loving #Postgres and #SQL #postgres", posted_at: "2030-01-01T10:00:00Z", reply_to: null}}
+      - {op: post, args: {user_id: $ann.id, body: "#sql all day", posted_at: "2030-01-01T11:00:00Z", reply_to: null}}
+      - {op: post, args: {user_id: $ann.id, body: "old #sql", posted_at: "2029-12-01T11:00:00Z", reply_to: null}}
+      - {op: trending, args: {since: "2030-01-01T00:00:00Z", n: 5}, expect: [{tag: sql, tweets: 2}, {tag: postgres, tweets: 1}]}
+  - name: retweet_rules
+    steps:
+      - {op: add_user, args: {handle: ann}, bind: ann}
+      - {op: add_user, args: {handle: bob}, bind: bob}
+      - {op: add_user, args: {handle: ann}, expect_error: unique_violation}
+      - {op: post, args: {user_id: $ann.id, body: hello, posted_at: "2030-01-01T10:00:00Z", reply_to: null}, bind: t}
+      - {op: retweet, args: {user_id: $bob.id, tweet_id: $t.id}}
+      - {op: retweet, args: {user_id: $bob.id, tweet_id: $t.id}, expect_error: rejected}
+      - {op: retweet, args: {user_id: $ann.id, tweet_id: $t.id}, expect_error: rejected}
+      - {op: top_tweets, args: {n: 1}, expect: [{author: ann, retweets: 1, replies: 0}]}

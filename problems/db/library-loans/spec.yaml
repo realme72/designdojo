@@ -1,0 +1,9 @@
+schema: designed
+operations:
+  add_book: {doc: Create a book., params: {isbn: text, title: text}, returns: one, columns: [id]}
+  add_copy: {doc: Add a physical copy., params: {book_id: bigint, barcode: text}, returns: one, columns: [id]}
+  add_member: {doc: Create a member., params: {name: text}, returns: one, columns: [id]}
+  checkout: {doc: Lend a copy (one active loan per copy, max 3 per member)., params: {barcode: text, member_id: bigint, at: timestamptz}, returns: one, columns: [loan_id, due_at]}
+  return_copy: {doc: Return a copy; returns the late fine., params: {barcode: text, at: timestamptz}, returns: one, columns: [fine]}
+  available_copies: {kind: query, doc: Copies of the book not on loan., params: {isbn: text}, returns: value}
+  overdue: {kind: query, doc: Overdue active loans., params: {at: timestamptz}, returns: rows, columns: [member, title, days_overdue], ordered: true}

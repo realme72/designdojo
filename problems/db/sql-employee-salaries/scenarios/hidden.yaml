@@ -1,0 +1,16 @@
+seed: |
+  insert into departments values (1, 'Ops'), (2, 'Data'), (3, 'Empty');
+  insert into employees values
+    (10, 'Zed', 1, null, 100), (11, 'Yan', 1, 10, 100), (12, 'Xu', 1, 10, 100),
+    (13, 'Wes', 2, 10, 80.5), (14, 'Val', 2, 13, 79.5), (15, 'Uma', 2, 13, 70), (16, 'Tim', 2, 13, 60), (17, 'Sol', 2, 13, 50);
+scenarios:
+  - name: ties_and_limits
+    steps:
+      - {op: nth_highest, args: {n: 1}, expect: 100}
+      - {op: nth_highest, args: {n: 2}, expect: 80.5}
+      - {op: nth_highest, args: {n: 6}, expect: 50}
+      - {op: nth_highest, args: {n: 7}, expect: null}
+      - {op: top3_per_department, args: {}, expect: [{department: Data, name: Wes, salary: 80.5}, {department: Data, name: Val, salary: 79.5}, {department: Data, name: Uma, salary: 70}, {department: Ops, name: Xu, salary: 100}, {department: Ops, name: Yan, salary: 100}, {department: Ops, name: Zed, salary: 100}]}
+      - {op: above_department_average, args: {}, expect: [{name: Uma, department: Data}, {name: Val, department: Data}, {name: Wes, department: Data}]}
+      - {op: managers_with_reports, args: {min: 3}, expect: [{name: Wes, reports: 4}, {name: Zed, reports: 3}]}
+      - {op: managers_with_reports, args: {min: 5}, expect: []}

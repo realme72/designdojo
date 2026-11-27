@@ -1,0 +1,35 @@
+- id: tenancy_model
+  stage: before
+  question: Shared tables with a tenant_id, a schema per tenant, or a database per tenant? Trade-offs?
+  points:
+    - text: Shared tables with tenant_id - cheapest and simplest to operate at many tenants, but isolation depends on discipline (composite FKs, RLS).
+      keywords: [shared, tenant_id, cheap, simple, rls, row-level]
+    - text: Schema per tenant - better isolation and per-tenant migrations, harder at thousands of tenants.
+      keywords: [schema per tenant, migration, thousands]
+    - text: Database per tenant - strongest isolation, per-tenant backups/compliance, highest cost; often for big enterprise customers.
+      keywords: [database per tenant, isolation, compliance, enterprise, cost]
+    - text: Hybrid - pooled for small tenants, dedicated for large ones.
+      keywords: [hybrid, pooled, dedicated, mix]
+  follow_up: One tenant is 1,000x bigger than the rest and slows everyone down. What do you do?
+- id: isolation
+  stage: design
+  question: How do you make a cross-tenant link (task in tenant A assigned to a user of tenant B) impossible?
+  points:
+    - text: Put tenant_id on every tenant-owned table.
+      keywords: [tenant_id on every, every table]
+    - text: Composite foreign keys including tenant_id (e.g. (tenant_id, assignee_id) -> users (tenant_id, id)).
+      keywords: [composite foreign key, composite fk, (tenant_id]
+    - text: Row-level security policies keyed on the current tenant guard reads in addition.
+      keywords: [row-level security, rls, policy, current_setting]
+  follow_up: How would RLS know which tenant the current request belongs to?
+- id: plan_limit
+  stage: design
+  question: FREE tenants may have 3 projects. Two "create project" requests race at 2 projects. How do you keep the limit?
+  points:
+    - text: Count-then-insert races.
+      keywords: [race, count-then, count then]
+    - text: Lock the tenant row (SELECT ... FOR UPDATE) in the trigger/transaction before counting, or maintain a counter with a CHECK.
+      keywords: [for update, lock, counter, check]
+    - text: Limits belong in data (a plans table), not hard-coded.
+      keywords: [plans table, data, configurable]
+  follow_up: A tenant downgrades from PRO to FREE with 7 projects. What should happen?

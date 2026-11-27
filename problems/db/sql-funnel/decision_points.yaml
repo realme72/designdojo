@@ -1,0 +1,6 @@
+- id: ordering
+  question: How is step order enforced per user?
+  good: Per user, MIN(at) per type (FILTER), then compare - cart_at >= view_at, purchase at or after the first cart after viewing; LEFT JOINs or conditional aggregation in one pass.
+- id: percentages
+  question: How are percentages computed safely?
+  good: round(100.0 * a / NULLIF(b, 0), 1) in numeric.

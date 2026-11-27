@@ -1,0 +1,20 @@
+scenarios:
+  - name: best_fit
+    steps:
+      - {op: add_table, args: {label: T6, seats: 6}}
+      - {op: add_table, args: {label: T2a, seats: 2}}
+      - {op: add_table, args: {label: T4, seats: 4}}
+      - {op: reserve, args: {guest: Ann, party_size: 2, starts_at: "2030-01-01T19:00:00Z"}, expect: {table_label: T2a}}
+      - {op: reserve, args: {guest: Bob, party_size: 2, starts_at: "2030-01-01T20:00:00Z"}, expect: {table_label: T4}}
+      - {op: reserve, args: {guest: Cy, party_size: 5, starts_at: "2030-01-01T19:30:00Z"}, expect: {table_label: T6}}
+      - {op: reserve, args: {guest: Dee, party_size: 2, starts_at: "2030-01-01T20:30:00Z"}, expect_error: rejected}
+      - {op: reserve, args: {guest: Eve, party_size: 2, starts_at: "2030-01-01T21:00:00Z"}, expect: {table_label: T2a}}
+  - name: cancel_and_free
+    steps:
+      - {op: add_table, args: {label: T2, seats: 2}}
+      - {op: add_table, args: {label: T4, seats: 4}}
+      - {op: reserve, args: {guest: Ann, party_size: 2, starts_at: "2030-01-01T19:00:00Z"}, bind: r}
+      - {op: free_tables, args: {at: "2030-01-01T20:59:00Z"}, expect: [{label: T4, seats: 4}]}
+      - {op: free_tables, args: {at: "2030-01-01T21:00:00Z"}, expect: [{label: T2}, {label: T4}]}
+      - {op: cancel, args: {reservation_id: $r.reservation_id}}
+      - {op: free_tables, args: {at: "2030-01-01T20:00:00Z"}, expect: [{label: T2}, {label: T4}]}

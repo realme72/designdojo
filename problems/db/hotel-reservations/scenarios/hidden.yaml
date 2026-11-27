@@ -1,0 +1,61 @@
+scenarios:
+  - name: cancelled_blocks_nothing
+    steps:
+      - {op: add_room_type, args: {name: Std, nightly_rate: 80}, bind: t}
+      - {op: add_room, args: {number: "201", room_type_id: $t.id}, bind: r}
+      - {op: add_guest, args: {email: a@inn.test, name: A}, bind: a}
+      - {op: add_guest, args: {email: b@inn.test, name: B}, bind: b}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-10", check_out: "2030-05-15"}, bind: x}
+      - {op: cancel, args: {booking_id: $x.booking_id}}
+      - {op: book, args: {room_id: $r.id, guest_id: $b.id, check_in: "2030-05-11", check_out: "2030-05-12"}, expect: {total: 80}}
+      - {op: guest_stays, args: {guest_id: $a.id}, expect: [{status: CANCELLED, nights: 5, total: 400}]}
+  - name: overlap_shapes
+    steps:
+      - {op: add_room_type, args: {name: Std, nightly_rate: 80}, bind: t}
+      - {op: add_room, args: {number: "201", room_type_id: $t.id}, bind: r}
+      - {op: add_room, args: {number: "202", room_type_id: $t.id}, bind: r2}
+      - {op: add_guest, args: {email: a@inn.test, name: A}, bind: a}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-10", check_out: "2030-05-15"}}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-08", check_out: "2030-05-20"}, expect_error: rejected}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-11", check_out: "2030-05-12"}, expect_error: rejected}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-14", check_out: "2030-05-16"}, expect_error: rejected}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-08", check_out: "2030-05-10"}, expect: {total: 160}}
+      - {op: book, args: {room_id: $r2.id, guest_id: $a.id, check_in: "2030-05-11", check_out: "2030-05-12"}, expect: {total: 80}}
+  - name: bad_bookings_rejected
+    steps:
+      - {op: add_room_type, args: {name: Std, nightly_rate: 80}, bind: t}
+      - {op: add_room, args: {number: "201", room_type_id: $t.id}, bind: r}
+      - {op: add_guest, args: {email: a@inn.test, name: A}, bind: a}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-10", check_out: "2030-05-10"}, expect_error: rejected}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-10", check_out: "2030-05-09"}, expect_error: rejected}
+      - {op: book, args: {room_id: 999999, guest_id: $a.id, check_in: "2030-05-10", check_out: "2030-05-11"}, expect_error: rejected}
+      - {op: book, args: {room_id: $r.id, guest_id: 999999, check_in: "2030-05-10", check_out: "2030-05-11"}, expect_error: rejected}
+      - {op: add_room, args: {number: "201", room_type_id: $t.id}, expect_error: unique_violation}
+      - {op: add_room, args: {number: "301", room_type_id: 999999}, expect_error: rejected}
+      - {op: add_guest, args: {email: a@inn.test, name: Dup}, expect_error: unique_violation}
+      - {op: available_rooms, args: {room_type_id: $t.id, check_in: "2030-05-01", check_out: "2030-06-01"}, expect: [{number: "201"}]}
+  - name: rates_fixed_at_booking
+    steps:
+      - {op: add_room_type, args: {name: Std, nightly_rate: 80}, bind: t}
+      - {op: add_room, args: {number: "201", room_type_id: $t.id}, bind: r}
+      - {op: add_guest, args: {email: a@inn.test, name: A}, bind: a}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-10", check_out: "2030-05-12"}}
+      - {op: set_rate, args: {room_type_id: $t.id, nightly_rate: 99.50}}
+      - {op: book, args: {room_id: $r.id, guest_id: $a.id, check_in: "2030-05-12", check_out: "2030-05-13"}, expect: {total: 99.5}}
+      - {op: guest_stays, args: {guest_id: $a.id}, expect: [{total: 160}, {total: 99.5}]}
+  - name: occupancy_report
+    steps:
+      - {op: add_room_type, args: {name: Suite, nightly_rate: 300}, bind: s}
+      - {op: add_room_type, args: {name: Deluxe, nightly_rate: 120}, bind: d}
+      - {op: add_room_type, args: {name: Penthouse, nightly_rate: 900}}
+      - {op: add_room, args: {number: "101", room_type_id: $d.id}, bind: r1}
+      - {op: add_room, args: {number: "102", room_type_id: $d.id}, bind: r2}
+      - {op: add_room, args: {number: "501", room_type_id: $s.id}, bind: r5}
+      - {op: add_guest, args: {email: a@inn.test, name: A}, bind: a}
+      - {op: book, args: {room_id: $r1.id, guest_id: $a.id, check_in: "2030-07-01", check_out: "2030-07-03"}}
+      - {op: book, args: {room_id: $r2.id, guest_id: $a.id, check_in: "2030-07-02", check_out: "2030-07-04"}, bind: x}
+      - {op: book, args: {room_id: $r5.id, guest_id: $a.id, check_in: "2030-06-28", check_out: "2030-07-02"}}
+      - {op: occupancy, args: {day: "2030-07-02"}, expect: [{room_type: Deluxe, occupied: 2, rooms: 2}, {room_type: Penthouse, occupied: 0, rooms: 0}, {room_type: Suite, occupied: 0, rooms: 1}]}
+      - {op: cancel, args: {booking_id: $x.booking_id}}
+      - {op: occupancy, args: {day: "2030-07-02"}, expect: [{room_type: Deluxe, occupied: 1}, {room_type: Penthouse, occupied: 0}, {room_type: Suite, occupied: 0}]}
+      - {op: occupancy, args: {day: "2030-07-01"}, expect: [{room_type: Deluxe, occupied: 1}, {room_type: Penthouse, occupied: 0}, {room_type: Suite, occupied: 1}]}

@@ -1,0 +1,5 @@
+schema: provided
+operations:
+  best_per_category: {kind: query, doc: Highest-average products per category with ties., params: {min_reviews: int}, returns: rows, columns: [category, name, avg_rating], ordered: true}
+  latest_review_per_product: {kind: query, doc: Most recent review per product., params: {}, returns: rows, columns: [name, rating, created_at], ordered: true}
+  bayesian_ranking: {kind: query, doc: Bayesian-average ranking., params: {m: int}, returns: rows, columns: [name, score], ordered: true}

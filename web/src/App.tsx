@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Lang } from './api'
+import type { Lang, Track } from './api'
+import Home from './pages/Home'
 import ProblemList from './pages/ProblemList'
 import WorkspacePage from './pages/WorkspacePage'
 
@@ -15,7 +16,14 @@ function useHash() {
 
 export default function App() {
   const hash = useHash()
-  const m = hash.match(/^#\/p\/([\w-]+)\/(java|python)$/)
-  if (m) return <WorkspacePage key={`${m[1]}/${m[2]}`} problemId={m[1]} lang={m[2] as Lang} />
-  return <ProblemList />
+  const legacy = hash.match(/^#\/p\/([\w-]+)\/(java|python)$/) // links from before the tracks existed
+  if (legacy) {
+    window.location.replace(`#/lld/p/${legacy[1]}/${legacy[2]}`)
+    return null
+  }
+  const ws = hash.match(/^#\/(lld|db|hld)\/p\/([\w-]+)\/(java|python|sql)$/)
+  if (ws) return <WorkspacePage key={hash} track={ws[1] as Track} problemId={ws[2]} lang={ws[3] as Lang} />
+  const list = hash.match(/^#\/(lld|db|hld)\/?$/)
+  if (list) return <ProblemList key={list[1]} track={list[1] as Track} />
+  return <Home />
 }

@@ -1,0 +1,8 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  list_item: {doc: List an item for auction., params: {seller_id: bigint, title: text, start_price: numeric, ends_at: timestamptz}, returns: one, columns: [id]}
+  bid: {doc: Place a bid (rules in the statement)., params: {item_id: bigint, bidder_id: bigint, amount: numeric, at: timestamptz}, returns: one, columns: [bid_id]}
+  bid_history: {kind: query, doc: Bids on the item, highest first., params: {item_id: bigint}, returns: rows, columns: [bidder, amount], ordered: true}
+  results: {kind: query, doc: Ended auctions with bids, their winner and price., params: {at: timestamptz}, returns: rows, columns: [title, winner, price], ordered: true}
+  wins: {kind: query, doc: Number of auctions the user has won., params: {user_id: bigint, at: timestamptz}, returns: value}

@@ -1,0 +1,35 @@
+scenarios:
+  - name: one_active_order_per_agent
+    steps:
+      - {op: add_restaurant, args: {name: A}, bind: r}
+      - {op: add_item, args: {restaurant_id: $r.id, name: Idli, price: 50}, bind: i}
+      - {op: add_customer, args: {name: Ann}, bind: u}
+      - {op: add_agent, args: {name: Ravi}, bind: ravi}
+      - {op: add_agent, args: {name: Asha}, bind: asha}
+      - {op: place_order, args: {customer_id: $u.id, restaurant_id: $r.id, items: [{item_id: $i.id, qty: 1}]}, bind: o1}
+      - {op: place_order, args: {customer_id: $u.id, restaurant_id: $r.id, items: [{item_id: $i.id, qty: 2}]}, bind: o2}
+      - {op: assign_agent, args: {order_id: $o1.order_id, agent_id: $ravi.id}}
+      - {op: assign_agent, args: {order_id: $o2.order_id, agent_id: $ravi.id}, expect_error: rejected}
+      - {op: advance, args: {order_id: $o1.order_id, status: CANCELLED}}
+      - {op: assign_agent, args: {order_id: $o2.order_id, agent_id: $ravi.id}}
+      - {op: advance, args: {order_id: $o2.order_id, status: PREPARING}}
+      - {op: advance, args: {order_id: $o2.order_id, status: PICKED_UP}}
+      - {op: advance, args: {order_id: $o2.order_id, status: DELIVERED}}
+      - {op: advance, args: {order_id: $o1.order_id, status: PREPARING}, expect_error: rejected}
+      - {op: agent_deliveries, args: {}, expect: [{agent: Asha, delivered: 0}, {agent: Ravi, delivered: 1}]}
+      - {op: restaurant_revenue, args: {restaurant_id: $r.id}, expect: 100}
+  - name: validation_and_price_snapshot
+    steps:
+      - {op: add_restaurant, args: {name: A}, bind: r}
+      - {op: add_item, args: {restaurant_id: $r.id, name: Vada, price: -1}, expect_error: rejected}
+      - {op: add_item, args: {restaurant_id: $r.id, name: Vada, price: 30}, bind: v}
+      - {op: add_customer, args: {name: Ann}, bind: u}
+      - {op: place_order, args: {customer_id: $u.id, restaurant_id: $r.id, items: [{item_id: $v.id, qty: 0}]}, expect_error: rejected}
+      - {op: place_order, args: {customer_id: 999999, restaurant_id: $r.id, items: [{item_id: $v.id, qty: 1}]}, expect_error: rejected}
+      - {op: place_order, args: {customer_id: $u.id, restaurant_id: $r.id, items: [{item_id: $v.id, qty: 3}]}, bind: o}
+      - {op: advance, args: {order_id: $o.order_id, status: SHIPPED}, expect_error: rejected}
+      - {op: advance, args: {order_id: $o.order_id, status: PREPARING}}
+      - {op: advance, args: {order_id: $o.order_id, status: CANCELLED}, expect_error: rejected}
+      - {op: advance, args: {order_id: $o.order_id, status: PICKED_UP}}
+      - {op: advance, args: {order_id: $o.order_id, status: DELIVERED}}
+      - {op: restaurant_revenue, args: {restaurant_id: $r.id}, expect: 90}

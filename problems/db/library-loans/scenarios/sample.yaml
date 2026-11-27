@@ -1,0 +1,26 @@
+scenarios:
+  - name: lend_return_fine
+    steps:
+      - {op: add_book, args: {isbn: "978-0", title: SQL Basics}, bind: b}
+      - {op: add_copy, args: {book_id: $b.id, barcode: C1}}
+      - {op: add_copy, args: {book_id: $b.id, barcode: C2}}
+      - {op: add_member, args: {name: Ann}, bind: m}
+      - {op: checkout, args: {barcode: C1, member_id: $m.id, at: "2030-01-01T10:00:00Z"}, expect: {due_at: "2030-01-15T10:00:00+00:00"}}
+      - {op: available_copies, args: {isbn: "978-0"}, expect: 1}
+      - {op: checkout, args: {barcode: C1, member_id: $m.id, at: "2030-01-02T10:00:00Z"}, expect_error: rejected}
+      - {op: return_copy, args: {barcode: C1, at: "2030-01-17T09:00:00Z"}, expect: {fine: 20}}
+      - {op: return_copy, args: {barcode: C1, at: "2030-01-18T09:00:00Z"}, expect_error: rejected}
+  - name: three_loans_max
+    steps:
+      - {op: add_book, args: {isbn: "1", title: A}, bind: b}
+      - {op: add_copy, args: {book_id: $b.id, barcode: X1}}
+      - {op: add_copy, args: {book_id: $b.id, barcode: X2}}
+      - {op: add_copy, args: {book_id: $b.id, barcode: X3}}
+      - {op: add_copy, args: {book_id: $b.id, barcode: X4}}
+      - {op: add_member, args: {name: Ann}, bind: m}
+      - {op: checkout, args: {barcode: X1, member_id: $m.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: checkout, args: {barcode: X2, member_id: $m.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: checkout, args: {barcode: X3, member_id: $m.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: checkout, args: {barcode: X4, member_id: $m.id, at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: return_copy, args: {barcode: X2, at: "2030-01-05T10:00:00Z"}, expect: {fine: 0}}
+      - {op: checkout, args: {barcode: X4, member_id: $m.id, at: "2030-01-05T10:00:00Z"}}

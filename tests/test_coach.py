@@ -206,7 +206,7 @@ def test_offline_without_key_and_strict_mode(ws, monkeypatch):
 
 def test_offline_on_reference_flags_nothing_as_missed(tmp_path):
     dst = tmp_path / "ref"
-    shutil.copytree(ROOT / "problems/parking-lot/reference/java", dst)
+    shutil.copytree(ROOT / "problems/lld/parking-lot/reference/java", dst)
     r = review(Workspace.open(dst), provider=ExhaustedProvider())["review"]
     assert all(d["status"] != "missed" for d in r["decision_points"])
     assert all(c["confidence"] < 0.5 for c in r["comments"])

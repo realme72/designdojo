@@ -1,0 +1,21 @@
+scenarios:
+  - name: invites_and_agenda
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: create_event, args: {organizer_id: $ann.id, title: Standup, starts_at: "2030-01-06T09:00:00Z", ends_at: "2030-01-06T09:15:00Z"}, bind: st}
+      - {op: create_event, args: {organizer_id: $ann.id, title: Review, starts_at: "2030-01-06T14:00:00Z", ends_at: "2030-01-06T15:00:00Z"}, bind: rv}
+      - {op: invite, args: {event_id: $st.id, user_id: $bob.id}}
+      - {op: invite, args: {event_id: $rv.id, user_id: $bob.id}}
+      - {op: invite, args: {event_id: $rv.id, user_id: $bob.id}, expect_error: rejected}
+      - {op: respond, args: {event_id: $rv.id, user_id: $bob.id, response: DECLINED}}
+      - {op: agenda, args: {user_id: $bob.id, from: "2030-01-06T00:00:00Z", to: "2030-01-07T00:00:00Z"}, expect: [{title: Standup, response: INVITED}]}
+      - {op: attendance, args: {event_id: $rv.id}, expect: [{response: ACCEPTED, people: 1}, {response: DECLINED, people: 1}]}
+  - name: conflicts
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: create_event, args: {organizer_id: $ann.id, title: A, starts_at: "2030-01-06T09:00:00Z", ends_at: "2030-01-06T10:00:00Z"}}
+      - {op: create_event, args: {organizer_id: $ann.id, title: B, starts_at: "2030-01-06T09:30:00Z", ends_at: "2030-01-06T11:00:00Z"}}
+      - {op: create_event, args: {organizer_id: $ann.id, title: C, starts_at: "2030-01-06T11:00:00Z", ends_at: "2030-01-06T12:00:00Z"}}
+      - {op: create_event, args: {organizer_id: $ann.id, title: D, starts_at: "2030-01-06T09:45:00Z", ends_at: "2030-01-06T09:50:00Z"}}
+      - {op: conflicts, args: {user_id: $ann.id}, expect: [{first: A, second: B}, {first: A, second: D}, {first: B, second: D}]}

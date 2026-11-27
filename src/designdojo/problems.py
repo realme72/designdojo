@@ -16,6 +16,19 @@ PROBLEMS_DIR = Path(os.environ.get("DOJO_PROBLEMS", REPO_ROOT / "problems"))
 
 # Suites in run order. "visible" suites show full expected/actual on failure.
 SUITES = ("sample", "hidden", "concurrency")
+LANGS_BY_KIND = {"code": ("java", "python"), "sql": ("sql",), "hld": ()}
+
+# Three independent practice tracks: problems/<track>/<id>/. They never mix.
+TRACKS = {
+    "lld": {"title": "Low-level design", "kind": "code",
+            "blurb": "In-memory object design, like the interview: classes, interfaces, patterns, SOLID, "
+                     "concurrency. Java or Python, judged by hidden tests."},
+    "db": {"title": "Database design", "kind": "sql",
+           "blurb": "Design tables, keys, relationships and constraints on PostgreSQL, write the SQL, "
+                    "and watch how each query actually executes."},
+    "hld": {"title": "High-level design", "kind": "hld",
+            "blurb": "System design: components, data flow, scaling and trade-offs. Coming soon."},
+}
 VISIBLE_SUITES = {"sample"}
 
 
@@ -27,6 +40,7 @@ class ProblemError(LookupError):
 class Problem:
     id: str
     root: Path
+    track: str = "lld"
 
     @cached_property
     def meta(self) -> dict:
@@ -35,6 +49,21 @@ class Problem:
     @property
     def title(self) -> str:
         return self.meta.get("title", self.id)
+
+    @property
+    def kind(self) -> str:
+        """code (LLD: Java/Python) | sql (schema design and queries on PostgreSQL)."""
+        return self.meta.get("kind", TRACKS[self.track]["kind"])
+
+    @property
+    def langs(self) -> tuple[str, ...]:
+        return LANGS_BY_KIND[self.kind]
+
+    @cached_property
+    def sql_spec(self):
+        from .sql.spec import load_spec
+
+        return load_spec(self.root / "spec.yaml")
 
     @cached_property
     def _raw_contract(self) -> dict:
@@ -69,7 +98,8 @@ class Problem:
         return contract_from_raw(raw)
 
     def suites_at(self, level: int) -> list[str]:
-        return list(SUITES) + [f"curveball-{i}" for i in range(1, level + 1)]
+        base = ["sample", "hidden"] if self.kind == "sql" else list(SUITES)
+        return base + [f"curveball-{i}" for i in range(1, level + 1)]
 
     @property
     def concurrency(self) -> bool:
@@ -77,6 +107,8 @@ class Problem:
 
     @property
     def contract_types(self) -> set[str]:
+        if self.kind == "sql":
+            return set()
         c = self.contract
         return set(c.interfaces) | set(c.provided)
 
@@ -166,6 +198,10 @@ def _type_issue(value, t: dict, c: Contract, path: str) -> str | None:
 
 def lint_problem(p: Problem) -> list[str]:
     """Static checks that catch authoring mistakes before anything runs."""
+    if p.kind == "sql":
+        from .sql.lint import lint_sql_problem
+
+        return lint_sql_problem(p)
     issues: list[str] = []
     try:
         c = p.contract
@@ -276,15 +312,30 @@ def reference_meta(p: Problem, lang: str) -> str:
     return json.dumps(meta) + "\n"
 
 
-def list_problems() -> list[Problem]:
-    if not PROBLEMS_DIR.is_dir():
-        return []
-    return [Problem(p.name, p) for p in sorted(PROBLEMS_DIR.iterdir()) if (p / "problem.yaml").exists()]
+def list_problems(track: str | None = None) -> list[Problem]:
+    out = []
+    for t in TRACKS if track is None else [track]:
+        d = PROBLEMS_DIR / t
+        if d.is_dir():
+            out += [Problem(p.name, p, t) for p in sorted(d.iterdir()) if (p / "problem.yaml").exists()]
+    return out
 
 
-def get_problem(problem_id: str) -> Problem:
-    root = PROBLEMS_DIR / problem_id
-    if not (root / "problem.yaml").exists():
-        known = ", ".join(p.id for p in list_problems()) or "none"
-        raise ProblemError(f"unknown problem {problem_id!r} (available: {known})")
-    return Problem(problem_id, root)
+def get_problem(problem_id: str, track: str | None = None) -> Problem:
+    """Problem ids are unique across tracks (lint enforces it), so the track is optional."""
+    for t in TRACKS if track is None else [track]:
+        root = PROBLEMS_DIR / t / problem_id
+        if (root / "problem.yaml").exists():
+            return Problem(problem_id, root, t)
+    known = ", ".join(p.id for p in list_problems(track)) or "none"
+    raise ProblemError(f"unknown problem {problem_id!r} (available: {known})")
+
+
+def duplicate_ids() -> list[str]:
+    seen: dict[str, str] = {}
+    dups = []
+    for p in list_problems():
+        if p.id in seen:
+            dups.append(f"{p.id} is in both {seen[p.id]} and {p.track}")
+        seen[p.id] = p.track
+    return dups

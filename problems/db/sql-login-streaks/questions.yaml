@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: Describe (in words) how you'd find each user's longest streak of consecutive login days in SQL.
+  points:
+    - text: Reduce to one row per user per day first (DISTINCT) - multiple logins a day must not break the logic.
+      keywords: [distinct, one row per day, dedupe, per day]
+    - text: Gaps-and-islands - subtract ROW_NUMBER (in days) from the date; consecutive days share the same value.
+      keywords: [gaps and islands, row_number, subtract, same value, island]
+    - text: Group by user and that key to get run lengths, then take the max per user.
+      keywords: [group by, run length, max, count]
+  follow_up: How would you do it with LAG instead of ROW_NUMBER?
+- id: time_zones
+  stage: design
+  question: A login at 23:30 IST and one at 00:30 IST - same day or not? How do you make the query unambiguous?
+  points:
+    - text: Decide the business time zone and convert explicitly (AT TIME ZONE) before taking the date.
+      keywords: [at time zone, convert, explicit, business time zone]
+    - text: timestamptz stores instants; the "day" depends on the zone you view it in.
+      keywords: [timestamptz, instant, depends on zone]
+    - text: Per-user time zones need the user's zone in the conversion.
+      keywords: [per-user, user's zone, local day]
+  follow_up: Which index helps a "logins per day for the last 30 days" query?

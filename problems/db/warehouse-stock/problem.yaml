@@ -1,0 +1,8 @@
+id: warehouse-stock
+title: Multi-Warehouse Stock
+difficulty: medium
+category: Commerce & payments
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [ledger, upsert, check-constraints, left-join-reports]

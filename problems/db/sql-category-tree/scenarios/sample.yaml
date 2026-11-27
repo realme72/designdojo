@@ -1,0 +1,15 @@
+seed: |
+  insert into categories values (1, null, 'Electronics'), (2, 1, 'Phones'), (3, 2, 'Android'), (4, 2, 'Ios'),
+    (5, 1, 'Laptops'), (6, null, 'Books');
+  insert into products values (1, 3, 'Pixel', 600), (2, 4, 'Iphone 15', 900), (3, 5, 'ThinkPad', 1000), (4, 2, 'Case', 15.5);
+scenarios:
+  - name: paths_and_subtrees
+    steps:
+      - {op: path, args: {category_id: 3}, expect: Electronics > Phones > Android}
+      - {op: path, args: {category_id: 6}, expect: Books}
+      - {op: subtree_products, args: {category_id: 2}, expect: {products: 3, avg_price: 505.17}}
+      - {op: subtree_products, args: {category_id: 6}, expect: {products: 0, avg_price: null}}
+  - name: outline_and_leaves
+    steps:
+      - {op: outline, args: {}, expect: [{name: Books, depth: 0}, {name: Electronics, depth: 0}, {name: Laptops, depth: 1}, {name: Phones, depth: 1}, {name: Android, depth: 2}, {name: Ios, depth: 2}]}
+      - {op: leaf_categories, args: {}, expect: [{name: Android}, {name: Books}, {name: Ios}, {name: Laptops}]}

@@ -1,0 +1,72 @@
+- id: storage_choice
+  stage: before
+  question: Relational database or NoSQL for the reservation system? Why?
+  points:
+    - text: Double booking must be impossible - that needs strong consistency and transactions on the booking path.
+      keywords: [consisten, acid, transaction, double book, atomic]
+    - text: The no-overlap rule can be enforced by the database itself (an exclusion constraint on date ranges), which is hard to get in most NoSQL stores.
+      keywords: [exclusion, constraint, overlap, daterange, range]
+    - text: Rooms, types, guests and bookings are relational; occupancy and history reports need joins and aggregation.
+      keywords: [join, relational, relationship, report, aggregat]
+    - text: NoSQL/caches can serve the read-heavy search side (availability browsing) if it tolerates staleness, while bookings stay authoritative in the RDBMS.
+      keywords: [cache, search, read-heavy, eventual, redis, elasticsearch, stale]
+  follow_up: Search traffic is 1000x booking traffic. How do you keep search fast without risking double bookings?
+- id: no_double_booking
+  stage: design
+  question: How do you guarantee a room is never double-booked, even when two requests arrive at the same time?
+  points:
+    - text: Checking for overlaps and then inserting is a race - both requests can pass the check.
+      keywords: [race, concurrent, check-then, check then, both]
+    - text: An exclusion constraint - EXCLUDE USING gist (room_id WITH =, daterange(check_in, check_out) WITH &&) - makes the database reject the second one atomically.
+      keywords: [exclude, exclusion, gist, "&&", btree_gist]
+    - text: Only confirmed bookings should conflict - a partial constraint (WHERE status = 'CONFIRMED').
+      keywords: [partial, where status, confirmed, cancel]
+    - text: Alternatives - lock the room row (SELECT ... FOR UPDATE) before checking, an advisory lock, or SERIALIZABLE with retries - and why they are weaker or slower.
+      keywords: [for update, lock, advisory, serializable, retry]
+  follow_up: Your exclusion constraint rejected a booking. What should the API tell the user, and what should the client do?
+- id: date_model
+  stage: design
+  question: How do you represent a stay, and why does the choice of interval matter?
+  points:
+    - text: Half-open intervals [check_in, check_out) - the checkout day is free, so back-to-back stays don't conflict.
+      keywords: [half-open, half open, "[)", exclusive, back-to-back, back to back]
+    - text: Nights = check_out - check_in; use date, not timestamp, for calendar days.
+      keywords: [nights, date, not timestamp, calendar]
+    - text: CHECK (check_out > check_in) rejects empty or inverted stays.
+      keywords: [check, check_out > check_in, invert, empty]
+  follow_up: Some hotels allow hourly day-use rooms. What changes in the model?
+- id: availability
+  stage: design
+  question: How would you find available rooms of a type for a date range, and keep it fast?
+  points:
+    - text: NOT EXISTS (or anti-join) on bookings with the same overlap predicate the constraint uses.
+      keywords: [not exists, anti-join, anti join, left join, overlap, "&&"]
+    - text: The exclusion constraint's gist index on (room_id, stay range) serves the overlap lookup.
+      keywords: [gist, index]
+    - text: Alternative - a per-night inventory table (one row per room per night) - simple counting and locking, but many more rows and writes.
+      keywords: [per night, per-night, inventory, room_nights, calendar table]
+  follow_up: Guests want "any room of this type" rather than a specific room. Would you assign the room at booking time or at check-in?
+- id: cancellations
+  stage: after
+  question: How do you model cancellations, and what happens to the booking's history?
+  points:
+    - text: Keep the row and change status (soft cancel) - refunds, audits and analytics need the history.
+      keywords: [soft, status, keep, history, audit, don't delete, not delete]
+    - text: Cancelled bookings must stop blocking the dates - the conflict rule applies only to confirmed ones.
+      keywords: [partial, confirmed, free, release, block]
+    - text: Status is a constrained set; refund rules may depend on how close to check-in the cancellation is.
+      keywords: [check, enum, refund, policy]
+  follow_up: You now need to know who cancelled and when, for disputes. Where does that go?
+- id: scale
+  stage: after
+  question: The system grows to 10,000 hotels with booking spikes during holidays. What changes?
+  points:
+    - text: Contention is per room/hotel, so partitioning or sharding by hotel keeps hot spots independent.
+      keywords: [partition, shard, by hotel, hotel_id]
+    - text: Short-lived holds (with expiry) during checkout keep payment from blocking the inventory for long.
+      keywords: [hold, expir, ttl, reserve, timeout]
+    - text: Search reads from caches/replicas with eventual consistency; the final booking is still validated by the authoritative database.
+      keywords: [cache, replica, eventual, authoritative, read]
+    - text: Queue or rate-limit spikes rather than letting retries pile up on the database.
+      keywords: [queue, rate limit, backpressure, retry]
+  follow_up: A replica lags 5 seconds behind. Which screens can read from it and which must not?

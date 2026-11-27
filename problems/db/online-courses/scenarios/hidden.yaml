@@ -1,0 +1,25 @@
+scenarios:
+  - name: board
+    steps:
+      - {op: add_course, args: {title: SQL}, bind: c}
+      - {op: add_lesson, args: {course_id: $c.id, title: A}, bind: a}
+      - {op: add_lesson, args: {course_id: $c.id, title: B}, bind: b}
+      - {op: add_student, args: {name: Zoe}, bind: z}
+      - {op: add_student, args: {name: Ann}, bind: n}
+      - {op: add_student, args: {name: Bob}, bind: o}
+      - {op: enroll, args: {student_id: $z.id, course_id: $c.id}}
+      - {op: enroll, args: {student_id: $n.id, course_id: $c.id}}
+      - {op: enroll, args: {student_id: $o.id, course_id: $c.id}}
+      - {op: complete, args: {student_id: $z.id, lesson_id: $a.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: complete, args: {student_id: $z.id, lesson_id: $b.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: complete, args: {student_id: $n.id, lesson_id: $b.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: completion_board, args: {course_id: $c.id}, expect: [{student: Zoe, percent: 100}, {student: Ann, percent: 50}, {student: Bob, percent: 0}]}
+      - {op: next_lesson, args: {student_id: $z.id, course_id: $c.id}, expect: []}
+      - {op: next_lesson, args: {student_id: $n.id, course_id: $c.id}, expect: [{title: A}]}
+  - name: empty_course
+    steps:
+      - {op: add_course, args: {title: Soon}, bind: c}
+      - {op: add_student, args: {name: Ann}, bind: s}
+      - {op: enroll, args: {student_id: $s.id, course_id: $c.id}}
+      - {op: progress, args: {student_id: $s.id, course_id: $c.id}, expect: {done: 0, total: 0, percent: 0}}
+      - {op: add_lesson, args: {course_id: 999999, title: X}, expect_error: rejected}

@@ -1,0 +1,21 @@
+scenarios:
+  - name: receive_ship_transfer
+    steps:
+      - {op: add_product, args: {sku: MUG}, bind: p}
+      - {op: add_warehouse, args: {code: BLR}, bind: b}
+      - {op: add_warehouse, args: {code: DEL}, bind: d}
+      - {op: receive, args: {warehouse_id: $b.id, product_id: $p.id, qty: 10}}
+      - {op: ship, args: {warehouse_id: $b.id, product_id: $p.id, qty: 3}}
+      - {op: transfer, args: {from_id: $b.id, to_id: $d.id, product_id: $p.id, qty: 4}}
+      - {op: stock_by_warehouse, args: {product_id: $p.id}, expect: [{warehouse: BLR, qty: 3}, {warehouse: DEL, qty: 4}]}
+      - {op: history, args: {product_id: $p.id}, expect: [{warehouse: BLR, change: 10, reason: RECEIVE}, {warehouse: BLR, change: -3, reason: SHIP}, {warehouse: BLR, change: -4, reason: TRANSFER}, {warehouse: DEL, change: 4, reason: TRANSFER}]}
+  - name: never_negative
+    steps:
+      - {op: add_product, args: {sku: MUG}, bind: p}
+      - {op: add_warehouse, args: {code: BLR}, bind: b}
+      - {op: add_warehouse, args: {code: DEL}, bind: d}
+      - {op: receive, args: {warehouse_id: $b.id, product_id: $p.id, qty: 2}}
+      - {op: ship, args: {warehouse_id: $b.id, product_id: $p.id, qty: 3}, expect_error: rejected}
+      - {op: transfer, args: {from_id: $b.id, to_id: $d.id, product_id: $p.id, qty: 5}, expect_error: rejected}
+      - {op: stock_by_warehouse, args: {product_id: $p.id}, expect: [{warehouse: BLR, qty: 2}]}
+      - {op: history, args: {product_id: $p.id}, expect: [{change: 2}]}

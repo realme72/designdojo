@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: How do you split a click stream into sessions with SQL, without loops?
+  points:
+    - text: Compare each event to the previous one of the same user with LAG.
+      keywords: [lag, previous, partition by user]
+    - text: Flag a new session when the gap exceeds the threshold (or there is no previous event).
+      keywords: [flag, gap, threshold, 30 minutes, new session]
+    - text: A running SUM of the flags assigns session numbers; group by them.
+      keywords: [running sum, cumulative sum, sum over, session number]
+  follow_up: Sessions must also end at midnight. How do you add that rule?
+- id: streaming
+  stage: after
+  question: How would you sessionize in real time as events arrive?
+  points:
+    - text: Stream processing with session windows (Flink/Kafka Streams/Beam), keyed by user with an inactivity gap.
+      keywords: [stream, session window, flink, kafka streams, beam, gap]
+    - text: Late events can merge or split sessions - handle watermarks/allowed lateness.
+      keywords: [late, watermark, lateness, merge]
+    - text: Keep per-user state (last event time) in the stream processor.
+      keywords: [state, per-user state, last event]
+  follow_up: A user switches between phone and laptop. One session or two?

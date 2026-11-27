@@ -1,0 +1,15 @@
+- id: follows_model
+  question: How is the follow graph modelled?
+  good: A follows(follower_id, followee_id) table with a composite primary key, two FKs to users, CHECK (follower_id <> followee_id), and an index on (followee_id) for "who follows me".
+  smells: [NO_PRIMARY_KEY, MISSING_FK, FK_NOT_INDEXED]
+- id: likes_unique
+  question: How is "one like per user per post" enforced?
+  good: likes(user_id, post_id) with a composite primary key (or UNIQUE); the database rejects the duplicate, no read-then-write.
+  smells: [NO_PRIMARY_KEY]
+- id: counts
+  question: How are like/comment counts computed for the feed?
+  good: Aggregate likes and comments separately (subqueries, LATERAL or pre-aggregated CTEs) - joining both to posts multiplies rows. At scale, denormalized counters maintained transactionally.
+- id: integrity
+  question: Which rules does the database enforce?
+  good: Case-insensitive unique username (unique index on lower(username) or citext), non-empty comment CHECK, FKs everywhere.
+  smells: [NO_NATURAL_KEY, MISSING_FK]

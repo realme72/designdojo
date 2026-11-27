@@ -44,6 +44,48 @@ Reply with ONE JSON object, no prose, exactly this shape:
                 "why_here": "<= 2 sentences tied to this problem", "confidence": 0.0-1.0}}]}}"""
 
 
+SQL_SYSTEM = f"""You are DesignDojo's database design coach for interview practice (PostgreSQL).
+A candidate designed a schema and wrote SQL operations/queries for the problem below. Review the
+DESIGN: entities and relationships (1:1, 1:N, M:N via junction tables), keys (surrogate vs natural),
+normalization (1NF-3NF, and when denormalizing is justified), integrity enforced BY THE DATABASE
+(NOT NULL, UNIQUE, FOREIGN KEY with sensible ON DELETE, CHECK, EXCLUDE), data types (numeric for
+money, timestamptz), indexes that match the access paths, and query quality (correct joins,
+NULL-safety, CTEs/window functions where they clarify, no N+1 or accidental cross joins,
+race conditions such as check-then-insert that need a constraint or locking). Teach: explain why
+something matters in THIS problem.
+
+Rules:
+- Anchor every comment to real line numbers from the CODE section. Never invent lines.
+- STATIC SIGNALS come from the Postgres catalog and simple checks; confirm against the code first.
+- Use DECISION POINTS as your rubric. Judge each one: good | partial | missed | not_applicable.
+- Praise good decisions explicitly (kind "praise").
+- Flag over-engineering (kind "overengineering"): tables, indirection or denormalization with no
+  requirement behind them.
+- Separate correctness/integrity risks (kind "warning") from improvements (kind "suggestion").
+- hints: exactly 3, progressively more revealing: (1) a question that nudges, (2) name the
+  principle (e.g. "Referential integrity", "2NF", "Covering index") and why, (3) the concrete shape
+  of the fix. Do not give full solutions.
+- example: optional, <= 10 lines of SQL, only the essential shape.
+- At most {MAX_COMMENTS} comments, most important first. Be concise.
+- "principle" holds the database principle; "pattern" may name a modelling pattern
+  (junction table, soft delete, ledger, adjacency list, closure table...) or null.
+
+Reply with ONE JSON object, no prose, exactly this shape:
+{{"summary": "<= 3 sentences",
+  "design_score": 0-100,
+  "decision_points": [{{"id": "<id>", "status": "good|partial|missed|not_applicable", "note": "<= 1 sentence"}}],
+  "comments": [{{"file": "solution/...", "line_start": N, "line_end": N,
+                "kind": "suggestion|praise|warning|overengineering",
+                "principle": "e.g. Referential integrity or null", "pattern": "e.g. Junction table or null",
+                "decision_point": "<id or null>", "title": "<= 10 words",
+                "hints": ["nudge", "principle", "shape"], "example": "SQL or null",
+                "why_here": "<= 2 sentences tied to this problem", "confidence": 0.0-1.0}}]}}"""
+
+
+def system_for(lang: str) -> str:
+    return SQL_SYSTEM if lang == "sql" else SYSTEM
+
+
 def est_tokens(s: str) -> int:
     """Conservative estimate for mixed code/English (~3 chars per token)."""
     return len(s) // 3 + 1
@@ -83,7 +125,7 @@ def requirements(statement: str, limit: int = 2600) -> str:
 
 
 def build(*, title: str, statement: str, decision_points: list[dict], analysis: dict,
-          files: dict[str, str], tests: str) -> tuple[str, dict]:
+          files: dict[str, str], tests: str, system: str = SYSTEM) -> tuple[str, dict]:
     """Return (user_prompt, meta). meta records which files were outlined."""
     dps = "\n".join(
         f"- {d['id']}: {d['question']} Good: {d['good']}"
@@ -104,12 +146,15 @@ def build(*, title: str, statement: str, decision_points: list[dict], analysis: 
         for c in analysis["classes"]
     ) or "- none"
 
+    graph_title = "CLASS GRAPH"
+    if analysis.get("graph_text") is not None:
+        graph_title, classes = "SCHEMA (from the Postgres catalog)", analysis["graph_text"]
     head = (f"PROBLEM: {title}\nREQUIREMENTS:\n{requirements(statement)}\n\n"
             f"DECISION POINTS:\n{dps}\n\nTEST RESULTS: {tests}\n\n"
             f"STATIC SIGNALS (parser output; confirm before using):\n{signals}\n\n"
-            f"CLASS GRAPH:\n{classes}\n\nCODE (line-numbered):\n")
+            f"{graph_title}:\n{classes}\n\nCODE (line-numbered):\n")
 
-    budget = INPUT_BUDGET - est_tokens(SYSTEM) - est_tokens(head)
+    budget = INPUT_BUDGET - est_tokens(system) - est_tokens(head)
     flagged = {s["file"] for s in analysis["smells"]}
     rendered = {p: number(src) for p, src in files.items()}
     outlined: list[str] = []
@@ -131,7 +176,7 @@ def build(*, title: str, statement: str, decision_points: list[dict], analysis: 
 
     code = "\n\n".join(f"=== {p} ===\n{t}" for p, t in sorted(rendered.items()) if t)
     user = head + code
-    return user, {"outlined": outlined, "truncated": truncated, "input_tokens_est": est_tokens(SYSTEM + user)}
+    return user, {"outlined": outlined, "truncated": truncated, "input_tokens_est": est_tokens(system + user)}
 
 
 def read_solution(root: Path, ext: str) -> dict[str, str]:

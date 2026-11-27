@@ -1,0 +1,11 @@
+seed: |
+  insert into pageviews values
+    (1, 1, '/home', '2030-01-01 10:00Z'), (2, 1, '/a', '2030-01-01 10:20Z'), (3, 1, '/b', '2030-01-01 10:50Z'),
+    (4, 1, '/home', '2030-01-01 11:21Z'), (5, 1, '/c', '2030-01-01 11:30Z'),
+    (6, 2, '/blog', '2030-01-01 09:00Z');
+scenarios:
+  - name: thirty_minute_rule
+    steps:
+      - {op: sessions, args: {}, expect: [{user_id: 1, session_no: 1, started_at: "2030-01-01T10:00:00+00:00", ended_at: "2030-01-01T10:50:00+00:00", views: 3}, {user_id: 1, session_no: 2, views: 2}, {user_id: 2, session_no: 1, views: 1}]}
+      - {op: avg_session_minutes, args: {}, expect: 19.7}
+      - {op: landing_pages, args: {}, expect: [{url: /home, sessions: 2}, {url: /blog, sessions: 1}]}

@@ -1,0 +1,8 @@
+id: calendar-events
+title: Calendar & Invites (Google Calendar)
+difficulty: medium
+category: SaaS & productivity
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [m2m-with-attributes, overlap-self-join, ranges, rsvp]

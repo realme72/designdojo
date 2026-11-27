@@ -1,0 +1,22 @@
+scenarios:
+  - name: no_cross_tenant_links
+    steps:
+      - {op: add_tenant, args: {slug: acme, plan: PRO}, bind: a}
+      - {op: add_tenant, args: {slug: globex, plan: PRO}, bind: g}
+      - {op: add_user, args: {tenant_id: $a.id, email: ann@x.com}, bind: ann}
+      - {op: add_user, args: {tenant_id: $g.id, email: ann@x.com}, bind: gann}
+      - {op: add_user, args: {tenant_id: $a.id, email: ann@x.com}, expect_error: unique_violation}
+      - {op: create_project, args: {tenant_id: $a.id, name: Web}, bind: ap}
+      - {op: create_task, args: {tenant_id: $a.id, project_id: $ap.id, title: Login, assignee_id: $gann.id}, expect_error: rejected}
+      - {op: create_task, args: {tenant_id: $g.id, project_id: $ap.id, title: Steal, assignee_id: null}, expect_error: rejected}
+      - {op: create_task, args: {tenant_id: $a.id, project_id: $ap.id, title: Login, assignee_id: $ann.id}}
+      - {op: user_tasks, args: {tenant_id: $a.id, user_id: $ann.id}, expect: [{project: Web, title: Login}]}
+  - name: free_plan_limit
+    steps:
+      - {op: add_tenant, args: {slug: tiny, plan: FREE}, bind: t}
+      - {op: create_project, args: {tenant_id: $t.id, name: P1}}
+      - {op: create_project, args: {tenant_id: $t.id, name: P2}}
+      - {op: create_project, args: {tenant_id: $t.id, name: P3}}
+      - {op: create_project, args: {tenant_id: $t.id, name: P4}, expect_error: rejected}
+      - {op: upgrade, args: {tenant_id: $t.id}}
+      - {op: create_project, args: {tenant_id: $t.id, name: P4}}

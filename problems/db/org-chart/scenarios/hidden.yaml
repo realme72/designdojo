@@ -1,0 +1,22 @@
+scenarios:
+  - name: salary_reports
+    steps:
+      - {op: add_department, args: {name: Sales}, bind: s}
+      - {op: add_department, args: {name: Eng}, bind: e}
+      - {op: add_department, args: {name: Empty}}
+      - {op: hire, args: {name: Boss, department_id: $e.id, manager_id: null, salary: 200, hired_on: "2020-01-01"}, bind: boss}
+      - {op: hire, args: {name: Ann, department_id: $e.id, manager_id: $boss.id, salary: 250, hired_on: "2020-01-01"}}
+      - {op: hire, args: {name: Bob, department_id: $e.id, manager_id: $boss.id, salary: 250, hired_on: "2020-01-01"}}
+      - {op: hire, args: {name: Cy, department_id: $e.id, manager_id: $boss.id, salary: 100, hired_on: "2020-01-01"}}
+      - {op: hire, args: {name: Sid, department_id: $s.id, manager_id: $boss.id, salary: 90.50, hired_on: "2020-01-01"}}
+      - {op: hire, args: {name: Sue, department_id: $s.id, manager_id: $boss.id, salary: 80, hired_on: "2020-01-01"}}
+      - {op: top_paid, args: {n: 2}, expect: [{department: Eng, name: Ann, salary: 250}, {department: Eng, name: Bob, salary: 250}, {department: Eng, name: Boss, salary: 200}, {department: Sales, name: Sid, salary: 90.5}, {department: Sales, name: Sue, salary: 80}]}
+      - {op: dept_stats, args: {}, expect: [{department: Empty, headcount: 0, avg_salary: null, max_salary: null}, {department: Eng, headcount: 4, avg_salary: 200, max_salary: 250}, {department: Sales, headcount: 2, avg_salary: 85.25, max_salary: 90.5}]}
+      - {op: earns_more_than_manager, args: {}, expect: [{name: Ann, manager: Boss}, {name: Bob, manager: Boss}]}
+  - name: validation
+    steps:
+      - {op: add_department, args: {name: Eng}, bind: e}
+      - {op: add_department, args: {name: Eng}, expect_error: unique_violation}
+      - {op: hire, args: {name: X, department_id: $e.id, manager_id: null, salary: 0, hired_on: "2020-01-01"}, expect_error: rejected}
+      - {op: hire, args: {name: X, department_id: 999999, manager_id: null, salary: 10, hired_on: "2020-01-01"}, expect_error: rejected}
+      - {op: hire, args: {name: X, department_id: $e.id, manager_id: 999999, salary: 10, hired_on: "2020-01-01"}, expect_error: rejected}

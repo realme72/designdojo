@@ -1,0 +1,9 @@
+- id: pivot
+  question: How are rows turned into quarter columns?
+  good: Conditional aggregation - SUM(amount) FILTER (WHERE extract(quarter ...) = 1) with COALESCE to 0 (or SUM(CASE ...)).
+- id: rollup
+  question: How are subtotals produced?
+  good: GROUP BY ROLLUP (region, product); ordering with NULLS LAST / GROUPING() to put subtotals after details.
+- id: share
+  question: How is the top product's share computed?
+  good: Window SUM over the region and ROW_NUMBER/DISTINCT ON for the top product; round in numeric.

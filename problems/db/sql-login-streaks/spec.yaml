@@ -1,0 +1,5 @@
+schema: provided
+operations:
+  longest_streak: {kind: query, doc: Longest consecutive-day streak per user., params: {}, returns: rows, columns: [name, streak], ordered: true}
+  daily_active: {kind: query, doc: Distinct users per day, zero days included., params: {from_day: date, to_day: date}, returns: rows, columns: [day, users], ordered: true}
+  active_n_days_in_row: {kind: query, doc: Users with a streak of at least n days., params: {n: int}, returns: rows, columns: [name], ordered: true}

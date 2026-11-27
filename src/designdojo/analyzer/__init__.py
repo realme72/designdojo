@@ -22,6 +22,10 @@ __all__ = ["analyze", "SMELLS"]
 
 def analyze(root: Path, lang: str, *, concurrency: bool = False, contract_types: set[str] | None = None) -> dict:
     """Analyze <root>/solution. Paths in the result are relative to root (e.g. solution/Lot.java)."""
+    if lang == "sql":
+        from ..sql.analyze import analyze_workspace
+
+        return analyze_workspace(root)
     contract_types = contract_types or set()
     classes: list[ClassInfo] = []
     smells: list[Smell] = []

@@ -1,0 +1,17 @@
+seed: |
+  insert into departments values (1, 'Eng'), (2, 'Sales');
+  insert into employees values
+    (1, 'Ceo', 1, null, 300), (2, 'Ann', 1, 1, 200), (3, 'Bob', 1, 1, 200),
+    (4, 'Cy', 1, 2, 150), (5, 'Dee', 1, 2, 120), (6, 'Sam', 2, 1, 90), (7, 'Sue', 2, 6, 60);
+scenarios:
+  - name: nth_highest
+    steps:
+      - {op: nth_highest, args: {n: 1}, expect: 300}
+      - {op: nth_highest, args: {n: 2}, expect: 200}
+      - {op: nth_highest, args: {n: 3}, expect: 150}
+      - {op: nth_highest, args: {n: 9}, expect: null}
+  - name: per_department
+    steps:
+      - {op: top3_per_department, args: {}, expect: [{department: Eng, name: Ceo, salary: 300}, {department: Eng, name: Ann, salary: 200}, {department: Eng, name: Bob, salary: 200}, {department: Eng, name: Cy, salary: 150}, {department: Sales, name: Sam, salary: 90}, {department: Sales, name: Sue, salary: 60}]}
+      - {op: above_department_average, args: {}, expect: [{name: Ann, department: Eng}, {name: Bob, department: Eng}, {name: Ceo, department: Eng}, {name: Sam, department: Sales}]}
+      - {op: managers_with_reports, args: {min: 2}, expect: [{name: Ceo, reports: 3}, {name: Ann, reports: 2}]}

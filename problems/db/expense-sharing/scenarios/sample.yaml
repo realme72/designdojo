@@ -1,0 +1,24 @@
+scenarios:
+  - name: equal_split_to_the_cent
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: add_user, args: {name: Cy}, bind: c}
+      - {op: create_group, args: {name: Trip}, bind: g}
+      - {op: add_member, args: {group_id: $g.id, user_id: $a.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $b.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $c.id}}
+      - {op: add_expense_equal, args: {group_id: $g.id, paid_by: $a.id, amount: 100.00, description: Dinner, participants: [$b.id, $a.id, $c.id]}, bind: e}
+      - {op: expense_shares, args: {expense_id: $e.id}, expect: [{name: Ann, share: 33.33}, {name: Bob, share: 33.34}, {name: Cy, share: 33.33}]}
+      - {op: balances, args: {group_id: $g.id}, expect: [{name: Ann, balance: 66.67}, {name: Bob, balance: -33.34}, {name: Cy, balance: -33.33}]}
+  - name: exact_and_settle
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: create_group, args: {name: Flat}, bind: g}
+      - {op: add_member, args: {group_id: $g.id, user_id: $a.id}}
+      - {op: add_member, args: {group_id: $g.id, user_id: $b.id}}
+      - {op: add_expense_exact, args: {group_id: $g.id, paid_by: $b.id, amount: 90, description: Rent, shares: [{user_id: $a.id, amount: 60}, {user_id: $b.id, amount: 20}]}, expect_error: rejected}
+      - {op: add_expense_exact, args: {group_id: $g.id, paid_by: $b.id, amount: 90, description: Rent, shares: [{user_id: $a.id, amount: 60}, {user_id: $b.id, amount: 30}]}}
+      - {op: settle, args: {group_id: $g.id, from_id: $a.id, to_id: $b.id, amount: 50}}
+      - {op: balances, args: {group_id: $g.id}, expect: [{name: Ann, balance: -10}, {name: Bob, balance: 10}]}

@@ -1,0 +1,9 @@
+- id: ordered_set
+  question: How is the median computed?
+  good: percentile_cont(0.5) WITHIN GROUP (ORDER BY salary) per company - percentile_disc picks an actual value instead.
+- id: compare_to_group
+  question: How do you compare rows to their group's median?
+  good: Compute medians in a CTE and join back (ordered-set aggregates aren't window functions).
+- id: ntile
+  question: How are quartiles assigned?
+  good: NTILE(4) OVER (ORDER BY salary, id) - deterministic with a tie-breaker.

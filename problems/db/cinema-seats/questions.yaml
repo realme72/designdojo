@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Ticket booking for a blockbuster release - which storage and why?
+  points:
+    - text: Seat assignment needs strong consistency - a relational database with unique constraints guarantees no seat is sold twice.
+      keywords: [consisten, unique, relational, acid, double]
+    - text: Seat maps are read-heavy and can be cached briefly; the final booking is checked by the database.
+      keywords: [cache, read-heavy, stale, final check]
+    - text: Temporary holds during payment are often kept in Redis with a TTL, confirmed into the database after payment.
+      keywords: [hold, redis, ttl, expire, payment]
+  follow_up: 50,000 people open the seat map for the same show at 10:00:00. What do you protect, and how?
+- id: double_booking
+  stage: design
+  question: Two customers click the same seat at the same moment. How does your schema guarantee only one gets it?
+  points:
+    - text: A unique constraint on (show, seat) - the second insert fails.
+      keywords: [unique, primary key, (show_id, seat_id), constraint]
+    - text: Booking several seats is one transaction - all or nothing.
+      keywords: [transaction, all or nothing, atomic]
+    - text: SELECT ... FOR UPDATE SKIP LOCKED is useful for "give me any N free seats" allocation.
+      keywords: [skip locked, for update]
+  follow_up: How would you implement a 10-minute seat hold while the customer pays?
+- id: seat_model
+  stage: design
+  question: Do you store seats per screen, or per show? Why?
+  points:
+    - text: Seats belong to the screen (physical layout); a show references the screen.
+      keywords: [screen, layout, physical, per screen]
+    - text: Bookings are per (show, seat), so availability is derived per show.
+      keywords: [per show, (show, seat), derived, availability]
+    - text: Per-show seat rows (copying the grid for every show) simplify locking but multiply rows - a valid trade-off at scale.
+      keywords: [copy, per-show rows, multiply, trade-off, pre-create]
+  follow_up: Seat prices differ by row (recliners cost more). Where does price live?

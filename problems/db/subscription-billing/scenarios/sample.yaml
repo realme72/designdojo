@@ -1,0 +1,19 @@
+scenarios:
+  - name: one_active_and_plan_change
+    steps:
+      - {op: add_plan, args: {code: basic, monthly_price: 10}}
+      - {op: add_plan, args: {code: pro, monthly_price: 25}}
+      - {op: add_customer, args: {email: ann@co.test}, bind: c}
+      - {op: subscribe, args: {customer_id: $c.id, plan_code: basic, start_at: "2030-01-01T00:00:00Z"}, bind: s}
+      - {op: subscribe, args: {customer_id: $c.id, plan_code: pro, start_at: "2030-02-01T00:00:00Z"}, expect_error: rejected}
+      - {op: change_plan, args: {subscription_id: $s.subscription_id, plan_code: pro, at: "2030-02-15T00:00:00Z"}, bind: s2}
+      - {op: mrr, args: {at: "2030-02-14T00:00:00Z"}, expect: 10}
+      - {op: mrr, args: {at: "2030-02-15T00:00:00Z"}, expect: 25}
+  - name: bill_once
+    steps:
+      - {op: add_plan, args: {code: basic, monthly_price: 9.99}}
+      - {op: add_customer, args: {email: ann@co.test}, bind: c}
+      - {op: subscribe, args: {customer_id: $c.id, plan_code: basic, start_at: "2030-01-01T00:00:00Z"}, bind: s}
+      - {op: bill, args: {subscription_id: $s.subscription_id, period_start: "2030-01-01"}, expect: {amount: 9.99}}
+      - {op: bill, args: {subscription_id: $s.subscription_id, period_start: "2030-01-01"}, expect_error: rejected}
+      - {op: bill, args: {subscription_id: $s.subscription_id, period_start: "2030-02-01"}, expect: {amount: 9.99}}

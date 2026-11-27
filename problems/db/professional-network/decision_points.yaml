@@ -1,0 +1,14 @@
+- id: symmetric
+  question: How is a mutual connection stored?
+  good: Once per unordered pair in canonical order (user_low < user_high) with a composite PK and CHECK - or both directions written together; queries union the two columns or the view does.
+  smells: [NO_PRIMARY_KEY]
+- id: pending_once
+  question: How is "one pending request per pair, either direction" enforced?
+  good: A partial unique index on (least(from_id, to_id), greatest(from_id, to_id)) WHERE status = 'PENDING' - race-free.
+- id: traversal
+  question: How is degree of separation computed?
+  good: WITH RECURSIVE breadth-first search bounded at depth 3, tracking visited nodes (or depth) to avoid cycles.
+- id: integrity
+  question: Which other rules does the database enforce?
+  good: FKs on both ends, CHECK (from_id <> to_id), constrained status, indexes on both pair columns.
+  smells: [MISSING_FK, FK_NOT_INDEXED, UNCONSTRAINED_STATUS]

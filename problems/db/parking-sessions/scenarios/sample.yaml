@@ -1,0 +1,21 @@
+scenarios:
+  - name: enter_exit_fee
+    steps:
+      - {op: add_lot, args: {name: Mall}, bind: l}
+      - {op: add_spots, args: {lot_id: $l.id, type: COMPACT, count: 2}}
+      - {op: add_spots, args: {lot_id: $l.id, type: EV, count: 1}}
+      - {op: enter, args: {lot_id: $l.id, plate: KA01, type: COMPACT, at: "2030-01-01T10:00:00Z"}, expect: {spot_no: 1}}
+      - {op: enter, args: {lot_id: $l.id, plate: KA02, type: EV, at: "2030-01-01T10:00:00Z"}, expect: {spot_no: 3}}
+      - {op: enter, args: {lot_id: $l.id, plate: KA01, type: COMPACT, at: "2030-01-01T10:05:00Z"}, expect_error: rejected}
+      - {op: exit, args: {plate: KA01, at: "2030-01-01T12:00:01Z"}, expect: {fee: 60}}
+      - {op: exit, args: {plate: KA02, at: "2030-01-01T10:10:00Z"}, expect: {fee: 30}}
+      - {op: revenue, args: {lot_id: $l.id, day: "2030-01-01"}, expect: 90}
+  - name: full_lot_and_occupancy
+    steps:
+      - {op: add_lot, args: {name: Mall}, bind: l}
+      - {op: add_spots, args: {lot_id: $l.id, type: LARGE, count: 1}}
+      - {op: add_spots, args: {lot_id: $l.id, type: COMPACT, count: 2}}
+      - {op: enter, args: {lot_id: $l.id, plate: T1, type: LARGE, at: "2030-01-01T10:00:00Z"}}
+      - {op: enter, args: {lot_id: $l.id, plate: T2, type: LARGE, at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: enter, args: {lot_id: $l.id, plate: C1, type: COMPACT, at: "2030-01-01T10:00:00Z"}, expect: {spot_no: 2}}
+      - {op: occupancy, args: {lot_id: $l.id}, expect: [{type: COMPACT, occupied: 1, total: 2}, {type: LARGE, occupied: 1, total: 1}]}

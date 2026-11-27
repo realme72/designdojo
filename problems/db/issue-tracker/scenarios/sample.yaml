@@ -1,0 +1,31 @@
+scenarios:
+  - name: numbering_and_board
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: create_project, args: {key: DOJO, name: Dojo}, bind: p}
+      - {op: create_project, args: {key: WEB, name: Web}, bind: w}
+      - {op: add_member, args: {project_id: $p.id, user_id: $ann.id}}
+      - {op: add_member, args: {project_id: $p.id, user_id: $bob.id}}
+      - {op: add_member, args: {project_id: $w.id, user_id: $ann.id}}
+      - {op: create_issue, args: {project_id: $p.id, title: Login, reporter_id: $ann.id}, expect: {issue_key: DOJO-1}}
+      - {op: create_issue, args: {project_id: $w.id, title: Css, reporter_id: $ann.id}, expect: {issue_key: WEB-1}}
+      - {op: create_issue, args: {project_id: $p.id, title: Logout, reporter_id: $bob.id}, expect: {issue_key: DOJO-2}}
+      - {op: assign, args: {issue_key: DOJO-2, user_id: $bob.id}}
+      - {op: move, args: {issue_key: DOJO-2, status: IN_PROGRESS, at: "2030-01-01T10:00:00Z"}}
+      - {op: board, args: {project_id: $p.id}, expect: [{status: TODO, issue_key: DOJO-1, assignee: null}, {status: IN_PROGRESS, issue_key: DOJO-2, assignee: Bob}]}
+  - name: workflow_and_members
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Out}, bind: out}
+      - {op: create_project, args: {key: DOJO, name: Dojo}, bind: p}
+      - {op: add_member, args: {project_id: $p.id, user_id: $ann.id}}
+      - {op: create_issue, args: {project_id: $p.id, title: X, reporter_id: $out.id}, expect_error: rejected}
+      - {op: create_issue, args: {project_id: $p.id, title: X, reporter_id: $ann.id}}
+      - {op: assign, args: {issue_key: DOJO-1, user_id: $out.id}, expect_error: rejected}
+      - {op: move, args: {issue_key: DOJO-1, status: DONE, at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: move, args: {issue_key: DOJO-1, status: IN_PROGRESS, at: "2030-01-01T10:00:00Z"}}
+      - {op: move, args: {issue_key: DOJO-1, status: TODO, at: "2030-01-01T11:00:00Z"}}
+      - {op: move, args: {issue_key: DOJO-1, status: IN_PROGRESS, at: "2030-01-01T12:00:00Z"}}
+      - {op: move, args: {issue_key: DOJO-1, status: DONE, at: "2030-01-01T13:00:00Z"}}
+      - {op: history, args: {issue_key: DOJO-1}, expect: [{from_status: TODO, to_status: IN_PROGRESS}, {from_status: IN_PROGRESS, to_status: TODO}, {from_status: TODO, to_status: IN_PROGRESS}, {from_status: IN_PROGRESS, to_status: DONE}]}

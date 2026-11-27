@@ -1,0 +1,7 @@
+- id: both_directions
+  question: How do queries see both directions of a friendship stored once?
+  good: A CTE/view unioning (user_a, user_b) and (user_b, user_a) with UNION ALL - write it once, reuse it.
+- id: anti_join
+  question: How are existing friends excluded from recommendations?
+  good: NOT EXISTS against the bidirectional view (and exclude self) - not NOT IN.
+  smells: [NOT_IN_SUBQUERY]

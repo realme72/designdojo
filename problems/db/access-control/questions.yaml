@@ -1,0 +1,35 @@
+- id: storage_choice
+  stage: before
+  question: Authorization checks run on every request. Where do roles and permissions live, and how do checks stay fast?
+  points:
+    - text: The source of truth is relational (users, roles, permissions, junctions) with integrity constraints.
+      keywords: [relational, source of truth, junction, constraint]
+    - text: Effective permissions are computed and cached per user/session (or in a token), invalidated on change.
+      keywords: [cache, token, jwt, session, invalidate, precompute]
+    - text: Large systems use dedicated authorization services/models (Zanzibar-style relationship tuples, OPA).
+      keywords: [zanzibar, opa, spicedb, authorization service, tuples]
+  follow_up: An admin revokes a permission. How quickly must it take effect, and how?
+- id: model
+  stage: design
+  question: Model users, roles and permissions. What tables and keys?
+  points:
+    - text: Three entities and many-to-many junctions - user_roles and role_permissions.
+      keywords: [junction, user_roles, role_permissions, many-to-many]
+    - text: Composite primary keys on the junctions prevent duplicates.
+      keywords: [composite, primary key, duplicate]
+    - text: Permission as (resource, action) with a unique constraint.
+      keywords: [resource, action, unique]
+  follow_up: Permissions must now be scoped to a project ("editor of project 7"). What changes?
+- id: hierarchy
+  stage: design
+  question: Roles inherit other roles. How do you compute a user's permissions, and prevent cycles?
+  points:
+    - text: Recursive CTE climbing role_parents from the user's roles.
+      keywords: [recursive, with recursive, cte, climb, parents]
+    - text: UNION (not UNION ALL) or a visited path stops infinite loops on bad data.
+      keywords: [union, visited, path, infinite]
+    - text: Prevent cycles at write time with a trigger that checks reachability.
+      keywords: [trigger, reachab, cycle, write time]
+    - text: A closure table (all ancestor pairs) makes reads O(1) joins at the cost of maintenance.
+      keywords: [closure table, ancestor, precompute]
+  follow_up: How deep can hierarchies get before the recursive query becomes a problem?

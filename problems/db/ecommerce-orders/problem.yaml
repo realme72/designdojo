@@ -1,0 +1,8 @@
+id: ecommerce-orders
+title: E-commerce Orders
+difficulty: medium
+category: Commerce & payments
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [constraints, junction-table, aggregation, anti-join, jsonb]

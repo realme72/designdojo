@@ -1,0 +1,23 @@
+scenarios:
+  - name: place_order_and_read_lines
+    steps:
+      - {op: add_customer, args: {email: ann@shop.test, name: Ann}, bind: ann}
+      - {op: add_product, args: {sku: A-1, name: Mug, price: 19.99, stock: 10}, bind: mug}
+      - {op: add_product, args: {sku: B-2, name: Tea, price: 5.00, stock: 10}, bind: tea}
+      - op: place_order
+        args: {customer_id: $ann.id, items: [{product_id: $tea.id, qty: 1}, {product_id: $mug.id, qty: 2}]}
+        expect: {total: 44.98}
+        bind: o
+      - {op: order_lines, args: {order_id: $o.order_id}, expect: [{sku: A-1, qty: 2, unit_price: 19.99}, {sku: B-2, qty: 1, unit_price: 5}]}
+  - name: email_unique_ignoring_case
+    steps:
+      - {op: add_customer, args: {email: ann@shop.test, name: Ann}}
+      - {op: add_customer, args: {email: Ann@Shop.Test, name: Ann Again}, expect_error: unique_violation}
+  - name: old_orders_keep_their_price
+    steps:
+      - {op: add_customer, args: {email: ann@shop.test, name: Ann}, bind: ann}
+      - {op: add_product, args: {sku: A-1, name: Mug, price: 19.99, stock: 10}, bind: mug}
+      - {op: place_order, args: {customer_id: $ann.id, items: [{product_id: $mug.id, qty: 2}]}, bind: o}
+      - {op: set_price, args: {product_id: $mug.id, price: 24.99}}
+      - {op: order_lines, args: {order_id: $o.order_id}, expect: [{sku: A-1, unit_price: 19.99}]}
+      - {op: place_order, args: {customer_id: $ann.id, items: [{product_id: $mug.id, qty: 1}]}, expect: {total: 24.99}}

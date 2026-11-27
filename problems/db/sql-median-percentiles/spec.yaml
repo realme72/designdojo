@@ -1,0 +1,6 @@
+schema: provided
+operations:
+  median_by_company: {kind: query, doc: Continuous median per company., params: {}, returns: rows, columns: [company, median], ordered: true}
+  percentile: {kind: query, doc: Continuous percentile of all salaries., params: {p: numeric}, returns: value}
+  above_median: {kind: query, doc: Employees above their company median., params: {}, returns: rows, columns: [company, employee], ordered: true}
+  salary_quartiles: {kind: query, doc: NTILE(4) over salary., params: {}, returns: rows, columns: [employee, quartile], ordered: true}

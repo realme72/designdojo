@@ -1,0 +1,14 @@
+- id: codes
+  question: How are codes and URLs constrained?
+  good: UNIQUE code (case-sensitive text), CHECK url ~ '^https?://', CHECK expires_at > created_at.
+  smells: [NO_NATURAL_KEY]
+- id: clicks
+  question: How are clicks stored?
+  good: An append-only clicks table (link_id, clicked_at timestamptz, country) indexed by (link_id, clicked_at); aggregated into rollups at scale.
+  smells: [FK_NOT_INDEXED, TIMESTAMP_NO_TZ]
+- id: zero_days
+  question: How do days without clicks appear?
+  good: generate_series of days LEFT JOINed to clicks grouped by date_trunc('day').
+- id: expiry
+  question: How is expiry enforced on resolve?
+  good: The resolve statement only matches (and only records a click for) links where expires_at IS NULL OR expires_at > :at, in one statement.

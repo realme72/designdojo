@@ -1,0 +1,23 @@
+scenarios:
+  - name: direct_once_and_unread
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: start_direct, args: {user_a: $ann.id, user_b: $bob.id}, bind: d}
+      - {op: start_direct, args: {user_a: $bob.id, user_b: $ann.id}, expect: {conversation_id: $d.conversation_id}}
+      - {op: send, args: {conversation_id: $d.conversation_id, sender_id: $ann.id, body: hi, sent_at: "2030-01-01T10:00:00Z"}}
+      - {op: send, args: {conversation_id: $d.conversation_id, sender_id: $ann.id, body: "there?", sent_at: "2030-01-01T10:01:00Z"}, bind: m2}
+      - {op: inbox, args: {user_id: $bob.id}, expect: [{title: Ann, last_message: "there?", unread: 2}]}
+      - {op: inbox, args: {user_id: $ann.id}, expect: [{title: Bob, unread: 0}]}
+      - {op: mark_read, args: {conversation_id: $d.conversation_id, user_id: $bob.id, message_id: $m2.id}}
+      - {op: inbox, args: {user_id: $bob.id}, expect: [{unread: 0}]}
+  - name: only_members_send
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: create_group, args: {name: Team, owner_id: $ann.id}, bind: g}
+      - {op: send, args: {conversation_id: $g.conversation_id, sender_id: $bob.id, body: let me in, sent_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: add_member, args: {conversation_id: $g.conversation_id, user_id: $bob.id}}
+      - {op: add_member, args: {conversation_id: $g.conversation_id, user_id: $bob.id}, expect_error: rejected}
+      - {op: send, args: {conversation_id: $g.conversation_id, sender_id: $bob.id, body: thanks, sent_at: "2030-01-01T10:00:00Z"}}
+      - {op: inbox, args: {user_id: $ann.id}, expect: [{title: Team, last_message: thanks, unread: 1}]}

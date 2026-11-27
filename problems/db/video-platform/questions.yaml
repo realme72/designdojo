@@ -1,0 +1,35 @@
+- id: storage_choice
+  stage: before
+  question: Where would you store videos, metadata and view counts for a YouTube-scale system, and why?
+  points:
+    - text: Video files in object storage served through a CDN, never in the database.
+      keywords: [object storage, s3, cdn, blob, file]
+    - text: Metadata (channels, videos, subscriptions) in a relational or sharded relational store (e.g. Vitess/MySQL).
+      keywords: [relational, mysql, vitess, metadata, shard]
+    - text: Views are an event stream aggregated into counters (Kafka + stream processing), not a row read per page load.
+      keywords: [stream, kafka, aggregate, counter, event, batch]
+  follow_up: View counts are allowed to lag a little. How does that freedom simplify your design?
+- id: view_counts
+  stage: design
+  question: Every video page shows a view count. How do you keep it fast and correct enough?
+  points:
+    - text: Counting rows on every page view does not scale.
+      keywords: [count(*), every page, does not scale, expensive, slow]
+    - text: Maintain counters - increment asynchronously or in batches from the event stream.
+      keywords: [counter, batch, async, increment, buffer]
+    - text: Hot videos need sharded counters or in-memory aggregation to avoid row contention.
+      keywords: [shard, contention, hot, in-memory, redis]
+    - text: Deduplicate/validate views (bots, refreshes) before counting.
+      keywords: [dedup, bot, fraud, valid]
+  follow_up: How would you show "views in the last 24 hours" for every video cheaply?
+- id: top_n
+  stage: after
+  question: Write (in words) how you'd get each channel's most viewed video, and how it behaves on ties.
+  points:
+    - text: Aggregate views per video first, then rank within each channel with a window function (ROW_NUMBER/RANK OVER (PARTITION BY channel ORDER BY views DESC)).
+      keywords: [window, row_number, rank, partition by, over]
+    - text: DISTINCT ON (channel) ... ORDER BY channel, views DESC is a Postgres shortcut.
+      keywords: [distinct on]
+    - text: Ties need an explicit tie-breaker (ROW_NUMBER picks one; RANK keeps all).
+      keywords: [tie, tie-breaker, rank keeps, dense_rank]
+  follow_up: Which index helps if this runs every minute?

@@ -1,0 +1,46 @@
+- id: storage_choice
+  stage: before
+  question: Twitter-scale writes and reads - which storage would you use for tweets, timelines and trends, and why?
+  points:
+    - text: User accounts and relationships fit a relational store (integrity, uniqueness).
+      keywords: [relational, postgres, mysql, integrity, unique]
+    - text: Tweets and timelines at huge scale are often in a sharded or wide-column store (Cassandra/Manhattan) keyed by user and time.
+      keywords: [cassandra, wide-column, shard, partition, manhattan, key by user]
+    - text: Trends are computed by stream processing over recent events (sliding windows), not by scanning the tweet table.
+      keywords: [stream, kafka, flink, window, sliding, count-min, approximate]
+    - text: Search/hashtag lookup uses an inverted index (Elasticsearch/Lucene).
+      keywords: [search, inverted index, elasticsearch, lucene]
+  follow_up: How would you shard tweets so that a user's timeline and a single tweet are both cheap to read?
+- id: hashtags_model
+  stage: design
+  question: How would you store hashtags, and why not a text or array column on the tweet?
+  points:
+    - text: A many-to-many - tags table plus tweet_tags junction - so tags are counted, indexed and joined efficiently.
+      keywords: [many-to-many, junction, tweet_tags, tags table, m:n]
+    - text: A comma-separated column breaks 1NF and can't be indexed or counted reliably.
+      keywords: [1nf, comma, normaliz, can't index, cannot index]
+    - text: Arrays with a GIN index are a pragmatic Postgres alternative, with trade-offs for counting and constraints.
+      keywords: [array, gin]
+    - text: Normalize case on write (lower-case) and dedupe within a tweet.
+      keywords: [lower, case, dedupe, distinct]
+  follow_up: Trending must reflect the last hour, updated every few seconds. Does querying this table still work?
+- id: threads
+  stage: design
+  question: How do you store and read reply threads of arbitrary depth?
+  points:
+    - text: Adjacency list - a nullable reply_to foreign key to tweets.
+      keywords: [adjacency, reply_to, parent_id, self-referenc]
+    - text: Read with a recursive CTE (WITH RECURSIVE), carrying depth and a path for ordering.
+      keywords: [recursive, with recursive, cte, path, depth]
+    - text: Alternatives for read-heavy trees - materialized path, closure table, or storing root_id to fetch a thread in one indexed query.
+      keywords: [materialized path, closure, root_id, ltree, nested set]
+  follow_up: A viral thread has 2 million replies. How do you page through it?
+- id: counts
+  stage: after
+  question: The tweet page shows retweet and reply counts. Count on read, or store counters?
+  points:
+    - text: Count on read is correct but slow for popular tweets; denormalized counters are fast but must be maintained transactionally.
+      keywords: [counter, denormal, count on read, maintain, transaction]
+    - text: Hot counters need contention handling - sharded counters or async aggregation with eventual consistency.
+      keywords: [contention, shard, async, eventual, hot]
+  follow_up: A counter drifts from the true count after a bug. How do you detect and repair it?

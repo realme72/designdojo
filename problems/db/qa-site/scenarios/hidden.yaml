@@ -1,0 +1,39 @@
+scenarios:
+  - name: tag_rules
+    steps:
+      - {op: add_user, args: {name: ann}, bind: ann}
+      - {op: ask, args: {user_id: $ann.id, title: none, tags: [], asked_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: ask, args: {user_id: $ann.id, title: six, tags: [a, b, c, d, e, f], asked_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: ask, args: {user_id: $ann.id, title: five, tags: [a, b, c, d, e], asked_at: "2030-01-01T10:00:00Z"}}
+      - {op: ask, args: {user_id: $ann.id, title: shared, tags: [a], asked_at: "2030-01-02T10:00:00Z"}}
+      - {op: unanswered, args: {tag: a}, expect: [{title: five}, {title: shared}]}
+      - {op: unanswered, args: {tag: zzz}, expect: []}
+  - name: vote_changes_and_values
+    steps:
+      - {op: add_user, args: {name: ann}, bind: ann}
+      - {op: add_user, args: {name: bob}, bind: bob}
+      - {op: ask, args: {user_id: $ann.id, title: Q, tags: [sql], asked_at: "2030-01-01T10:00:00Z"}, bind: q}
+      - {op: vote_question, args: {user_id: $bob.id, question_id: $q.id, value: 1}}
+      - {op: vote_question, args: {user_id: $bob.id, question_id: $q.id, value: -1}}
+      - {op: reputation, args: {user_id: $ann.id}, expect: -2}
+      - {op: vote_question, args: {user_id: $bob.id, question_id: $q.id, value: 3}, expect_error: rejected}
+      - {op: vote_question, args: {user_id: $ann.id, question_id: $q.id, value: 1}, expect_error: rejected}
+  - name: leaders_and_switching_accept
+    steps:
+      - {op: add_user, args: {name: ann}, bind: ann}
+      - {op: add_user, args: {name: bob}, bind: bob}
+      - {op: add_user, args: {name: cy}, bind: cy}
+      - {op: ask, args: {user_id: $ann.id, title: Q, tags: [sql], asked_at: "2030-01-01T10:00:00Z"}, bind: q}
+      - {op: ask, args: {user_id: $ann.id, title: R, tags: [java], asked_at: "2030-01-01T10:00:00Z"}, bind: r}
+      - {op: answer, args: {question_id: $q.id, user_id: $bob.id, body: b}, bind: ab}
+      - {op: answer, args: {question_id: $q.id, user_id: $cy.id, body: c}, bind: ac}
+      - {op: answer, args: {question_id: $r.id, user_id: $cy.id, body: c2}, bind: ar}
+      - {op: vote_answer, args: {user_id: $ann.id, answer_id: $ac.id, value: 1}}
+      - {op: vote_answer, args: {user_id: $bob.id, answer_id: $ac.id, value: 1}}
+      - {op: vote_answer, args: {user_id: $ann.id, answer_id: $ar.id, value: 1}}
+      - {op: vote_answer, args: {user_id: $ann.id, answer_id: $ab.id, value: 1}}
+      - {op: tag_leaders, args: {tag: sql, n: 5}, expect: [{name: cy, score: 2}, {name: bob, score: 1}]}
+      - {op: accept, args: {question_id: $q.id, answer_id: $ab.id}}
+      - {op: accept, args: {question_id: $q.id, answer_id: $ac.id}}
+      - {op: reputation, args: {user_id: $bob.id}, expect: 10}
+      - {op: reputation, args: {user_id: $cy.id}, expect: 45}

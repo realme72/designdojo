@@ -1,0 +1,8 @@
+id: flight-reservations
+title: Flight Reservations
+difficulty: hard
+category: Booking & reservations
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [seat-allocation, self-join, intervals, check-constraints]

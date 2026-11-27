@@ -1,0 +1,22 @@
+scenarios:
+  - name: nearest_driver_and_fare
+    steps:
+      - {op: add_rider, args: {name: Ann}, bind: ann}
+      - {op: add_driver, args: {name: Far, class: SEDAN}, bind: far}
+      - {op: add_driver, args: {name: Near, class: SEDAN}, bind: near}
+      - {op: add_driver, args: {name: Suv, class: SUV}, bind: suv}
+      - {op: driver_status, args: {driver_id: $far.id, online: true, lat: 12.95, lng: 77.60}}
+      - {op: driver_status, args: {driver_id: $near.id, online: true, lat: 12.971, lng: 77.594}}
+      - {op: driver_status, args: {driver_id: $suv.id, online: true, lat: 12.97, lng: 77.59}}
+      - {op: request, args: {rider_id: $ann.id, class: SEDAN, lat: 12.97, lng: 77.59, at: "2030-01-01T10:00:00Z"}, expect: {driver: Near}, bind: t}
+      - {op: complete, args: {trip_id: $t.trip_id, km: 7.5}, expect: {fare: 185}}
+  - name: one_active_trip
+    steps:
+      - {op: add_rider, args: {name: Ann}, bind: ann}
+      - {op: add_rider, args: {name: Bob}, bind: bob}
+      - {op: add_driver, args: {name: D1, class: MINI}, bind: d1}
+      - {op: driver_status, args: {driver_id: $d1.id, online: true, lat: 12.97, lng: 77.59}}
+      - {op: request, args: {rider_id: $ann.id, class: MINI, lat: 12.97, lng: 77.59, at: "2030-01-01T10:00:00Z"}, bind: t}
+      - {op: request, args: {rider_id: $bob.id, class: MINI, lat: 12.97, lng: 77.59, at: "2030-01-01T10:01:00Z"}, expect_error: rejected}
+      - {op: cancel, args: {trip_id: $t.trip_id}}
+      - {op: request, args: {rider_id: $bob.id, class: MINI, lat: 12.97, lng: 77.59, at: "2030-01-01T10:02:00Z"}, expect: {driver: D1}}

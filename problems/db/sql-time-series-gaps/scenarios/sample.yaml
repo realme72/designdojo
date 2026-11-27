@@ -1,0 +1,15 @@
+seed: |
+  insert into sensors values (1, 'boiler'), (2, 'attic');
+  insert into readings values
+    (1, '2030-01-01 00:00Z', 10), (1, '2030-01-01 01:00Z', 12), (1, '2030-01-01 04:00Z', 20),
+    (1, '2030-01-01 05:00Z', 17), (1, '2030-01-01 07:00Z', 20),
+    (2, '2030-01-01 03:00Z', 5), (2, '2030-01-01 09:00Z', 7);
+scenarios:
+  - name: gaps
+    steps:
+      - {op: missing_hours, args: {sensor_id: 1, from: "2030-01-01T00:00:00Z", to: "2030-01-01T08:00:00Z"}, expect: [{hour: "2030-01-01T02:00:00+00:00"}, {hour: "2030-01-01T03:00:00+00:00"}, {hour: "2030-01-01T06:00:00+00:00"}]}
+      - {op: outages, args: {sensor_id: 1, from: "2030-01-01T00:00:00Z", to: "2030-01-01T08:00:00Z"}, expect: [{started: "2030-01-01T02:00:00+00:00", ended: "2030-01-01T04:00:00+00:00", hours: 2}, {started: "2030-01-01T06:00:00+00:00", ended: "2030-01-01T07:00:00+00:00", hours: 1}]}
+  - name: windows
+    steps:
+      - {op: rolling_avg, args: {sensor_id: 1}, expect: [{value: 10, avg3: 10}, {value: 12, avg3: 11}, {value: 20, avg3: 14}, {value: 17, avg3: 16.33}, {value: 20, avg3: 19}]}
+      - {op: hourly_max, args: {day: "2030-01-01"}, expect: [{sensor: attic, peak: 7, peak_hour: "2030-01-01T09:00:00+00:00"}, {sensor: boiler, peak: 20, peak_hour: "2030-01-01T04:00:00+00:00"}]}

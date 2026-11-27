@@ -8,7 +8,7 @@ from designdojo.judge import Workspace, judge
 from designdojo.problems import SUITES
 
 ROOT = Path(__file__).resolve().parents[1]
-REF = ROOT / "problems" / "parking-lot" / "reference"
+REF = ROOT / "problems" / "lld" / "parking-lot" / "reference"
 NAIVE = ROOT / "tests" / "fixtures" / "parking-lot"
 LANGS = ["java", "python"]
 
@@ -23,7 +23,7 @@ def failures(result: dict) -> dict[str, set[str]]:
 def _references():
     from designdojo.problems import list_problems
 
-    for p in list_problems():
+    for p in list_problems("lld"):
         for lang in LANGS:
             ref = p.root / "reference" / lang
             if (ref / "solution").is_dir():
@@ -116,7 +116,7 @@ public final class Solution {
 def _stub_only():
     from designdojo.problems import list_problems
 
-    for p in list_problems():
+    for p in list_problems("lld"):
         for lang in LANGS:
             if not (p.root / "reference" / lang / "solution").is_dir():
                 yield pytest.param(p.id, lang, id=f"{p.id}-{lang}-stub")

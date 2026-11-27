@@ -1,0 +1,27 @@
+scenarios:
+  - name: cancel_frees_and_lengths
+    steps:
+      - {op: add_doctor, args: {name: Dr Rao, specialty: derma}, bind: d}
+      - {op: add_patient, args: {name: Ann}, bind: a}
+      - {op: add_patient, args: {name: Bob}, bind: b}
+      - {op: book, args: {doctor_id: $d.id, patient_id: $a.id, starts_at: "2030-01-07T10:00:00Z", minutes: 20}, expect_error: rejected}
+      - {op: book, args: {doctor_id: $d.id, patient_id: $a.id, starts_at: "2030-01-07T10:00:00Z", minutes: 60}, bind: x}
+      - {op: cancel, args: {appointment_id: $x.id}}
+      - {op: book, args: {doctor_id: $d.id, patient_id: $b.id, starts_at: "2030-01-07T10:30:00Z", minutes: 15}}
+      - {op: doctor_day, args: {doctor_id: $d.id, day: "2030-01-07"}, expect: [{patient: Bob}]}
+      - {op: doctor_day, args: {doctor_id: $d.id, day: "2030-01-08"}, expect: []}
+      - {op: book, args: {doctor_id: 999999, patient_id: $b.id, starts_at: "2030-01-09T10:30:00Z", minutes: 15}, expect_error: rejected}
+  - name: specialty_report
+    steps:
+      - {op: add_doctor, args: {name: A, specialty: derma}, bind: a}
+      - {op: add_doctor, args: {name: B, specialty: cardio}, bind: b}
+      - {op: add_doctor, args: {name: C, specialty: derma}, bind: c}
+      - {op: add_patient, args: {name: P}, bind: p}
+      - {op: add_patient, args: {name: Q}, bind: q}
+      - {op: book, args: {doctor_id: $a.id, patient_id: $p.id, starts_at: "2030-01-07T09:00:00Z", minutes: 30}}
+      - {op: book, args: {doctor_id: $c.id, patient_id: $q.id, starts_at: "2030-01-07T09:00:00Z", minutes: 30}}
+      - {op: book, args: {doctor_id: $b.id, patient_id: $p.id, starts_at: "2030-01-07T11:00:00Z", minutes: 30}, bind: x}
+      - {op: book, args: {doctor_id: $b.id, patient_id: $q.id, starts_at: "2030-01-08T09:00:00Z", minutes: 30}}
+      - {op: cancel, args: {appointment_id: $x.id}}
+      - {op: busiest_specialties, args: {from: "2030-01-07T00:00:00Z", to: "2030-01-08T00:00:00Z"}, expect: [{specialty: derma, appointments: 2}]}
+      - {op: busiest_specialties, args: {from: "2030-01-07T00:00:00Z", to: "2030-01-09T00:00:00Z"}, expect: [{specialty: derma, appointments: 2}, {specialty: cardio, appointments: 1}]}

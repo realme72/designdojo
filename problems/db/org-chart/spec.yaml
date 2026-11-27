@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_department: {doc: Create a department., params: {name: text}, returns: one, columns: [id]}
+  hire: {doc: Hire an employee., params: {name: text, department_id: bigint, manager_id: bigint, salary: numeric, hired_on: date}, returns: one, columns: [id]}
+  set_manager: {doc: Change an employee's manager (no cycles)., params: {employee_id: bigint, manager_id: bigint}, returns: none}
+  chain: {kind: query, doc: Reporting chain upward., params: {employee_id: bigint}, returns: rows, columns: [name, level], ordered: true}
+  team_size: {kind: query, doc: Number of direct and indirect reports., params: {employee_id: bigint}, returns: value}
+  top_paid: {kind: query, doc: Employees with a top-n distinct salary in their department., params: {n: int}, returns: rows, columns: [department, name, salary], ordered: true}
+  dept_stats: {kind: query, doc: Headcount, average and max salary per department., params: {}, returns: rows, columns: [department, headcount, avg_salary, max_salary], ordered: true}
+  earns_more_than_manager: {kind: query, doc: Employees paid more than their manager., params: {}, returns: rows, columns: [name, manager], ordered: true}

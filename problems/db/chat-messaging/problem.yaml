@@ -1,0 +1,8 @@
+id: chat-messaging
+title: Chat Messaging (WhatsApp)
+difficulty: hard
+category: Social & content
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [composite-fk, idempotent-upsert, unread-counts, keyset-pagination]

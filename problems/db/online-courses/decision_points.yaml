@@ -1,0 +1,11 @@
+- id: enrolled_only
+  question: How is "only lessons of enrolled courses" enforced?
+  good: completions carry course_id with composite FKs (student_id, course_id) -> enrollments and (course_id, lesson_id) -> lessons (course_id, id).
+  smells: [MISSING_FK]
+- id: ordering
+  question: How is lesson order kept?
+  good: position with UNIQUE (course_id, position), assigned as max + 1.
+- id: idempotent
+  question: How is repeated completion handled?
+  good: Composite PK (student_id, lesson_id) on completions with INSERT ... ON CONFLICT DO NOTHING.
+  smells: [NO_PRIMARY_KEY]

@@ -1,0 +1,12 @@
+schema: designed
+operations:
+  add_restaurant: {doc: Create a restaurant., params: {name: text}, returns: one, columns: [id]}
+  add_customer: {doc: Create a customer., params: {name: text}, returns: one, columns: [id]}
+  add_agent: {doc: Create a delivery agent., params: {name: text}, returns: one, columns: [id]}
+  add_item: {doc: Add a menu item., params: {restaurant_id: bigint, name: text, price: numeric}, returns: one, columns: [id]}
+  set_available: {doc: Toggle availability., params: {item_id: bigint, available: bool}, returns: none}
+  place_order: {doc: Place an order at one restaurant with available items of that restaurant., params: {customer_id: bigint, restaurant_id: bigint, items: jsonb}, returns: one, columns: [order_id, total]}
+  assign_agent: {doc: Assign an agent (one active order per agent)., params: {order_id: bigint, agent_id: bigint}, returns: none}
+  advance: {doc: Move the order to a new status (allowed transitions only)., params: {order_id: bigint, status: text}, returns: none}
+  restaurant_revenue: {kind: query, doc: Total of delivered orders., params: {restaurant_id: bigint}, returns: value}
+  agent_deliveries: {kind: query, doc: Delivered orders per agent., params: {}, returns: rows, columns: [agent, delivered], ordered: true}

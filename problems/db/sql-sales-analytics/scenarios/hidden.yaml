@@ -1,0 +1,11 @@
+seed: |
+  insert into customers values (1, 'Zed'), (2, 'Amy'), (3, 'Max');
+  insert into orders values
+    (1, 1, '2031-12-31 23:30Z', 10), (2, 2, '2032-01-01 00:10Z', 0), (3, 3, '2032-01-15Z', 40),
+    (4, 1, '2032-02-01Z', 40), (5, 2, '2032-02-03Z', 15.55), (6, 3, '2032-03-01Z', 0);
+scenarios:
+  - name: year_edges_and_zero
+    steps:
+      - {op: monthly_revenue, args: {}, expect: [{month: "2031-12-01", revenue: 10, growth_pct: null}, {month: "2032-01-01", revenue: 40, growth_pct: 300}, {month: "2032-02-01", revenue: 55.55, growth_pct: 38.9}, {month: "2032-03-01", revenue: 0, growth_pct: -100}]}
+      - {op: running_total, args: {year: 2031}, expect: [{revenue: 0, running: 0}, {running: 0}, {running: 0}, {running: 0}, {running: 0}, {running: 0}, {running: 0}, {running: 0}, {running: 0}, {running: 0}, {running: 0}, {month: "2031-12-01", revenue: 10, running: 10}]}
+      - {op: top_customer_per_month, args: {}, expect: [{month: "2031-12-01", customer: Zed}, {month: "2032-01-01", customer: Max, revenue: 40}, {month: "2032-02-01", customer: Zed, revenue: 40}, {month: "2032-03-01", customer: Max, revenue: 0}]}

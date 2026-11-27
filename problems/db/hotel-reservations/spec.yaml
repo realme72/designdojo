@@ -1,0 +1,51 @@
+schema: designed
+operations:
+  add_room_type:
+    doc: Create a room type with its current nightly rate.
+    params: {name: text, nightly_rate: numeric}
+    returns: one
+    columns: [id]
+  set_rate:
+    doc: Change a room type's nightly rate. Existing bookings keep their price.
+    params: {room_type_id: bigint, nightly_rate: numeric}
+    returns: none
+  add_room:
+    doc: Create a room. Room numbers are unique.
+    params: {number: text, room_type_id: bigint}
+    returns: one
+    columns: [id]
+  add_guest:
+    doc: Create a guest. Emails are unique.
+    params: {email: text, name: text}
+    returns: one
+    columns: [id]
+  book:
+    doc: Book a room for [check_in, check_out). Rejected if it overlaps a confirmed booking of that room.
+    params: {room_id: bigint, guest_id: bigint, check_in: date, check_out: date}
+    returns: one
+    columns: [booking_id, total]
+  cancel:
+    doc: Cancel a booking. Its dates become free again.
+    params: {booking_id: bigint}
+    returns: none
+  available_rooms:
+    kind: query
+    doc: Numbers of rooms of the type with no confirmed booking overlapping [check_in, check_out), by number.
+    params: {room_type_id: bigint, check_in: date, check_out: date}
+    returns: rows
+    columns: [number]
+    ordered: true
+  occupancy:
+    kind: query
+    doc: For every room type (even with zero rooms or zero bookings) - rooms occupied on the night of day, and total rooms. By room type name.
+    params: {day: date}
+    returns: rows
+    columns: [room_type, occupied, rooms]
+    ordered: true
+  guest_stays:
+    kind: query
+    doc: The guest's bookings (confirmed and cancelled), by check_in.
+    params: {guest_id: bigint}
+    returns: rows
+    columns: [number, check_in, nights, total, status]
+    ordered: true

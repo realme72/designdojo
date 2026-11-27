@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: Before writing "month-over-month growth", what's the grain of each step of the query?
+  points:
+    - text: First aggregate orders to one row per month (date_trunc('month')).
+      keywords: [aggregate, per month, date_trunc, group by month]
+    - text: Then apply LAG over the monthly rows - window functions run after GROUP BY.
+      keywords: [lag, window, after group by]
+    - text: Handle the first month (NULL) and a zero previous month (NULLIF).
+      keywords: [null, nullif, first month, division by zero]
+  follow_up: Should missing months count as "previous month = 0" or be skipped? What does the business want?
+- id: frames
+  stage: design
+  question: SUM(x) OVER (ORDER BY month) - what frame does that use, and when does it give surprising results?
+  points:
+    - text: The default frame is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW.
+      keywords: [range, unbounded preceding, current row, default frame]
+    - text: With duplicate ORDER BY values (peers), RANGE includes all peers - a running total jumps; ROWS avoids that.
+      keywords: [peers, duplicate, rows between, ties]
+    - text: For moving averages specify ROWS BETWEEN n PRECEDING AND CURRENT ROW.
+      keywords: [moving average, preceding, rows]
+  follow_up: How would you compute a 3-month moving average?

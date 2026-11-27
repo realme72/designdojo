@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: "\"Best rated product per category\" - what's wrong with just ordering by average rating?"
+  points:
+    - text: A product with one 5-star review beats one with 1,000 reviews at 4.9 - require a minimum number of reviews or use a Bayesian average.
+      keywords: [few reviews, minimum, one review, bayesian, shrink, confidence]
+    - text: Ties need a decision - keep all with RANK, or break them explicitly.
+      keywords: [tie, rank, keep all, tie-break]
+    - text: Average per product first, then rank within the category.
+      keywords: [per product, then rank, partition by category]
+  follow_up: How would you weight recent reviews more than old ones?
+- id: latest_row
+  stage: design
+  question: Three ways to get the latest review per product - which do you prefer in Postgres and why?
+  points:
+    - text: DISTINCT ON (product_id) ORDER BY product_id, created_at DESC - concise, Postgres-specific.
+      keywords: [distinct on]
+    - text: ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY created_at DESC) = 1 - portable.
+      keywords: [row_number, partition by, portable]
+    - text: A LATERAL subquery with LIMIT 1 per product - fast with an index (product_id, created_at DESC).
+      keywords: [lateral, limit 1, index]
+  follow_up: Which one can use the index to avoid sorting all reviews?

@@ -1,0 +1,24 @@
+scenarios:
+  - name: votes_accept_reputation
+    steps:
+      - {op: add_user, args: {name: ann}, bind: ann}
+      - {op: add_user, args: {name: bob}, bind: bob}
+      - {op: add_user, args: {name: cy}, bind: cy}
+      - {op: ask, args: {user_id: $ann.id, title: "How to index?", tags: [sql, postgres], asked_at: "2030-01-01T10:00:00Z"}, bind: q}
+      - {op: answer, args: {question_id: $q.id, user_id: $bob.id, body: Use btree}, bind: a}
+      - {op: vote_question, args: {user_id: $bob.id, question_id: $q.id, value: 1}}
+      - {op: vote_answer, args: {user_id: $ann.id, answer_id: $a.id, value: 1}}
+      - {op: vote_answer, args: {user_id: $cy.id, answer_id: $a.id, value: -1}}
+      - {op: accept, args: {question_id: $q.id, answer_id: $a.id}}
+      - {op: reputation, args: {user_id: $bob.id}, expect: 23}
+      - {op: reputation, args: {user_id: $ann.id}, expect: 5}
+      - {op: vote_answer, args: {user_id: $bob.id, answer_id: $a.id, value: 1}, expect_error: rejected}
+  - name: accept_only_own_answers
+    steps:
+      - {op: add_user, args: {name: ann}, bind: ann}
+      - {op: add_user, args: {name: bob}, bind: bob}
+      - {op: ask, args: {user_id: $ann.id, title: Q1, tags: [sql], asked_at: "2030-01-01T10:00:00Z"}, bind: q1}
+      - {op: ask, args: {user_id: $ann.id, title: Q2, tags: [sql], asked_at: "2030-01-02T10:00:00Z"}, bind: q2}
+      - {op: answer, args: {question_id: $q2.id, user_id: $bob.id, body: x}, bind: a2}
+      - {op: accept, args: {question_id: $q1.id, answer_id: $a2.id}, expect_error: rejected}
+      - {op: unanswered, args: {tag: sql}, expect: [{title: Q1}]}

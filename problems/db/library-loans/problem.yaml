@@ -1,0 +1,8 @@
+id: library-loans
+title: Library Loans
+difficulty: easy
+category: Booking & reservations
+kind: sql
+time_limit_min: 35
+statement: statement.md
+tags: [partial-unique-index, trigger-limit, date-math, overdue]

@@ -1,0 +1,29 @@
+scenarios:
+  - name: low_stock_report
+    steps:
+      - {op: add_product, args: {sku: A}, bind: a}
+      - {op: add_product, args: {sku: B}, bind: b}
+      - {op: add_product, args: {sku: C}}
+      - {op: add_warehouse, args: {code: W1}, bind: w1}
+      - {op: add_warehouse, args: {code: W2}, bind: w2}
+      - {op: receive, args: {warehouse_id: $w1.id, product_id: $a.id, qty: 3}}
+      - {op: receive, args: {warehouse_id: $w2.id, product_id: $a.id, qty: 3}}
+      - {op: receive, args: {warehouse_id: $w1.id, product_id: $b.id, qty: 4}}
+      - {op: ship, args: {warehouse_id: $w1.id, product_id: $b.id, qty: 4}}
+      - {op: low_stock, args: {threshold: 5}, expect: [{sku: B, total: 0}, {sku: C, total: 0}]}
+      - {op: low_stock, args: {threshold: 7}, expect: [{sku: A, total: 6}, {sku: B, total: 0}, {sku: C, total: 0}]}
+  - name: invalid_movements
+    steps:
+      - {op: add_product, args: {sku: A}, bind: a}
+      - {op: add_product, args: {sku: A}, expect_error: unique_violation}
+      - {op: add_warehouse, args: {code: W1}, bind: w1}
+      - {op: add_warehouse, args: {code: W2}, bind: w2}
+      - {op: receive, args: {warehouse_id: $w1.id, product_id: $a.id, qty: 0}, expect_error: rejected}
+      - {op: receive, args: {warehouse_id: $w1.id, product_id: $a.id, qty: -2}, expect_error: rejected}
+      - {op: ship, args: {warehouse_id: $w2.id, product_id: $a.id, qty: 1}, expect_error: rejected}
+      - {op: receive, args: {warehouse_id: $w1.id, product_id: $a.id, qty: 5}}
+      - {op: transfer, args: {from_id: $w1.id, to_id: $w1.id, product_id: $a.id, qty: 1}, expect_error: rejected}
+      - {op: transfer, args: {from_id: $w1.id, to_id: 999999, product_id: $a.id, qty: 1}, expect_error: rejected}
+      - {op: receive, args: {warehouse_id: $w1.id, product_id: 999999, qty: 1}, expect_error: rejected}
+      - {op: transfer, args: {from_id: $w1.id, to_id: $w2.id, product_id: $a.id, qty: 5}}
+      - {op: stock_by_warehouse, args: {product_id: $a.id}, expect: [{warehouse: W1, qty: 0}, {warehouse: W2, qty: 5}]}

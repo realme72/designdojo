@@ -1,0 +1,11 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  add_role: {doc: Create a role., params: {name: text}, returns: one, columns: [id]}
+  add_permission: {doc: Create a permission., params: {resource: text, action: text}, returns: one, columns: [id]}
+  grant: {doc: Grant a permission to a role., params: {role_id: bigint, permission_id: bigint}, returns: none}
+  assign: {doc: Assign a role to a user., params: {user_id: bigint, role_id: bigint}, returns: none}
+  inherit: {doc: role_id inherits parent_id (no cycles)., params: {role_id: bigint, parent_id: bigint}, returns: none}
+  can: {kind: query, doc: "Does the user effectively have the permission?", params: {user_id: bigint, resource: text, action: text}, returns: value}
+  permissions_of: {kind: query, doc: Effective permissions of a user., params: {user_id: bigint}, returns: rows, columns: [resource, action], ordered: true}
+  who_can: {kind: query, doc: Users with an effective permission., params: {resource: text, action: text}, returns: rows, columns: [name], ordered: true}

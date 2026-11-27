@@ -1,0 +1,27 @@
+scenarios:
+  - name: top_per_channel_and_windows
+    steps:
+      - {op: add_user, args: {email: a@t.test}, bind: a}
+      - {op: add_user, args: {email: b@t.test}, bind: b}
+      - {op: create_channel, args: {user_id: $a.id, handle: zeta}, bind: z}
+      - {op: create_channel, args: {user_id: $b.id, handle: alpha}, bind: al}
+      - {op: upload, args: {channel_id: $z.id, title: Z1, duration_s: 60, visibility: PUBLIC, uploaded_at: "2030-01-01T10:00:00Z"}, bind: z1}
+      - {op: upload, args: {channel_id: $z.id, title: Z2, duration_s: 60, visibility: PUBLIC, uploaded_at: "2030-01-01T10:00:00Z"}, bind: z2}
+      - {op: upload, args: {channel_id: $al.id, title: A1, duration_s: 60, visibility: PUBLIC, uploaded_at: "2030-01-01T10:00:00Z"}, bind: a1}
+      - {op: upload, args: {channel_id: $al.id, title: A0, duration_s: 60, visibility: PUBLIC, uploaded_at: "2030-01-01T10:00:00Z"}}
+      - {op: view, args: {video_id: $z2.id, user_id: null, viewed_at: "2030-01-01T11:00:00Z"}}
+      - {op: view, args: {video_id: $z2.id, user_id: null, viewed_at: "2030-01-05T11:00:00Z"}}
+      - {op: view, args: {video_id: $z1.id, user_id: null, viewed_at: "2030-01-05T11:00:00Z"}}
+      - {op: top_video_per_channel, args: {}, expect: [{channel: alpha, title: A0, views: 0}, {channel: zeta, title: Z2, views: 2}]}
+      - {op: trending, args: {since: "2030-01-05T00:00:00Z", n: 5}, expect: [{title: Z1, views: 1}, {title: Z2, views: 1}]}
+  - name: validation
+    steps:
+      - {op: add_user, args: {email: a@t.test}, bind: a}
+      - {op: add_user, args: {email: a@t.test}, expect_error: unique_violation}
+      - {op: create_channel, args: {user_id: $a.id, handle: h}, bind: c}
+      - {op: add_user, args: {email: b@t.test}, bind: b}
+      - {op: create_channel, args: {user_id: $b.id, handle: h}, expect_error: unique_violation}
+      - {op: upload, args: {channel_id: $c.id, title: X, duration_s: 0, visibility: PUBLIC, uploaded_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: upload, args: {channel_id: $c.id, title: X, duration_s: 10, visibility: SECRET, uploaded_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: view, args: {video_id: 999999, user_id: null, viewed_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: channel_stats, args: {channel_id: $c.id}, expect: {subscribers: 0, videos: 0, total_views: 0}}

@@ -1,0 +1,11 @@
+seed: |
+  insert into people values (1, 'A'), (2, 'B'), (3, 'C'), (4, 'D');
+  insert into friendships values (1, 2), (2, 3), (3, 4);
+scenarios:
+  - name: chain
+    steps:
+      - {op: recommendations, args: {person_id: 1, n: 5}, expect: [{name: C, mutuals: 1}]}
+      - {op: recommendations, args: {person_id: 2, n: 5}, expect: [{name: D, mutuals: 1}]}
+      - {op: mutual_friends, args: {a_id: 1, b_id: 3}, expect: [{name: B}]}
+      - {op: mutual_friends, args: {a_id: 1, b_id: 4}, expect: []}
+      - {op: most_connected, args: {n: 10}, expect: [{name: B, friends: 2}, {name: C, friends: 2}, {name: A, friends: 1}, {name: D, friends: 1}]}

@@ -1,0 +1,50 @@
+schema: designed
+operations:
+  add_customer:
+    doc: Create a customer. Emails are unique ignoring case.
+    params: {email: text, name: text}
+    returns: one
+    columns: [id]
+  add_product:
+    doc: Create a product with an initial stock count.
+    params: {sku: text, name: text, price: numeric, stock: int}
+    returns: one
+    columns: [id]
+  set_price:
+    doc: Change a product's current price. Existing orders keep their price.
+    params: {product_id: bigint, price: numeric}
+    returns: none
+  place_order:
+    doc: |
+      Create an order with its lines and take the items out of stock. All or nothing.
+      :items is jsonb: [{"product_id": 1, "qty": 2}, ...]
+    params: {customer_id: bigint, items: jsonb}
+    returns: one
+    columns: [order_id, total]
+  set_status:
+    doc: Set an order's status (PLACED, PAID, SHIPPED, CANCELLED).
+    params: {order_id: bigint, status: text}
+    returns: none
+  order_lines:
+    kind: query
+    doc: The order's lines with the price they were sold at, ordered by sku.
+    params: {order_id: bigint}
+    returns: rows
+    columns: [sku, qty, unit_price]
+    ordered: true
+  top_customers:
+    kind: query
+    doc: |
+      The n biggest spenders over non-cancelled orders: email, number of non-cancelled orders,
+      total spent. Highest total first, ties by email.
+    params: {n: int}
+    returns: rows
+    columns: [email, orders, total_spent]
+    ordered: true
+  never_ordered:
+    kind: query
+    doc: SKUs of products that never appeared on any order (cancelled ones count), ordered by sku.
+    params: {}
+    returns: rows
+    columns: [sku]
+    ordered: true

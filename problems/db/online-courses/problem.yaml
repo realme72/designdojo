@@ -1,0 +1,8 @@
+id: online-courses
+title: Online Courses (Udemy)
+difficulty: easy
+category: SaaS & productivity
+kind: sql
+time_limit_min: 35
+statement: statement.md
+tags: [composite-fk, ordered-children, progress, percentages]

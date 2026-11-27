@@ -1,0 +1,30 @@
+scenarios:
+  - name: inherited_permissions
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: add_role, args: {name: viewer}, bind: viewer}
+      - {op: add_role, args: {name: editor}, bind: editor}
+      - {op: add_role, args: {name: admin}, bind: admin}
+      - {op: add_permission, args: {resource: doc, action: read}, bind: read}
+      - {op: add_permission, args: {resource: doc, action: write}, bind: write}
+      - {op: add_permission, args: {resource: user, action: delete}, bind: del}
+      - {op: grant, args: {role_id: $viewer.id, permission_id: $read.id}}
+      - {op: grant, args: {role_id: $editor.id, permission_id: $write.id}}
+      - {op: grant, args: {role_id: $admin.id, permission_id: $del.id}}
+      - {op: inherit, args: {role_id: $editor.id, parent_id: $viewer.id}}
+      - {op: inherit, args: {role_id: $admin.id, parent_id: $editor.id}}
+      - {op: assign, args: {user_id: $ann.id, role_id: $admin.id}}
+      - {op: assign, args: {user_id: $bob.id, role_id: $viewer.id}}
+      - {op: can, args: {user_id: $ann.id, resource: doc, action: read}, expect: true}
+      - {op: can, args: {user_id: $bob.id, resource: doc, action: write}, expect: false}
+      - {op: permissions_of, args: {user_id: $ann.id}, expect: [{resource: doc, action: read}, {resource: doc, action: write}, {resource: user, action: delete}]}
+  - name: no_cycles
+    steps:
+      - {op: add_role, args: {name: a}, bind: a}
+      - {op: add_role, args: {name: b}, bind: b}
+      - {op: add_role, args: {name: c}, bind: c}
+      - {op: inherit, args: {role_id: $a.id, parent_id: $b.id}}
+      - {op: inherit, args: {role_id: $b.id, parent_id: $c.id}}
+      - {op: inherit, args: {role_id: $c.id, parent_id: $a.id}, expect_error: rejected}
+      - {op: inherit, args: {role_id: $a.id, parent_id: $a.id}, expect_error: rejected}

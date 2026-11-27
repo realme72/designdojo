@@ -1,0 +1,8 @@
+id: ride-hailing
+title: Ride Hailing (Uber)
+difficulty: hard
+category: Transport & logistics
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [partial-unique-index, nearest-neighbour, skip-locked, aggregation]

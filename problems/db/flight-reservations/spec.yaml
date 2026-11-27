@@ -1,0 +1,8 @@
+schema: designed
+operations:
+  add_flight: {doc: Create a flight., params: {code: text, origin: text, destination: text, departs_at: timestamptz, arrives_at: timestamptz}, returns: one, columns: [id]}
+  add_seats: {doc: Create seats first_no..last_no of a class., params: {flight_id: bigint, class: text, first_no: int, last_no: int}, returns: none}
+  book: {doc: Reserve the lowest free seat of the class., params: {flight_id: bigint, class: text, passenger: text, pnr: text}, returns: one, columns: [seat_no]}
+  cancel: {doc: Cancel a reservation by PNR., params: {pnr: text}, returns: none}
+  load_factor: {kind: query, doc: Booked seats and capacity., params: {flight_id: bigint}, returns: one, columns: [booked, capacity]}
+  connections: {kind: query, doc: One-stop itineraries with a valid layover., params: {origin: text, destination: text}, returns: rows, columns: [first, second, layover_min], ordered: true}

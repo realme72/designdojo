@@ -1,0 +1,36 @@
+scenarios:
+  - name: feed_order_limit_and_unfollow
+    steps:
+      - {op: add_user, args: {username: ann}, bind: ann}
+      - {op: add_user, args: {username: bob}, bind: bob}
+      - {op: add_user, args: {username: cy}, bind: cy}
+      - {op: follow, args: {follower_id: $ann.id, followee_id: $bob.id}}
+      - {op: follow, args: {follower_id: $ann.id, followee_id: $cy.id}}
+      - {op: create_post, args: {user_id: $bob.id, caption: b1, posted_at: "2030-01-01T10:00:00Z"}}
+      - {op: create_post, args: {user_id: $cy.id, caption: c1, posted_at: "2030-01-01T10:00:00Z"}}
+      - {op: create_post, args: {user_id: $cy.id, caption: c2, posted_at: "2030-01-05T10:00:00Z"}}
+      - {op: feed, args: {user_id: $ann.id, n: 2}, expect: [{caption: c2}, {caption: c1}]}
+      - {op: unfollow, args: {follower_id: $ann.id, followee_id: $cy.id}}
+      - {op: feed, args: {user_id: $ann.id, n: 10}, expect: [{caption: b1}]}
+      - {op: feed, args: {user_id: $bob.id, n: 10}, expect: []}
+  - name: suggestions_friends_of_friends
+    steps:
+      - {op: add_user, args: {username: ann}, bind: ann}
+      - {op: add_user, args: {username: bob}, bind: bob}
+      - {op: add_user, args: {username: cy}, bind: cy}
+      - {op: add_user, args: {username: dee}, bind: dee}
+      - {op: add_user, args: {username: eve}, bind: eve}
+      - {op: follow, args: {follower_id: $ann.id, followee_id: $bob.id}}
+      - {op: follow, args: {follower_id: $ann.id, followee_id: $cy.id}}
+      - {op: follow, args: {follower_id: $bob.id, followee_id: $dee.id}}
+      - {op: follow, args: {follower_id: $cy.id, followee_id: $dee.id}}
+      - {op: follow, args: {follower_id: $cy.id, followee_id: $eve.id}}
+      - {op: follow, args: {follower_id: $bob.id, followee_id: $ann.id}}
+      - {op: follow, args: {follower_id: $bob.id, followee_id: $cy.id}}
+      - {op: suggestions, args: {user_id: $ann.id}, expect: [{username: dee, mutuals: 2}, {username: eve, mutuals: 1}]}
+  - name: bad_references
+    steps:
+      - {op: add_user, args: {username: ann}, bind: ann}
+      - {op: follow, args: {follower_id: $ann.id, followee_id: 999999}, expect_error: rejected}
+      - {op: create_post, args: {user_id: 999999, caption: x, posted_at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: like, args: {user_id: $ann.id, post_id: 999999}, expect_error: rejected}

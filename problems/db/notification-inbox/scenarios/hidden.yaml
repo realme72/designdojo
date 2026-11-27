@@ -1,0 +1,25 @@
+scenarios:
+  - name: keys_are_per_user_and_mark_all
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: notify, args: {user_id: $a.id, type: LIKE, text: one, key: same, created_at: "2030-01-01T10:00:00Z"}}
+      - {op: notify, args: {user_id: $b.id, type: LIKE, text: other, key: same, created_at: "2030-01-01T10:00:00Z"}}
+      - {op: notify, args: {user_id: $a.id, type: COMMENT, text: two, key: k2, created_at: "2030-01-01T10:00:00Z"}}
+      - {op: unread_count, args: {user_id: $a.id}, expect: 2}
+      - {op: unread_count, args: {user_id: $b.id}, expect: 1}
+      - {op: mark_all_read, args: {user_id: $a.id}}
+      - {op: unread_count, args: {user_id: $a.id}, expect: 0}
+      - {op: unread_count, args: {user_id: $b.id}, expect: 1}
+      - {op: inbox, args: {user_id: $a.id, n: 1}, expect: [{text: two, read: true}]}
+  - name: unmute_resumes
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: mute, args: {user_id: $a.id, type: LIKE}}
+      - {op: mute, args: {user_id: $a.id, type: LIKE}}
+      - {op: notify, args: {user_id: $a.id, type: LIKE, text: muted, key: m1, created_at: "2030-01-01T10:00:00Z"}, expect: []}
+      - {op: unmute, args: {user_id: $a.id, type: LIKE}}
+      - {op: notify, args: {user_id: $a.id, type: LIKE, text: back, key: m2, created_at: "2030-01-01T11:00:00Z"}}
+      - {op: inbox, args: {user_id: $a.id, n: 10}, expect: [{text: back}]}
+      - {op: mute, args: {user_id: $a.id, type: NOPE}, expect_error: rejected}
+      - {op: notify, args: {user_id: 999999, type: LIKE, text: ghost, key: g, created_at: "2030-01-01T11:00:00Z"}, expect_error: rejected}

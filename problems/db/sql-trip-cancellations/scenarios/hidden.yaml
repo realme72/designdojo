@@ -1,0 +1,12 @@
+seed: |
+  insert into users values (1, 'client', false), (2, 'client', false), (10, 'driver', false), (11, 'driver', false);
+  insert into trips values
+    (1, 1, 10, 'cancelled_by_driver', '2030-01-01'), (2, 2, 10, 'cancelled_by_client', '2030-01-01'),
+    (3, 1, 11, 'completed', '2030-01-01'), (4, 2, 10, 'completed', '2030-01-05'),
+    (5, 1, 11, 'completed', '2030-01-09');
+scenarios:
+  - name: ranges_and_thresholds
+    steps:
+      - {op: cancellation_rate, args: {from_day: "2030-01-01", to_day: "2030-01-05"}, expect: [{day: "2030-01-01", rate: 0.67}, {day: "2030-01-05", rate: 0}]}
+      - {op: cancellation_rate, args: {from_day: "2030-01-02", to_day: "2030-01-04"}, expect: []}
+      - {op: worst_drivers, args: {min_trips: 3}, expect: [{driver_id: 10, cancel_rate: 0.33}]}

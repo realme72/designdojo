@@ -1,0 +1,11 @@
+seed: |
+  insert into pageviews values
+    (1, 5, '/x', '2030-01-01 23:50Z'), (2, 5, '/y', '2030-01-02 00:20Z'),
+    (3, 5, '/z', '2030-01-02 00:50:01Z'), (4, 5, '/w', '2030-01-02 00:50:01Z'),
+    (5, 6, '/x', '2030-01-01 23:50Z');
+scenarios:
+  - name: exact_boundaries
+    steps:
+      - {op: sessions, args: {}, expect: [{user_id: 5, session_no: 1, views: 2}, {user_id: 5, session_no: 2, views: 2}, {user_id: 6, session_no: 1, views: 1}]}
+      - {op: landing_pages, args: {}, expect: [{url: /x, sessions: 2}, {url: /z, sessions: 1}]}
+      - {op: avg_session_minutes, args: {}, expect: 10}

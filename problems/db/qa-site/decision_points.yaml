@@ -1,0 +1,14 @@
+- id: votes_model
+  question: How are votes on two kinds of posts stored?
+  good: Two vote tables (question_votes, answer_votes) with real FKs and composite PKs - or one posts supertable. A polymorphic (post_type, post_id) column can't have a foreign key.
+  smells: [MISSING_FK, NO_PRIMARY_KEY]
+- id: accepted_answer
+  question: How is "the accepted answer belongs to this question" enforced?
+  good: questions.accepted_answer_id with a composite FK (id, accepted_answer_id) REFERENCES answers (question_id, id), backed by UNIQUE (question_id, id) on answers.
+- id: tags
+  question: How are tags stored and limited?
+  good: tags table + question_tags junction (composite PK); the 1-5 rule needs a trigger/deferred check or validation in the ask operation.
+  smells: [REPEATING_GROUP]
+- id: reputation
+  question: How is reputation computed?
+  good: Derived from votes and acceptances with separate aggregates (no join fan-out); at scale, a ledger of reputation events or a maintained counter.

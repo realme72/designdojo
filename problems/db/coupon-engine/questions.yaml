@@ -1,0 +1,33 @@
+- id: limit_race
+  stage: design
+  question: A coupon allows 100 uses and 10,000 people redeem at the same second. How do you make sure exactly 100 succeed?
+  points:
+    - text: Count-then-insert races - many transactions see 99 and all insert.
+      keywords: [race, count then, check-then, all see, concurren]
+    - text: Atomic conditional increment of a counter - UPDATE coupons SET uses = uses + 1 WHERE id = ... AND uses < max_uses (or CHECK uses <= max_uses).
+      keywords: [atomic, counter, uses + 1, check, conditional update]
+    - text: The row lock serializes redemptions of one coupon - a hot row; for huge drops, pre-split the budget or use a queue/Redis decrement.
+      keywords: [hot row, contention, lock, redis, decr, queue, pre-split, shard]
+  follow_up: The order fails after the coupon was redeemed. How do you give the use back safely?
+- id: per_user
+  stage: design
+  question: How do you enforce "at most 2 uses per user" without races?
+  points:
+    - text: A per (coupon, user) counter row with a CHECK on the limit, upserted atomically.
+      keywords: [per user, counter, upsert, on conflict, check]
+    - text: Or UNIQUE (coupon, user, n) slot numbering - more rows, same guarantee.
+      keywords: [unique, slot]
+    - text: Counting existing redemptions in the same transaction is racy unless serializable or locked.
+      keywords: [racy, serializable, lock, count]
+  follow_up: Limits change after launch (2 -> 3 per user). What has to change in the data?
+- id: model
+  stage: before
+  question: Model the coupon - what columns and constraints would you put on it?
+  points:
+    - text: Unique code (case-insensitive), discount type with exactly one of percent/flat (CHECK), ranges validated.
+      keywords: [unique, case, lower, check, exactly one, percent, flat]
+    - text: Validity window (valid_from, valid_to) or a tstzrange, with valid_to > valid_from.
+      keywords: [valid_from, valid_to, range, tstzrange, window]
+    - text: Limits (global, per user, minimum order) as columns with CHECKs; redemptions recorded separately for audit.
+      keywords: [limit, max_uses, per_user, min_order, redemption, audit]
+  follow_up: Marketing wants coupons that only apply to certain categories. How does the schema grow?

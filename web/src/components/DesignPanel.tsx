@@ -11,7 +11,12 @@ function loadMermaid() {
 
 let renderSeq = 0
 
-function Diagram({ code, dark }: { code: string; dark: boolean }) {
+export function Diagram({ code, dark, title = 'Class diagram', legend }: {
+  code: string
+  dark: boolean
+  title?: string
+  legend?: string
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [full, setFull] = useState(false)
@@ -32,11 +37,17 @@ function Diagram({ code, dark }: { code: string; dark: boolean }) {
         theme: dark ? 'dark' : 'neutral',
         fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
         class: { hideEmptyMembersBox: true },
+        themeVariables: { fontSize: '13px' },
+        flowchart: { nodeSpacing: 28, rankSpacing: 34 },
       })
       try {
         const { svg } = await mermaid.render(`classdiag-${++renderSeq}`, code)
         if (!cancelled && ref.current) {
           ref.current.innerHTML = svg
+          // never scale a small diagram up: cap at its natural width, shrink to fit when wider
+          const el = ref.current.querySelector('svg')
+          const w = el?.viewBox?.baseVal?.width
+          if (el && w) el.style.maxWidth = `min(100%, ${Math.ceil(w)}px)`
           setError(null)
         }
       } catch (e) {
@@ -53,8 +64,10 @@ function Diagram({ code, dark }: { code: string; dark: boolean }) {
       {error && <pre className="raw">Diagram failed to render: {error}</pre>}
       <div className={`diagram-wrap ${full ? 'full' : ''}`}>
         <div className="diagram-bar">
-          {full && <strong>Class diagram</strong>}
-          <span className="meta">Generated from your code. Arrows: ◁┄ implements · ◁─ extends · → holds · ┄&gt; creates</span>
+          {full && <strong>{title}</strong>}
+          <span className="meta">
+            {legend ?? 'Generated from your code. Arrows: ◁┄ implements · ◁─ extends · → holds · ┄> creates'}
+          </span>
           <span className="spacer" />
           <button className="btn small ghost" onClick={() => setFull(!full)} title={full ? 'Close (Esc)' : 'Expand'}>
             {full ? <X size={13} /> : <Maximize2 size={13} />} {full ? 'Close' : 'Expand'}
@@ -112,11 +125,13 @@ export default function DesignPanel({ coach, analysis, loading, error, dark, onR
             Signals {analysis.smells.length > 0 && <span className="tab-badge">{analysis.smells.length}</span>}
           </button>
           <button className={view === 'diagram' ? 'on' : ''} onClick={() => setView('diagram')}>
-            Class diagram
+            {analysis.lang === 'sql' ? 'ER diagram' : 'Class diagram'}
           </button>
         </div>
         <span className="meta">
-          {st.classes} classes · {st.abstractions} abstractions · {st.methods} methods · {st.lines} lines
+          {analysis.lang === 'sql'
+            ? `${st.classes} tables · ${st.abstractions} relationships · ${st.methods} unique/check constraints · ${st.lines} lines`
+            : `${st.classes} classes · ${st.abstractions} abstractions · ${st.methods} methods · ${st.lines} lines`}
         </span>
         <span className="spacer" />
         <button className="btn small ghost" onClick={onRefresh} disabled={loading} title="Re-analyze">
@@ -127,7 +142,14 @@ export default function DesignPanel({ coach, analysis, loading, error, dark, onR
       {view === 'coach' ? (
         <CoachView {...coach} onJump={onJump} />
       ) : view === 'diagram' ? (
-        <Diagram code={analysis.mermaid} dark={dark} />
+        <Diagram
+          code={analysis.mermaid}
+          dark={dark}
+          title={analysis.lang === 'sql' ? 'ER diagram' : 'Class diagram'}
+          legend={analysis.lang === 'sql'
+            ? 'Read from the Postgres catalog after applying schema.sql. ||--o{ one-to-many · ||--o| one-to-one · |o optional parent'
+            : undefined}
+        />
       ) : (
         <>
           <p className="note">

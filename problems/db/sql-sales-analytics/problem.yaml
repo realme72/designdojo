@@ -1,0 +1,8 @@
+id: sql-sales-analytics
+title: Sales Analytics
+difficulty: medium
+category: SQL queries
+kind: sql
+time_limit_min: 35
+statement: statement.md
+tags: [lag, running-total, date-trunc, top-n-per-group]

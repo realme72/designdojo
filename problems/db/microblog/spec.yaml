@@ -1,0 +1,30 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user with a unique handle., params: {handle: text}, returns: one, columns: [id]}
+  post:
+    doc: Post a tweet (1-280 chars), optionally as a reply; extract its hashtags.
+    params: {user_id: bigint, body: text, posted_at: timestamptz, reply_to: bigint}
+    returns: one
+    columns: [id]
+  retweet: {doc: Retweet once; never your own tweet., params: {user_id: bigint, tweet_id: bigint}, returns: none}
+  trending:
+    kind: query
+    doc: Top n hashtags by number of tweets posted at or after :since; ties by tag.
+    params: {since: timestamptz, n: int}
+    returns: rows
+    columns: [tag, tweets]
+    ordered: true
+  thread:
+    kind: query
+    doc: The tweet and all replies beneath it, depth-first, children in posting order (then id).
+    params: {tweet_id: bigint}
+    returns: rows
+    columns: [id, depth, body]
+    ordered: true
+  top_tweets:
+    kind: query
+    doc: n tweets with most retweets, then most direct replies, then lowest id.
+    params: {n: int}
+    returns: rows
+    columns: [id, author, retweets, replies]
+    ordered: true

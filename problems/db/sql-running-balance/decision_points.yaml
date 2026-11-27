@@ -1,0 +1,9 @@
+- id: running
+  question: How is the running balance computed?
+  good: SUM(amount) OVER (PARTITION BY account ORDER BY posted_at, id ROWS UNBOUNDED PRECEDING) - ROWS frame with a tie-breaker so same-time transactions don't jump.
+- id: carry_forward
+  question: How are days without transactions filled?
+  good: generate_series of days and, per day, the cumulative sum of transactions up to that day's end (correlated SUM or a running total joined by date).
+- id: first_event
+  question: How is the first overdraft found?
+  good: Compute running balances, keep rows with balance < 0, take the first per account (DISTINCT ON / ROW_NUMBER = 1).

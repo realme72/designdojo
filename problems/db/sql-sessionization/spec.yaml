@@ -1,0 +1,5 @@
+schema: provided
+operations:
+  sessions: {kind: query, doc: Sessions per user with a 30-minute inactivity rule., params: {}, returns: rows, columns: [user_id, session_no, started_at, ended_at, views], ordered: true}
+  avg_session_minutes: {kind: query, doc: Average session length in minutes., params: {}, returns: value}
+  landing_pages: {kind: query, doc: First URL per session counted., params: {}, returns: rows, columns: [url, sessions], ordered: true}

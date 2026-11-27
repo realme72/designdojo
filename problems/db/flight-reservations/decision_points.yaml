@@ -1,0 +1,13 @@
+- id: seat_held_once
+  question: How is a seat held by at most one reservation?
+  good: reservations.seat_id UNIQUE NOT NULL referencing seats (or a nullable reservation pointer on seats with UNIQUE) - concurrent bookings of one seat fail at the constraint.
+- id: allocation
+  question: How is the lowest free seat picked safely under concurrency?
+  good: INSERT ... SELECT the first free seat ORDER BY seat_no LIMIT 1 (FOR UPDATE SKIP LOCKED for high concurrency); the UNIQUE seat constraint is the safety net.
+- id: flight_rules
+  question: Which flight rules are constraints?
+  good: CHECK origin <> destination, char length 3, arrives_at > departs_at, class CHECK, UNIQUE (flight_id, seat_no), unique code/PNR.
+  smells: [NO_NATURAL_KEY, UNCONSTRAINED_STATUS]
+- id: connections
+  question: How are connections found?
+  good: A self-join of flights on f1.destination = f2.origin with an interval window on f2.departs_at - f1.arrives_at; indexes on (origin, departs_at).

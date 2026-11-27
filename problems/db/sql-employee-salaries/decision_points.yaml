@@ -1,0 +1,10 @@
+- id: ranking
+  question: Which ranking function fits "distinct salaries, ties included"?
+  good: DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) <= 3; for nth highest, DENSE_RANK or SELECT DISTINCT ... OFFSET n-1 LIMIT 1 wrapped to return NULL.
+- id: group_comparison
+  question: How is each row compared to its group's average?
+  good: AVG(salary) OVER (PARTITION BY department_id) in a subquery/CTE, or a correlated subquery; not a GROUP BY that loses the row.
+- id: self_join
+  question: How are direct reports counted?
+  good: Self-join employees e JOIN employees m ON e.manager_id = m.id, GROUP BY manager, HAVING COUNT(*) >= :min.
+  smells: [SELECT_STAR]

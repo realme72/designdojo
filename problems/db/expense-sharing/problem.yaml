@@ -1,0 +1,8 @@
+id: expense-sharing
+title: Expense Sharing (Splitwise)
+difficulty: medium
+category: Commerce & payments
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [composite-fk, exact-money-split, ordinality, aggregation]

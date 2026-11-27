@@ -1,0 +1,25 @@
+- id: no_overlap
+  question: How is "no overlapping confirmed bookings per room" enforced?
+  good: An exclusion constraint - EXCLUDE USING gist (room_id WITH =, daterange(check_in, check_out) WITH &&) WHERE (status = 'CONFIRMED') - which is race-free. A check-then-insert in a query or a plain trigger is racy unless it locks the room row.
+- id: half_open_ranges
+  question: How are stay dates modelled?
+  good: Half-open [check_in, check_out) (daterange default '[)'), with CHECK (check_out > check_in); back-to-back stays don't conflict.
+- id: price_snapshot
+  question: Where does a booking's price come from after rates change?
+  good: Store the total (or nightly rate) on the booking at booking time.
+- id: integrity
+  question: Which rules does the database enforce?
+  good: Foreign keys room->room_type, booking->room/guest; UNIQUE room number, room type name and guest email; constrained status; rate >= 0.
+  smells: [MISSING_FK, NO_NATURAL_KEY, UNCONSTRAINED_STATUS, NO_DOMAIN_CHECK, NO_PRIMARY_KEY]
+- id: reporting
+  question: Are the reports correct at the edges?
+  good: occupancy LEFT JOINs room types so empty types show 0; availability uses NOT EXISTS with the same overlap predicate as the constraint; nights = check_out - check_in.
+  smells: [NOT_IN_SUBQUERY, COMMA_JOIN, SELECT_STAR]
+- id: indexes
+  question: Which lookups need indexes?
+  good: The exclusion constraint's gist index serves room/date lookups; index bookings.guest_id for guest history; rooms.room_type_id for availability by type.
+  smells: [FK_NOT_INDEXED]
+- id: money
+  question: How is money stored?
+  good: numeric, never float.
+  smells: [FLOAT_MONEY]

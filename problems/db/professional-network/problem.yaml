@@ -1,0 +1,8 @@
+id: professional-network
+title: Professional Network (LinkedIn)
+difficulty: hard
+category: Social & content
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [symmetric-relationship, partial-unique-index, recursive-bfs, graph]

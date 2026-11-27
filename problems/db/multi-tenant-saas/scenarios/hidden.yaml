@@ -1,0 +1,16 @@
+scenarios:
+  - name: usage_and_rules
+    steps:
+      - {op: add_tenant, args: {slug: zeta, plan: FREE}, bind: z}
+      - {op: add_tenant, args: {slug: alpha, plan: PRO}, bind: a}
+      - {op: add_tenant, args: {slug: alpha, plan: FREE}, expect_error: unique_violation}
+      - {op: add_tenant, args: {slug: beta, plan: GOLD}, expect_error: rejected}
+      - {op: add_user, args: {tenant_id: $a.id, email: x@a.com}, bind: x}
+      - {op: add_user, args: {tenant_id: $a.id, email: y@a.com}}
+      - {op: create_project, args: {tenant_id: $a.id, name: P}, bind: p}
+      - {op: create_project, args: {tenant_id: $a.id, name: P}, expect_error: unique_violation}
+      - {op: create_project, args: {tenant_id: $z.id, name: P}}
+      - {op: create_task, args: {tenant_id: $a.id, project_id: $p.id, title: t1, assignee_id: $x.id}}
+      - {op: create_task, args: {tenant_id: $a.id, project_id: $p.id, title: t2, assignee_id: null}}
+      - {op: usage, args: {}, expect: [{slug: alpha, plan: PRO, users: 2, projects: 1, tasks: 2}, {slug: zeta, plan: FREE, users: 0, projects: 1, tasks: 0}]}
+      - {op: user_tasks, args: {tenant_id: $z.id, user_id: $x.id}, expect: []}

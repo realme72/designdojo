@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  start_direct: {doc: Get or create the direct conversation of two different users., params: {user_a: bigint, user_b: bigint}, returns: one, columns: [conversation_id]}
+  create_group: {doc: Create a group; the owner becomes a member., params: {name: text, owner_id: bigint}, returns: one, columns: [conversation_id]}
+  add_member: {doc: Add a member to a group., params: {conversation_id: bigint, user_id: bigint}, returns: none}
+  send: {doc: Send a message (members only)., params: {conversation_id: bigint, sender_id: bigint, body: text, sent_at: timestamptz}, returns: one, columns: [id]}
+  mark_read: {doc: Move the member's read position forward (never backwards)., params: {conversation_id: bigint, user_id: bigint, message_id: bigint}, returns: none}
+  inbox: {kind: query, doc: The user's conversations with messages, latest first, with unread counts., params: {user_id: bigint}, returns: rows, columns: [conversation_id, title, last_message, unread], ordered: true}
+  history: {kind: query, doc: Keyset page of messages older than before_id (or newest), newest first., params: {conversation_id: bigint, before_id: bigint, n: int}, returns: rows, columns: [id, sender, body], ordered: true}

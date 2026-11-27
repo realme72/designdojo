@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: How would you print the full path of a category and count products in its whole subtree?
+  points:
+    - text: A recursive CTE walking up via parent_id, concatenating names in root-to-leaf order (string_agg ordered by depth).
+      keywords: [recursive, parent_id, up, string_agg, concatenat]
+    - text: A recursive CTE walking down from the category to collect descendant ids, then join products.
+      keywords: [down, descendant, children, join products]
+    - text: Include the category itself in the subtree.
+      keywords: [itself, include, self]
+  follow_up: How do you protect the recursion against a cycle introduced by bad data?
+- id: not_in_trap
+  stage: design
+  question: "Find leaf categories: why can WHERE id NOT IN (SELECT parent_id FROM categories) return nothing at all?"
+  points:
+    - text: Roots have parent_id NULL, so the subquery contains a NULL.
+      keywords: [null, root, parent_id null]
+    - text: x NOT IN (..., NULL) is never true - three-valued logic makes it NULL for every row.
+      keywords: [three-valued, unknown, never true, null comparison]
+    - text: Use NOT EXISTS, or filter NULLs out of the subquery.
+      keywords: [not exists, is not null, filter nulls]
+  follow_up: Does NOT EXISTS have the same problem? Why not?

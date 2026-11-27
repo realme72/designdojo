@@ -1,0 +1,11 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  ask: {doc: Ask a question with 1-5 tags., params: {user_id: bigint, title: text, tags: "text[]", asked_at: timestamptz}, returns: one, columns: [id]}
+  answer: {doc: Answer a question., params: {question_id: bigint, user_id: bigint, body: text}, returns: one, columns: [id]}
+  vote_question: {doc: Vote +1/-1 on a question (not your own)., params: {user_id: bigint, question_id: bigint, value: int}, returns: none}
+  vote_answer: {doc: Vote +1/-1 on an answer (not your own)., params: {user_id: bigint, answer_id: bigint, value: int}, returns: none}
+  accept: {doc: Accept an answer of this question., params: {question_id: bigint, answer_id: bigint}, returns: none}
+  reputation: {kind: query, doc: The user's reputation., params: {user_id: bigint}, returns: value}
+  unanswered: {kind: query, doc: Unanswered questions with the tag, oldest first., params: {tag: text}, returns: rows, columns: [id, title], ordered: true}
+  tag_leaders: {kind: query, doc: Top answerers for a tag by answer score., params: {tag: text, n: int}, returns: rows, columns: [name, score], ordered: true}

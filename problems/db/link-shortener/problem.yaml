@@ -1,0 +1,8 @@
+id: link-shortener
+title: Link Shortener Analytics (Bitly)
+difficulty: easy
+category: SaaS & productivity
+kind: sql
+time_limit_min: 35
+statement: statement.md
+tags: [generate-series, time-buckets, expiry, analytics]

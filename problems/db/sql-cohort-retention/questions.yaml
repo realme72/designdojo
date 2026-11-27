@@ -1,0 +1,24 @@
+- id: approach
+  stage: before
+  question: Explain how you'd build a monthly cohort retention table in SQL.
+  points:
+    - text: Assign each user a cohort (signup month).
+      keywords: [cohort, signup month, assign]
+    - text: For each activity, compute the month offset from the cohort month using calendar months.
+      keywords: [offset, calendar month, months between, date_trunc]
+    - text: Count distinct users per (cohort, offset) and divide by cohort size.
+      keywords: [count distinct, cohort size, divide, percentage]
+    - text: Generate the full grid so months with no activity show 0.
+      keywords: [grid, generate_series, cross join, zero]
+  follow_up: Retention by week instead of month - what changes?
+- id: performance
+  stage: after
+  question: This runs daily on 2 years of activity for 50 million users. How do you make it cheap?
+  points:
+    - text: Precompute monthly active users per cohort incrementally (only new days each run).
+      keywords: [precompute, incremental, rollup, monthly active]
+    - text: Run it in a warehouse/columnar store, not the OLTP database.
+      keywords: [warehouse, columnar, olap, bigquery, snowflake]
+    - text: Deduplicate activity to one row per user per month first.
+      keywords: [dedupe, one row per user per month, distinct]
+  follow_up: A late event for last month arrives today. Is your precomputed table now wrong?

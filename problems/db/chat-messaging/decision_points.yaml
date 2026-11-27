@@ -1,0 +1,14 @@
+- id: membership
+  question: How is "only members can send" enforced?
+  good: members(conversation_id, user_id) PK, and messages has a composite FK (conversation_id, sender_id) REFERENCES members - the database rejects non-members.
+  smells: [MISSING_FK, NO_PRIMARY_KEY]
+- id: direct_pairs
+  question: How is "one direct conversation per pair" enforced?
+  good: Store the pair canonically (least, greatest) with UNIQUE, and CHECK (user_low < user_high); get-or-create with INSERT ... ON CONFLICT then SELECT.
+- id: unread
+  question: How are unread counts computed?
+  good: A per-member last_read_message_id; unread = messages with id > last_read and sender <> user. Monotonic update with GREATEST.
+- id: pagination
+  question: How is history paginated?
+  good: Keyset pagination (WHERE id < :before_id ORDER BY id DESC LIMIT n) on an index (conversation_id, id), not OFFSET.
+  smells: [FK_NOT_INDEXED]

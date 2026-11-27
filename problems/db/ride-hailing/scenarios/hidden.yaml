@@ -1,0 +1,31 @@
+scenarios:
+  - name: offline_and_rider_limit
+    steps:
+      - {op: add_rider, args: {name: Ann}, bind: ann}
+      - {op: add_driver, args: {name: D1, class: MINI}, bind: d1}
+      - {op: add_driver, args: {name: D2, class: MINI}, bind: d2}
+      - {op: request, args: {rider_id: $ann.id, class: MINI, lat: 12.97, lng: 77.59, at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
+      - {op: driver_status, args: {driver_id: $d1.id, online: true, lat: 12.97, lng: 77.59}}
+      - {op: driver_status, args: {driver_id: $d2.id, online: true, lat: 12.98, lng: 77.59}}
+      - {op: request, args: {rider_id: $ann.id, class: MINI, lat: 12.97, lng: 77.59, at: "2030-01-01T10:00:00Z"}, expect: {driver: D1}}
+      - {op: request, args: {rider_id: $ann.id, class: MINI, lat: 12.97, lng: 77.59, at: "2030-01-01T10:01:00Z"}, expect_error: rejected}
+      - {op: driver_status, args: {driver_id: $d2.id, online: false, lat: 12.98, lng: 77.59}}
+      - {op: add_driver, args: {name: Bad, class: JET}, expect_error: rejected}
+      - {op: driver_status, args: {driver_id: $d2.id, online: true, lat: 95, lng: 77.59}, expect_error: rejected}
+  - name: earnings_report
+    steps:
+      - {op: add_rider, args: {name: R1}, bind: r1}
+      - {op: add_rider, args: {name: R2}, bind: r2}
+      - {op: add_driver, args: {name: Asha, class: MINI}, bind: a}
+      - {op: add_driver, args: {name: Bala, class: SUV}, bind: b}
+      - {op: add_driver, args: {name: Cyril, class: MINI}, bind: c}
+      - {op: driver_status, args: {driver_id: $a.id, online: true, lat: 1, lng: 1}}
+      - {op: driver_status, args: {driver_id: $b.id, online: true, lat: 1, lng: 1}}
+      - {op: request, args: {rider_id: $r1.id, class: MINI, lat: 1, lng: 1, at: "2030-01-01T10:00:00Z"}, bind: t1}
+      - {op: request, args: {rider_id: $r2.id, class: SUV, lat: 1, lng: 1, at: "2030-01-01T11:00:00Z"}, bind: t2}
+      - {op: complete, args: {trip_id: $t1.trip_id, km: 10}, expect: {fare: 150}}
+      - {op: complete, args: {trip_id: $t2.trip_id, km: 2}, expect: {fare: 160}}
+      - {op: complete, args: {trip_id: $t2.trip_id, km: 2}, expect_error: rejected}
+      - {op: request, args: {rider_id: $r1.id, class: MINI, lat: 1, lng: 1, at: "2030-01-02T10:00:00Z"}, bind: t3}
+      - {op: complete, args: {trip_id: $t3.trip_id, km: 1}}
+      - {op: earnings, args: {from: "2030-01-01T00:00:00Z", to: "2030-01-02T00:00:00Z"}, expect: [{driver: Bala, trips: 1, earned: 160}, {driver: Asha, trips: 1, earned: 150}, {driver: Cyril, trips: 0, earned: 0}]}

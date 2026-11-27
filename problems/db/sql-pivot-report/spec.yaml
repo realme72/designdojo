@@ -1,0 +1,5 @@
+schema: provided
+operations:
+  quarterly: {kind: query, doc: Sales pivoted into quarters per region., params: {year: int}, returns: rows, columns: [region, q1, q2, q3, q4, total], ordered: true}
+  with_subtotals: {kind: query, doc: Region/product totals with subtotals and a grand total., params: {year: int}, returns: rows, columns: [region, product, total], ordered: true}
+  best_product_share: {kind: query, doc: Top product per region and its share., params: {year: int}, returns: rows, columns: [region, product, share_pct], ordered: true}

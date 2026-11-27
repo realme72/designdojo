@@ -1,0 +1,10 @@
+- id: overlap
+  question: How are overlapping reservations on a table prevented?
+  good: An exclusion constraint on (table_id WITH =, tstzrange(starts_at, ends_at) WITH &&) for active reservations; ends_at stored (starts_at + 2 hours) with a CHECK.
+- id: fit
+  question: How is the party-size rule enforced?
+  good: CHECK party_size >= 1 and the assignment picks seats >= party_size; a trigger can also guard direct inserts.
+  smells: [NO_DOMAIN_CHECK]
+- id: best_fit
+  question: How is the table chosen?
+  good: ORDER BY seats, label LIMIT 1 among tables with no overlapping active reservation (NOT EXISTS with &&).

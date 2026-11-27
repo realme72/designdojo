@@ -1,0 +1,15 @@
+seed: |
+  insert into salaries values
+    (1, 'A', 'a1', 2341), (2, 'A', 'a2', 341), (3, 'A', 'a3', 15), (4, 'A', 'a4', 15314), (5, 'A', 'a5', 451), (6, 'A', 'a6', 513),
+    (7, 'B', 'b1', 15), (8, 'B', 'b2', 13), (9, 'B', 'b3', 1154), (10, 'B', 'b4', 1345), (11, 'B', 'b5', 1221),
+    (12, 'C', 'c1', 2345);
+scenarios:
+  - name: medians
+    steps:
+      - {op: median_by_company, args: {}, expect: [{company: A, median: 482}, {company: B, median: 1154}, {company: C, median: 2345}]}
+      - {op: above_median, args: {}, expect: [{company: A, employee: a1}, {company: A, employee: a4}, {company: A, employee: a6}, {company: B, employee: b4}, {company: B, employee: b5}]}
+  - name: percentiles_and_quartiles
+    steps:
+      - {op: percentile, args: {p: 0.5}, expect: 833.5}
+      - {op: percentile, args: {p: 0.9}, expect: 2344.6}
+      - {op: salary_quartiles, args: {}, expect: [{employee: b2, quartile: 1}, {employee: a3, quartile: 1}, {employee: b1, quartile: 1}, {employee: a2, quartile: 2}, {employee: a5, quartile: 2}, {employee: a6, quartile: 2}, {employee: b3, quartile: 3}, {employee: b5, quartile: 3}, {employee: b4, quartile: 3}, {employee: a1, quartile: 4}, {employee: c1, quartile: 4}, {employee: a4, quartile: 4}]}

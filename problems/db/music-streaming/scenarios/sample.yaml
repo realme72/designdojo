@@ -1,0 +1,27 @@
+scenarios:
+  - name: playlist_order_and_credits
+    steps:
+      - {op: add_artist, args: {name: Daft Punk}, bind: dp}
+      - {op: add_artist, args: {name: Pharrell}, bind: ph}
+      - {op: add_user, args: {name: Ann}, bind: u}
+      - {op: add_track, args: {title: Get Lucky, duration_s: 248, artist_ids: [$dp.id, $ph.id]}, bind: t1}
+      - {op: add_track, args: {title: One More Time, duration_s: 320, artist_ids: [$dp.id]}, bind: t2}
+      - {op: add_track, args: {title: Happy, duration_s: 233, artist_ids: [$ph.id]}, bind: t3}
+      - {op: create_playlist, args: {user_id: $u.id, name: Mix}, bind: p}
+      - {op: append, args: {playlist_id: $p.id, track_id: $t1.id}}
+      - {op: append, args: {playlist_id: $p.id, track_id: $t2.id}}
+      - {op: append, args: {playlist_id: $p.id, track_id: $t3.id}}
+      - {op: move, args: {playlist_id: $p.id, from_pos: 3, to_pos: 1}}
+      - {op: playlist, args: {playlist_id: $p.id}, expect: [{position: 1, title: Happy, artists: Pharrell}, {position: 2, title: Get Lucky, artists: "Daft Punk, Pharrell"}, {position: 3, title: One More Time}]}
+  - name: plays_and_reports
+    steps:
+      - {op: add_artist, args: {name: Daft Punk}, bind: dp}
+      - {op: add_user, args: {name: Ann}, bind: u}
+      - {op: add_track, args: {title: Aerodynamic, duration_s: 200, artist_ids: [$dp.id]}, bind: a}
+      - {op: add_track, args: {title: Voyager, duration_s: 200, artist_ids: [$dp.id]}, bind: v}
+      - {op: play, args: {user_id: $u.id, track_id: $a.id, played_at: "2030-03-01T23:50:00Z", seconds: 200}}
+      - {op: play, args: {user_id: $u.id, track_id: $a.id, played_at: "2030-03-02T00:10:00Z", seconds: 20}}
+      - {op: play, args: {user_id: $u.id, track_id: $v.id, played_at: "2030-03-02T08:00:00Z", seconds: 130}}
+      - {op: top_tracks, args: {artist_id: $dp.id, n: 5}, expect: [{title: Aerodynamic, plays: 1}, {title: Voyager, plays: 1}]}
+      - {op: listening_minutes, args: {user_id: $u.id, day: "2030-03-02"}, expect: 2}
+      - {op: play, args: {user_id: $u.id, track_id: $v.id, played_at: "2030-03-02T09:00:00Z", seconds: 201}, expect_error: rejected}

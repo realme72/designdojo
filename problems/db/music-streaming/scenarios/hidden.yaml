@@ -1,0 +1,30 @@
+scenarios:
+  - name: moves_both_directions_and_duplicates
+    steps:
+      - {op: add_artist, args: {name: X}, bind: x}
+      - {op: add_user, args: {name: Ann}, bind: u}
+      - {op: add_track, args: {title: A, duration_s: 100, artist_ids: [$x.id]}, bind: a}
+      - {op: add_track, args: {title: B, duration_s: 100, artist_ids: [$x.id]}, bind: b}
+      - {op: add_track, args: {title: C, duration_s: 100, artist_ids: [$x.id]}, bind: c}
+      - {op: create_playlist, args: {user_id: $u.id, name: P}, bind: p}
+      - {op: append, args: {playlist_id: $p.id, track_id: $a.id}}
+      - {op: append, args: {playlist_id: $p.id, track_id: $b.id}}
+      - {op: append, args: {playlist_id: $p.id, track_id: $c.id}}
+      - {op: append, args: {playlist_id: $p.id, track_id: $a.id}}
+      - {op: move, args: {playlist_id: $p.id, from_pos: 1, to_pos: 3}}
+      - {op: playlist, args: {playlist_id: $p.id}, expect: [{title: B}, {title: C}, {title: A}, {title: A}]}
+      - {op: move, args: {playlist_id: $p.id, from_pos: 4, to_pos: 2}}
+      - {op: playlist, args: {playlist_id: $p.id}, expect: [{position: 1, title: B}, {position: 2, title: A}, {position: 3, title: C}, {position: 4, title: A}]}
+  - name: catalog_rules
+    steps:
+      - {op: add_artist, args: {name: X}, bind: x}
+      - {op: add_artist, args: {name: X}, expect_error: unique_violation}
+      - {op: add_track, args: {title: Silent, duration_s: 0, artist_ids: [$x.id]}, expect_error: rejected}
+      - {op: add_track, args: {title: Nobody, duration_s: 100, artist_ids: []}, expect_error: rejected}
+      - {op: add_track, args: {title: Ghost, duration_s: 100, artist_ids: [999999]}, expect_error: rejected}
+      - {op: add_track, args: {title: Twice, duration_s: 100, artist_ids: [$x.id, $x.id]}, expect_error: rejected}
+      - {op: add_user, args: {name: Ann}, bind: u}
+      - {op: add_track, args: {title: Ok, duration_s: 100, artist_ids: [$x.id]}, bind: t}
+      - {op: play, args: {user_id: $u.id, track_id: $t.id, played_at: "2030-03-02T09:00:00Z", seconds: -1}, expect_error: rejected}
+      - {op: top_tracks, args: {artist_id: $x.id, n: 5}, expect: [{title: Ok, plays: 0}]}
+      - {op: listening_minutes, args: {user_id: $u.id, day: "2030-03-02"}, expect: 0}

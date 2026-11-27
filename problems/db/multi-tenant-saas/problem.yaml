@@ -1,0 +1,8 @@
+id: multi-tenant-saas
+title: Multi-Tenant SaaS
+difficulty: hard
+category: SaaS & productivity
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [tenant-isolation, composite-fk, plan-limits, per-tenant-unique]

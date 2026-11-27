@@ -1,0 +1,8 @@
+schema: designed
+operations:
+  open_account: {doc: Open a wallet account., params: {owner: text}, returns: one, columns: [id]}
+  deposit: {doc: Deposit external money; idempotent by key., params: {account_id: bigint, amount: numeric, key: text}, returns: one, columns: [txn_id]}
+  transfer: {doc: Move money between wallets; idempotent by key., params: {from_id: bigint, to_id: bigint, amount: numeric, key: text}, returns: one, columns: [txn_id]}
+  balance: {kind: query, doc: Current balance., params: {account_id: bigint}, returns: value}
+  statement: {kind: query, doc: Entries with running balance., params: {account_id: bigint}, returns: rows, columns: [txn_id, amount, balance_after], ordered: true}
+  unbalanced_transactions: {kind: query, doc: Transactions not summing to zero., params: {}, returns: rows, columns: [txn_id], ordered: true}

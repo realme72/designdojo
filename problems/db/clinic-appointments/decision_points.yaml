@@ -1,0 +1,14 @@
+- id: two_exclusions
+  question: How are overlaps prevented for doctors and patients?
+  good: Two partial exclusion constraints (doctor_id WITH =, range WITH &&) and (patient_id WITH =, range WITH &&) WHERE status = 'BOOKED' using btree_gist and a stored/derived tstzrange.
+- id: duration
+  question: How are lengths constrained?
+  good: CHECK (minutes IN (15, 30, 45, 60)); the end time derived (generated column or range expression), not stored inconsistently.
+  smells: [NO_DOMAIN_CHECK]
+- id: slots
+  question: How are free slots computed?
+  good: generate_series over the working day, anti-joined (NOT EXISTS) with booked appointments by range overlap.
+- id: status
+  question: How is status constrained?
+  good: CHECK (status IN ('BOOKED', 'CANCELLED')) - soft cancel keeps history.
+  smells: [UNCONSTRAINED_STATUS]

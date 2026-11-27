@@ -1,0 +1,14 @@
+- id: either_or
+  question: How is "percentage or flat, never both" enforced?
+  good: CHECK (num_nonnulls(percent_off, flat_off) = 1) plus range CHECKs; validity as CHECK (valid_to > valid_from) or a tstzrange.
+  smells: [NO_DOMAIN_CHECK]
+- id: global_limit
+  question: How does the global limit hold under concurrency?
+  good: A uses counter on the coupon with CHECK (uses <= max_uses), incremented atomically in the redemption statement - the row lock serializes; COUNT(*) then insert races.
+- id: per_user
+  question: How does the per-user limit hold under concurrency?
+  good: A (coupon, user) counter row with CHECK (count <= per_user) upserted atomically (ON CONFLICT DO UPDATE count = count + 1).
+- id: codes
+  question: How are codes kept unique ignoring case?
+  good: A unique index on lower(code) (or citext).
+  smells: [NO_NATURAL_KEY]

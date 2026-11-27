@@ -1,0 +1,16 @@
+scenarios:
+  - name: book_and_map
+    steps:
+      - {op: add_screen, args: {name: Audi 1, rows: 3, seats_per_row: 4}, bind: s}
+      - {op: add_show, args: {screen_id: $s.id, movie: Dune, starts_at: "2030-01-01T18:00:00Z", ends_at: "2030-01-01T21:00:00Z"}, bind: sh}
+      - {op: book, args: {show_id: $sh.id, customer: ann, seats: [A1, A2]}}
+      - {op: book, args: {show_id: $sh.id, customer: bob, seats: [A2, A3]}, expect_error: rejected}
+      - {op: available, args: {show_id: $sh.id}, expect: 10}
+      - {op: row_map, args: {show_id: $sh.id, row: A}, expect: [{seat: A1, taken: true}, {seat: A2, taken: true}, {seat: A3, taken: false}, {seat: A4, taken: false}]}
+  - name: shows_dont_overlap
+    steps:
+      - {op: add_screen, args: {name: Audi 1, rows: 1, seats_per_row: 2}, bind: s}
+      - {op: add_show, args: {screen_id: $s.id, movie: Dune, starts_at: "2030-01-01T18:00:00Z", ends_at: "2030-01-01T21:00:00Z"}}
+      - {op: add_show, args: {screen_id: $s.id, movie: Up, starts_at: "2030-01-01T20:00:00Z", ends_at: "2030-01-01T22:00:00Z"}, expect_error: rejected}
+      - {op: add_show, args: {screen_id: $s.id, movie: Up, starts_at: "2030-01-01T21:00:00Z", ends_at: "2030-01-01T23:00:00Z"}}
+      - {op: add_show, args: {screen_id: $s.id, movie: Up, starts_at: "2030-01-02T21:00:00Z", ends_at: "2030-01-02T20:00:00Z"}, expect_error: rejected}

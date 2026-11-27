@@ -1,0 +1,13 @@
+seed: |
+  insert into users values (7, 'Zoe'), (8, 'Yan');
+  insert into logins values
+    (7, '2030-02-27 12:00Z'), (7, '2030-02-28 12:00Z'), (7, '2030-03-01 12:00Z'), (7, '2030-03-02 12:00Z'),
+    (7, '2030-03-02 13:00Z'), (7, '2030-03-10 12:00Z'),
+    (8, '2030-03-01 00:00Z'), (8, '2030-03-02 00:00Z'), (8, '2030-03-03 00:00Z'), (8, '2030-03-04 00:00Z');
+scenarios:
+  - name: month_boundaries_and_ties
+    steps:
+      - {op: longest_streak, args: {}, expect: [{name: Yan, streak: 4}, {name: Zoe, streak: 4}]}
+      - {op: active_n_days_in_row, args: {n: 4}, expect: [{name: Yan}, {name: Zoe}]}
+      - {op: active_n_days_in_row, args: {n: 5}, expect: []}
+      - {op: daily_active, args: {from_day: "2030-03-02", to_day: "2030-03-04"}, expect: [{day: "2030-03-02", users: 2}, {day: "2030-03-03", users: 1}, {day: "2030-03-04", users: 1}]}

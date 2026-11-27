@@ -1,0 +1,13 @@
+scenarios:
+  - name: rules_and_covers
+    steps:
+      - {op: add_table, args: {label: T2, seats: 2}}
+      - {op: add_table, args: {label: Big, seats: 13}, expect_error: rejected}
+      - {op: add_table, args: {label: T2, seats: 4}, expect_error: unique_violation}
+      - {op: reserve, args: {guest: Ann, party_size: 0, starts_at: "2030-01-01T19:00:00Z"}, expect_error: rejected}
+      - {op: reserve, args: {guest: Ann, party_size: 3, starts_at: "2030-01-01T19:00:00Z"}, expect_error: rejected}
+      - {op: reserve, args: {guest: Ann, party_size: 2, starts_at: "2030-01-01T22:30:00Z"}}
+      - {op: reserve, args: {guest: Bob, party_size: 1, starts_at: "2030-01-02T00:30:00Z"}}
+      - {op: covers, args: {day: "2030-01-01"}, expect: 2}
+      - {op: covers, args: {day: "2030-01-02"}, expect: 1}
+      - {op: covers, args: {day: "2030-01-03"}, expect: 0}

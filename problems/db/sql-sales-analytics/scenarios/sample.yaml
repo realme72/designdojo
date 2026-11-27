@@ -1,0 +1,14 @@
+seed: |
+  insert into customers values (1, 'Acme'), (2, 'Beta');
+  insert into orders values
+    (1, 1, '2030-01-05Z', 100), (2, 2, '2030-01-20Z', 50),
+    (3, 1, '2030-02-02Z', 60), (4, 2, '2030-02-28 23:00Z', 60),
+    (5, 2, '2030-04-10Z', 30);
+scenarios:
+  - name: growth
+    steps:
+      - {op: monthly_revenue, args: {}, expect: [{month: "2030-01-01", revenue: 150, growth_pct: null}, {month: "2030-02-01", revenue: 120, growth_pct: -20}, {month: "2030-04-01", revenue: 30, growth_pct: -75}]}
+  - name: running_and_top
+    steps:
+      - {op: running_total, args: {year: 2030}, expect: [{month: "2030-01-01", revenue: 150, running: 150}, {month: "2030-02-01", revenue: 120, running: 270}, {month: "2030-03-01", revenue: 0, running: 270}, {month: "2030-04-01", revenue: 30, running: 300}, {running: 300}, {running: 300}, {running: 300}, {running: 300}, {running: 300}, {running: 300}, {running: 300}, {month: "2030-12-01", running: 300}]}
+      - {op: top_customer_per_month, args: {}, expect: [{month: "2030-01-01", customer: Acme, revenue: 100}, {month: "2030-02-01", customer: Acme, revenue: 60}, {month: "2030-04-01", customer: Beta, revenue: 30}]}

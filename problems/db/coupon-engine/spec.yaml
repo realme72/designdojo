@@ -1,0 +1,5 @@
+schema: designed
+operations:
+  create_coupon: {doc: Create a coupon., params: {code: text, percent_off: int, flat_off: numeric, min_order: numeric, max_uses: int, per_user: int, valid_from: timestamptz, valid_to: timestamptz}, returns: one, columns: [id]}
+  redeem: {doc: Redeem a coupon for an order; returns the discount., params: {code: text, user_id: bigint, order_total: numeric, at: timestamptz}, returns: one, columns: [discount]}
+  usage_report: {kind: query, doc: Uses and total discount per coupon., params: {}, returns: rows, columns: [code, uses, total_discount], ordered: true}

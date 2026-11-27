@@ -1,0 +1,44 @@
+- id: storage_choice
+  stage: before
+  question: Relational or NoSQL for an expense-splitting app? Why?
+  points:
+    - text: Money must be exact and consistent - an expense and its shares are written together in one ACID transaction.
+      keywords: [acid, transaction, together, atomic, consisten]
+    - text: Invariants (shares sum to the amount, only members take part) are enforced by constraints.
+      keywords: [constraint, invariant, foreign key, check, sum]
+    - text: Data is small per group and relational (groups, members, expenses, shares) - joins and aggregates are natural.
+      keywords: [relational, join, aggregate, small]
+  follow_up: Users want offline mode on their phones. What changes when two people edit the same group offline?
+- id: rounding
+  stage: design
+  question: Split 100.00 between three people. How do you store the shares so they always add up exactly?
+  points:
+    - text: Compute in integer cents and distribute the remainder (1 cent) deterministically.
+      keywords: [cents, integer, remainder, leftover, 33.34]
+    - text: Store money as numeric (or integer cents), never float.
+      keywords: [numeric, decimal, never float, integer cents]
+    - text: The database verifies the invariant sum(shares) = amount.
+      keywords: [sum, invariant, check, verify, trigger]
+  follow_up: Who should get the extra cent, and does it matter?
+- id: integrity
+  stage: design
+  question: How do you prevent an expense share for someone who isn't in the group?
+  points:
+    - text: A members(group_id, user_id) table with a composite PK.
+      keywords: [members, composite, group_id, user_id]
+    - text: Shares/payer reference members through a composite foreign key that includes the group.
+      keywords: [composite foreign key, composite fk, references members]
+    - text: Shares need the group id - carry it on the share row (with an FK to the expense's (id, group_id)) or validate via the expense.
+      keywords: [carry group, (expense_id, group_id), denormal, group_id on share]
+  follow_up: A member leaves the group with an unsettled balance. What should the schema allow?
+- id: simplify
+  stage: after
+  question: Ten people in a group owe each other in many directions. How would you minimize the number of payments to settle up?
+  points:
+    - text: Compute each person's net balance first; pairwise history doesn't matter for settling.
+      keywords: [net balance, net, aggregate]
+    - text: Greedily match the largest debtor with the largest creditor until all are zero (at most n-1 payments).
+      keywords: [greedy, largest, debtor, creditor, n-1]
+    - text: The true minimum is NP-hard in general; greedy is the practical answer.
+      keywords: [np-hard, np hard, optimal, heuristic]
+  follow_up: Expenses are in different currencies. What changes in the schema?

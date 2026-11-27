@@ -1,0 +1,9 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  create_event: {doc: Create an event; organizer attends (ACCEPTED)., params: {organizer_id: bigint, title: text, starts_at: timestamptz, ends_at: timestamptz}, returns: one, columns: [id]}
+  invite: {doc: Invite a user (once)., params: {event_id: bigint, user_id: bigint}, returns: none}
+  respond: {doc: An invited user responds., params: {event_id: bigint, user_id: bigint, response: text}, returns: none}
+  agenda: {kind: query, doc: Non-declined events overlapping a window., params: {user_id: bigint, from: timestamptz, to: timestamptz}, returns: rows, columns: [title, starts_at, response], ordered: true}
+  conflicts: {kind: query, doc: Overlapping accepted events., params: {user_id: bigint}, returns: rows, columns: [first, second], ordered: true}
+  attendance: {kind: query, doc: Counts per response., params: {event_id: bigint}, returns: rows, columns: [response, people], ordered: true}

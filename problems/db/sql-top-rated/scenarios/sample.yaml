@@ -1,0 +1,16 @@
+seed: |
+  insert into products values (1, 'Kettle', 'home'), (2, 'Lamp', 'home'), (3, 'Mug', 'home'), (4, 'Novel', 'books');
+  insert into reviews values
+    (1, 1, 1, 5, '2030-01-01Z'), (2, 1, 2, 4, '2030-01-02Z'),
+    (3, 2, 1, 5, '2030-01-01Z'), (4, 2, 3, 4, '2030-01-05Z'),
+    (5, 3, 4, 5, '2030-01-03Z'),
+    (6, 4, 1, 3, '2030-01-01Z'), (7, 4, 2, 3, '2030-01-01Z');
+scenarios:
+  - name: ties_and_latest
+    steps:
+      - {op: best_per_category, args: {min_reviews: 2}, expect: [{category: books, name: Novel, avg_rating: 3}, {category: home, name: Kettle, avg_rating: 4.5}, {category: home, name: Lamp, avg_rating: 4.5}]}
+      - {op: best_per_category, args: {min_reviews: 1}, expect: [{category: books, name: Novel}, {category: home, name: Mug, avg_rating: 5}]}
+      - {op: latest_review_per_product, args: {}, expect: [{name: Kettle, rating: 4}, {name: Lamp, rating: 4}, {name: Mug, rating: 5}, {name: Novel, rating: 3}]}
+  - name: bayesian
+    steps:
+      - {op: bayesian_ranking, args: {m: 2}, expect: [{name: Mug, score: 4.429}, {name: Kettle, score: 4.321}, {name: Lamp, score: 4.321}, {name: Novel, score: 3.571}]}

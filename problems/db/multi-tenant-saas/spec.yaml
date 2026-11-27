@@ -1,0 +1,9 @@
+schema: designed
+operations:
+  add_tenant: {doc: Create a tenant., params: {slug: text, plan: text}, returns: one, columns: [id]}
+  add_user: {doc: Create a user in a tenant., params: {tenant_id: bigint, email: text}, returns: one, columns: [id]}
+  create_project: {doc: Create a project (FREE plans max 3)., params: {tenant_id: bigint, name: text}, returns: one, columns: [id]}
+  create_task: {doc: Create a task; assignee must be in the same tenant., params: {tenant_id: bigint, project_id: bigint, title: text, assignee_id: bigint}, returns: one, columns: [id]}
+  upgrade: {doc: Upgrade a tenant to PRO., params: {tenant_id: bigint}, returns: none}
+  user_tasks: {kind: query, doc: Tasks assigned to a user within a tenant., params: {tenant_id: bigint, user_id: bigint}, returns: rows, columns: [project, title], ordered: true}
+  usage: {kind: query, doc: Counts per tenant., params: {}, returns: rows, columns: [slug, plan, users, projects, tasks], ordered: true}

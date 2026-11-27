@@ -1,0 +1,22 @@
+- id: storage_choice
+  stage: before
+  question: A URL shortener does billions of redirects a month. How would you store links and clicks?
+  points:
+    - text: Code -> URL lookups are pure key-value reads - cache heavily (CDN/Redis) in front of any database.
+      keywords: [key-value, cache, redis, cdn, lookup]
+    - text: Links can live in a relational or key-value store keyed by code; uniqueness of codes is the key constraint.
+      keywords: [unique, keyed by code, dynamodb, relational]
+    - text: Clicks are an event stream - write to a queue/log and aggregate in an analytics store, not row-by-row in the hot path.
+      keywords: [stream, kafka, queue, analytics, aggregate, async]
+  follow_up: How do you generate short codes that are unique without a central counter bottleneck?
+- id: analytics
+  stage: design
+  question: The dashboard shows clicks per day for the last 30 days, including days with zero. How?
+  points:
+    - text: generate_series of days LEFT JOIN aggregated clicks so missing days appear as 0.
+      keywords: [generate_series, left join, zero, missing days, calendar]
+    - text: Bucket by UTC day (date_trunc or casting at time zone 'UTC').
+      keywords: [date_trunc, utc, bucket, time zone]
+    - text: At scale, maintain daily rollup rows instead of scanning raw clicks.
+      keywords: [rollup, daily table, precompute, materialized]
+  follow_up: Users are in different time zones and want "their" days. What changes?

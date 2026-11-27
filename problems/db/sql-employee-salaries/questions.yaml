@@ -1,0 +1,33 @@
+- id: approach
+  stage: before
+  question: "\"Second highest salary\" - name three ways to write it and what each does with ties and with no second salary."
+  points:
+    - text: DENSE_RANK() = 2 (window function) - handles ties as distinct values.
+      keywords: [dense_rank, window, rank]
+    - text: SELECT DISTINCT salary ORDER BY salary DESC OFFSET 1 LIMIT 1 - must be wrapped (scalar subquery) to return NULL when missing.
+      keywords: [offset, limit, distinct, scalar subquery, null]
+    - text: MAX(salary) WHERE salary < (SELECT MAX(salary)) - only for N = 2.
+      keywords: [max, < (select max, nested max]
+  follow_up: Which version uses an index on salary best?
+- id: rank_functions
+  stage: design
+  question: ROW_NUMBER vs RANK vs DENSE_RANK for "top 3 salaries per department" - which and why?
+  points:
+    - text: ROW_NUMBER picks exactly 3 rows, arbitrarily dropping ties.
+      keywords: [row_number, exactly, arbitrary, drop]
+    - text: RANK skips numbers after ties (1, 1, 3) so you might get fewer distinct salaries.
+      keywords: [rank, skip, gap, 1, 1, 3]
+    - text: DENSE_RANK gives the top 3 distinct salaries, ties included.
+      keywords: [dense_rank, distinct, ties]
+  follow_up: How would the query change if you needed "top 3 people, ties broken by earliest hire"?
+- id: indexes
+  stage: after
+  question: These queries run on 10 million employees. Which indexes help?
+  points:
+    - text: (department_id, salary DESC) serves per-department ranking and averages.
+      keywords: [department_id, salary, composite, index]
+    - text: An index on manager_id for the self-join counts.
+      keywords: [manager_id, index]
+    - text: Window functions still sort/scan partitions - check EXPLAIN; precompute if this is a dashboard.
+      keywords: [explain, sort, precompute, materialized]
+  follow_up: Would a materialized view help here? When would it go stale?

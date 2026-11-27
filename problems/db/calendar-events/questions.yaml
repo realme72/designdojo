@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: A calendar for millions of users - how would you store events, and what about recurring events?
+  points:
+    - text: Events, attendees and RSVPs are relational (many-to-many with attributes).
+      keywords: [relational, many-to-many, attendees, rsvp]
+    - text: Recurring events are stored as a rule (RRULE) plus exceptions, expanded at read time - not one row per occurrence forever.
+      keywords: [rrule, recurrence, rule, exception, expand]
+    - text: Partition by user/organizer; free/busy lookups can be cached.
+      keywords: [partition, cache, free/busy, by user]
+  follow_up: A weekly meeting moves one occurrence to Thursday. How is that stored?
+- id: invites
+  stage: design
+  question: How do you model invitations and RSVPs?
+  points:
+    - text: An attendees junction table (event, user) with a response column - a many-to-many relationship that carries attributes.
+      keywords: [junction, attendees, response, many-to-many, attribute]
+    - text: Composite primary key prevents duplicate invites; response constrained to known values.
+      keywords: [composite, primary key, check, constrained]
+    - text: The organizer is also an attendee row (or a separate organizer_id) - pick one and keep queries consistent.
+      keywords: [organizer, attendee row, consistent]
+  follow_up: External guests (no account, just an email) can be invited. What changes?
+- id: conflicts
+  stage: after
+  question: How would you find a user's double-booked events?
+  points:
+    - text: Self-join the user's accepted events where the ranges overlap (a.start < b.end and b.start < a.end).
+      keywords: [self-join, self join, overlap, start <, end]
+    - text: Order the pair (a.id < b.id or by start) so each conflict appears once.
+      keywords: [a.id < b.id, once, duplicate pairs, order the pair]
+    - text: For large calendars, restrict to a time window and index event times.
+      keywords: [window, index, time range]
+  follow_up: How would you find the first 30-minute slot when 5 people are all free?

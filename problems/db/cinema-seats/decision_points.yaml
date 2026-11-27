@@ -1,0 +1,14 @@
+- id: seats_once
+  question: How is "a seat once per show" enforced?
+  good: booked_seats(show_id, seat_id) with a composite PK (or UNIQUE) - concurrent bookings of the same seat fail at the constraint, no locking code needed.
+  smells: [NO_PRIMARY_KEY]
+- id: right_screen
+  question: How do you prevent booking a seat from another screen?
+  good: booked_seats carries screen_id with composite FKs (show_id, screen_id) -> shows (id, screen_id) and (screen_id, seat_id) -> seats (screen_id, id).
+  smells: [MISSING_FK]
+- id: shows_overlap
+  question: How are overlapping shows prevented?
+  good: An exclusion constraint on (screen_id WITH =, tstzrange(starts_at, ends_at) WITH &&) plus CHECK ends_at > starts_at.
+- id: seat_generation
+  question: How are seats created?
+  good: Set-based INSERT ... SELECT with generate_series for rows and numbers (chr(64 + r) || n), not a loop.

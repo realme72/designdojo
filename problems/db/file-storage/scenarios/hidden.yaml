@@ -1,0 +1,29 @@
+scenarios:
+  - name: moves_and_cycles
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: null, name: A}, bind: a}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: $a.id, name: B}, bind: b}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: $b.id, name: C}, bind: c}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: null, name: Shared}, bind: s}
+      - {op: upload, args: {folder_id: $c.id, name: x.bin, size_bytes: 7}, bind: x}
+      - {op: move_folder, args: {folder_id: $a.id, new_parent_id: $c.id}, expect_error: rejected}
+      - {op: move_folder, args: {folder_id: $a.id, new_parent_id: $a.id}, expect_error: rejected}
+      - {op: move_folder, args: {folder_id: $b.id, new_parent_id: $s.id}}
+      - {op: path, args: {file_id: $x.id}, expect: /Shared/B/C/x.bin}
+      - {op: folder_size, args: {folder_id: $a.id}, expect: 0}
+      - {op: folder_size, args: {folder_id: $s.id}, expect: 7}
+      - {op: share, args: {folder_id: $s.id, user_id: $bob.id, role: EDIT}}
+      - {op: share, args: {folder_id: $s.id, user_id: $bob.id, role: VIEW}, expect_error: rejected}
+      - {op: share, args: {folder_id: $a.id, user_id: $bob.id, role: OWNER}, expect_error: rejected}
+      - {op: can_view, args: {user_id: $bob.id, file_id: $x.id}, expect: true}
+  - name: names_scoped_correctly
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: null, name: Docs}, bind: d}
+      - {op: create_folder, args: {owner_id: $bob.id, parent_id: null, name: Docs}}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: $d.id, name: Docs}}
+      - {op: create_folder, args: {owner_id: $ann.id, parent_id: $d.id, name: "a/b"}, expect_error: rejected}
+      - {op: upload, args: {folder_id: $d.id, name: f, size_bytes: -1}, expect_error: rejected}

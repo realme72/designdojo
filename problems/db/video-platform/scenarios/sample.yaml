@@ -1,0 +1,26 @@
+scenarios:
+  - name: channels_and_trending
+    steps:
+      - {op: add_user, args: {email: ann@tube.test}, bind: ann}
+      - {op: add_user, args: {email: bob@tube.test}, bind: bob}
+      - {op: create_channel, args: {user_id: $ann.id, handle: annsql}, bind: c}
+      - {op: create_channel, args: {user_id: $ann.id, handle: second}, expect_error: unique_violation}
+      - {op: upload, args: {channel_id: $c.id, title: Joins, duration_s: 600, visibility: PUBLIC, uploaded_at: "2030-01-01T10:00:00Z"}, bind: v1}
+      - {op: upload, args: {channel_id: $c.id, title: Secret, duration_s: 60, visibility: PRIVATE, uploaded_at: "2030-01-02T10:00:00Z"}, bind: v2}
+      - {op: view, args: {video_id: $v1.id, user_id: $bob.id, viewed_at: "2030-01-03T10:00:00Z"}}
+      - {op: view, args: {video_id: $v1.id, user_id: null, viewed_at: "2030-01-03T11:00:00Z"}}
+      - {op: view, args: {video_id: $v2.id, user_id: $ann.id, viewed_at: "2030-01-03T11:00:00Z"}}
+      - {op: trending, args: {since: "2030-01-01T00:00:00Z", n: 5}, expect: [{title: Joins, channel: annsql, views: 2}]}
+      - {op: channel_stats, args: {channel_id: $c.id}, expect: {subscribers: 0, videos: 1, total_views: 3}}
+  - name: subscriptions
+    steps:
+      - {op: add_user, args: {email: ann@tube.test}, bind: ann}
+      - {op: add_user, args: {email: bob@tube.test}, bind: bob}
+      - {op: create_channel, args: {user_id: $ann.id, handle: annsql}, bind: c}
+      - {op: subscribe, args: {user_id: $bob.id, channel_id: $c.id}}
+      - {op: subscribe, args: {user_id: $bob.id, channel_id: $c.id}, expect_error: rejected}
+      - {op: subscribe, args: {user_id: $ann.id, channel_id: $c.id}, expect_error: rejected}
+      - {op: upload, args: {channel_id: $c.id, title: Old, duration_s: 60, visibility: PUBLIC, uploaded_at: "2030-01-01T10:00:00Z"}}
+      - {op: upload, args: {channel_id: $c.id, title: New, duration_s: 60, visibility: PUBLIC, uploaded_at: "2030-02-01T10:00:00Z"}}
+      - {op: upload, args: {channel_id: $c.id, title: Hidden, duration_s: 60, visibility: UNLISTED, uploaded_at: "2030-03-01T10:00:00Z"}}
+      - {op: subscriptions_feed, args: {user_id: $bob.id, n: 10}, expect: [{title: New}, {title: Old}]}

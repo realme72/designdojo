@@ -1,0 +1,22 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user. Usernames are unique ignoring case., params: {username: text}, returns: one, columns: [id]}
+  follow: {doc: follower starts following followee., params: {follower_id: bigint, followee_id: bigint}, returns: none}
+  unfollow: {doc: Stop following., params: {follower_id: bigint, followee_id: bigint}, returns: none}
+  create_post: {doc: Create a post., params: {user_id: bigint, caption: text, posted_at: timestamptz}, returns: one, columns: [id]}
+  like: {doc: Like a post (once per user)., params: {user_id: bigint, post_id: bigint}, returns: none}
+  comment: {doc: Comment on a post (non-empty)., params: {user_id: bigint, post_id: bigint, body: text}, returns: one, columns: [id]}
+  feed:
+    kind: query
+    doc: The n newest posts by followed users, with like and comment counts.
+    params: {user_id: bigint, n: int}
+    returns: rows
+    columns: [post_id, author, caption, likes, comments]
+    ordered: true
+  suggestions:
+    kind: query
+    doc: Friends-of-friends the user doesn't follow yet, with the number of mutual connections.
+    params: {user_id: bigint}
+    returns: rows
+    columns: [username, mutuals]
+    ordered: true

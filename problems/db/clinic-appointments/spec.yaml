@@ -1,0 +1,9 @@
+schema: designed
+operations:
+  add_doctor: {doc: Create a doctor., params: {name: text, specialty: text}, returns: one, columns: [id]}
+  add_patient: {doc: Create a patient., params: {name: text}, returns: one, columns: [id]}
+  book: {doc: Book an appointment (no doctor or patient overlap)., params: {doctor_id: bigint, patient_id: bigint, starts_at: timestamptz, minutes: int}, returns: one, columns: [id]}
+  cancel: {doc: Cancel an appointment., params: {appointment_id: bigint}, returns: none}
+  doctor_day: {kind: query, doc: The doctor's booked appointments on a UTC day., params: {doctor_id: bigint, day: date}, returns: rows, columns: [starts_at, patient], ordered: true}
+  free_slots: {kind: query, doc: Free 30-minute slots 09:00-17:00 UTC., params: {doctor_id: bigint, day: date}, returns: rows, columns: [slot], ordered: true}
+  busiest_specialties: {kind: query, doc: Booked appointments per specialty in a window., params: {from: timestamptz, to: timestamptz}, returns: rows, columns: [specialty, appointments], ordered: true}

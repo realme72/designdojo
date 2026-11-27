@@ -1,0 +1,9 @@
+schema: designed
+operations:
+  add_rider: {doc: Create a rider., params: {name: text}, returns: one, columns: [id]}
+  add_driver: {doc: Create a driver (offline until they report)., params: {name: text, class: text}, returns: one, columns: [id]}
+  driver_status: {doc: Update a driver's online flag and location., params: {driver_id: bigint, online: bool, lat: numeric, lng: numeric}, returns: none}
+  request: {doc: Request a ride; assign the nearest free online driver of the class., params: {rider_id: bigint, class: text, lat: numeric, lng: numeric, at: timestamptz}, returns: one, columns: [trip_id, driver]}
+  complete: {doc: Complete a trip with its distance; compute the fare., params: {trip_id: bigint, km: numeric}, returns: one, columns: [fare]}
+  cancel: {doc: Cancel an accepted trip., params: {trip_id: bigint}, returns: none}
+  earnings: {kind: query, doc: Completed trips and earnings per driver., params: {from: timestamptz, to: timestamptz}, returns: rows, columns: [driver, trips, earned], ordered: true}

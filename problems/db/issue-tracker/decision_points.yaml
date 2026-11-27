@@ -1,0 +1,11 @@
+- id: numbering
+  question: How are per-project issue numbers assigned without gaps or duplicates?
+  good: A counter on the project row incremented with UPDATE ... RETURNING in the same transaction (row lock serializes); UNIQUE (project_id, number). A global sequence can't give per-project gapless numbers.
+- id: membership
+  question: How are reporter/assignee restricted to members?
+  good: Composite FKs (project_id, reporter_id) and (project_id, assignee_id) -> members (project_id, user_id).
+  smells: [MISSING_FK]
+- id: workflow_audit
+  question: How are transitions validated and audited?
+  good: A transitions table checked by a BEFORE UPDATE trigger, and an AFTER UPDATE trigger (or same statement) inserting into issue_history.
+  smells: [UNCONSTRAINED_STATUS]

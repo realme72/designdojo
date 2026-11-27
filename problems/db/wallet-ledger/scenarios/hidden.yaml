@@ -1,0 +1,26 @@
+scenarios:
+  - name: invalid_movements
+    steps:
+      - {op: open_account, args: {owner: Ann}, bind: a}
+      - {op: open_account, args: {owner: Bob}, bind: b}
+      - {op: deposit, args: {account_id: $a.id, amount: 0, key: d0}, expect_error: rejected}
+      - {op: deposit, args: {account_id: $a.id, amount: -5, key: dn}, expect_error: rejected}
+      - {op: deposit, args: {account_id: $a.id, amount: 10, key: d1}}
+      - {op: transfer, args: {from_id: $a.id, to_id: $a.id, amount: 1, key: same}, expect_error: rejected}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: -1, key: neg}, expect_error: rejected}
+      - {op: transfer, args: {from_id: $a.id, to_id: 999999, amount: 1, key: ghost}, expect_error: rejected}
+      - {op: balance, args: {account_id: $a.id}, expect: 10}
+      - {op: statement, args: {account_id: $b.id}, expect: []}
+      - {op: unbalanced_transactions, args: {}, expect: []}
+  - name: deposit_retry_and_running_balance
+    steps:
+      - {op: open_account, args: {owner: Ann}, bind: a}
+      - {op: open_account, args: {owner: Bob}, bind: b}
+      - {op: deposit, args: {account_id: $a.id, amount: 10, key: dep}, bind: d}
+      - {op: deposit, args: {account_id: $a.id, amount: 10, key: dep}, expect: {txn_id: $d.txn_id}}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: 4, key: x1}}
+      - {op: transfer, args: {from_id: $b.id, to_id: $a.id, amount: 1.25, key: x2}}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: 7.25, key: x3}}
+      - {op: statement, args: {account_id: $a.id}, expect: [{amount: 10, balance_after: 10}, {amount: -4, balance_after: 6}, {amount: 1.25, balance_after: 7.25}, {amount: -7.25, balance_after: 0}]}
+      - {op: transfer, args: {from_id: $a.id, to_id: $b.id, amount: 0.01, key: x4}, expect_error: rejected}
+      - {op: balance, args: {account_id: $b.id}, expect: 10}

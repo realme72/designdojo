@@ -1,0 +1,6 @@
+schema: provided
+operations:
+  nth_highest: {kind: query, doc: N-th highest distinct salary or NULL., params: {n: int}, returns: value}
+  top3_per_department: {kind: query, doc: Top 3 distinct salaries per department (ties included)., params: {}, returns: rows, columns: [department, name, salary], ordered: true}
+  above_department_average: {kind: query, doc: Employees above their department average., params: {}, returns: rows, columns: [name, department], ordered: true}
+  managers_with_reports: {kind: query, doc: Managers with at least min direct reports., params: {min: int}, returns: rows, columns: [name, reports], ordered: true}

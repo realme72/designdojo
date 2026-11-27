@@ -13,16 +13,21 @@ from .judge import JudgeError, Workspace, ensure_image, judge, scaffold
 from .problems import ProblemError, get_problem, list_problems, reference_meta
 
 
-def cmd_list(_args) -> int:
-    for p in list_problems():
-        m = p.meta
-        print(f"{p.id:<16} {m.get('difficulty', ''):<8} {p.title}")
+def cmd_list(args) -> int:
+    from .problems import TRACKS
+
+    for t in [args.track] if args.track else TRACKS:
+        ps = list_problems(t)
+        print(report.bold(f"{TRACKS[t]['title']} ({t}): {len(ps)} problem(s)") if hasattr(report, "bold")
+              else f"{TRACKS[t]['title']} ({t}): {len(ps)} problem(s)")
+        for p in ps:
+            print(f"  {p.id:<24} {p.meta.get('difficulty', ''):<8} {p.title}")
     return 0
 
 
 def cmd_scaffold(args) -> int:
     problem = get_problem(args.problem)
-    dest = Path(args.dir or f"work/{problem.id}-{args.lang}")
+    dest = Path(args.dir or f"work/{problem.track}/{problem.id}-{args.lang}")
     written = scaffold(problem, args.lang, dest)
     print(f"Workspace ready: {dest}")
     for p in written:
@@ -168,8 +173,13 @@ def _check_stub_compiles(problem, lang: str) -> str | None:
 def cmd_validate(args) -> int:
     from .problems import lint_problem
 
-    problems = [get_problem(p) for p in args.problems] if args.problems else list_problems()
+    from .problems import duplicate_ids
+
+    problems = [get_problem(p) for p in args.problems] if args.problems else list_problems(args.track)
     bad = 0
+    for d in duplicate_ids():
+        print(report.red(f"duplicate problem id: {d}"))
+        bad += 1
     for p in problems:
         issues = lint_problem(p)
         line = f"{p.id:<24}"
@@ -183,7 +193,7 @@ def cmd_validate(args) -> int:
             print(report.green(f"{line} lint ok"))
             continue
         parts = []
-        for lang in codegen.LANGS:
+        for lang in p.langs:
             ref = p.root / "reference" / lang
             if not (ref / "solution").is_dir():
                 problem_msg = _check_stub_compiles(p, lang)
@@ -242,11 +252,13 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="dojo", description="LLD practice playground")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    sub.add_parser("list", help="list problems").set_defaults(fn=cmd_list)
+    s = sub.add_parser("list", help="list problems by track")
+    s.add_argument("--track", choices=["lld", "db", "hld"])
+    s.set_defaults(fn=cmd_list)
 
     s = sub.add_parser("scaffold", help="create a workspace for a problem")
     s.add_argument("problem")
-    s.add_argument("--lang", choices=codegen.LANGS, required=True)
+    s.add_argument("--lang", choices=[*codegen.LANGS, "sql"], required=True)
     s.add_argument("dir", nargs="?", help="workspace dir (default: work/<problem>-<lang>)")
     s.set_defaults(fn=cmd_scaffold)
 
@@ -273,6 +285,7 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("validate", help="lint problems and run their reference solutions (authoring)")
     s.add_argument("problems", nargs="*")
     s.add_argument("--lint-only", action="store_true")
+    s.add_argument("--track", choices=["lld", "db", "hld"])
     s.add_argument("-v", "--verbose", action="store_true")
     s.set_defaults(fn=cmd_validate)
 

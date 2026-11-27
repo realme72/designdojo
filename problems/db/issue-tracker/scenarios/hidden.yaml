@@ -1,0 +1,24 @@
+scenarios:
+  - name: keys_and_workload
+    steps:
+      - {op: create_project, args: {key: dojo, name: Lower}, expect_error: rejected}
+      - {op: create_project, args: {key: A, name: Short}, expect_error: rejected}
+      - {op: create_project, args: {key: OPS, name: Ops}, bind: p}
+      - {op: create_project, args: {key: OPS, name: Again}, expect_error: unique_violation}
+      - {op: add_user, args: {name: Zed}, bind: z}
+      - {op: add_user, args: {name: Amy}, bind: a}
+      - {op: add_user, args: {name: Idle}, bind: i}
+      - {op: add_member, args: {project_id: $p.id, user_id: $z.id}}
+      - {op: add_member, args: {project_id: $p.id, user_id: $a.id}}
+      - {op: add_member, args: {project_id: $p.id, user_id: $i.id}}
+      - {op: add_member, args: {project_id: $p.id, user_id: $i.id}, expect_error: rejected}
+      - {op: create_issue, args: {project_id: $p.id, title: one, reporter_id: $z.id}}
+      - {op: create_issue, args: {project_id: $p.id, title: two, reporter_id: $z.id}}
+      - {op: create_issue, args: {project_id: $p.id, title: three, reporter_id: $z.id}, expect: {issue_key: OPS-3}}
+      - {op: assign, args: {issue_key: OPS-1, user_id: $a.id}}
+      - {op: assign, args: {issue_key: OPS-2, user_id: $a.id}}
+      - {op: assign, args: {issue_key: OPS-3, user_id: $z.id}}
+      - {op: move, args: {issue_key: OPS-1, status: IN_PROGRESS, at: "2030-01-01T10:00:00Z"}}
+      - {op: move, args: {issue_key: OPS-1, status: DONE, at: "2030-01-01T11:00:00Z"}}
+      - {op: workload, args: {project_id: $p.id}, expect: [{name: Amy, open: 1}, {name: Zed, open: 1}, {name: Idle, open: 0}]}
+      - {op: board, args: {project_id: $p.id}, expect: [{issue_key: OPS-2}, {issue_key: OPS-3}, {issue_key: OPS-1, status: DONE}]}

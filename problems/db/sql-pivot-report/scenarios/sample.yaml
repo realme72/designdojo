@@ -1,0 +1,12 @@
+seed: |
+  insert into sales values
+    (1, 'North', 'Tea', '2030-01-10', 100), (2, 'North', 'Tea', '2030-05-10', 50), (3, 'North', 'Coffee', '2030-11-10', 25),
+    (4, 'South', 'Coffee', '2030-02-10', 40), (5, 'South', 'Coffee', '2030-08-10', 60), (6, 'South', 'Tea', '2031-01-01', 999);
+scenarios:
+  - name: pivot
+    steps:
+      - {op: quarterly, args: {year: 2030}, expect: [{region: North, q1: 100, q2: 50, q3: 0, q4: 25, total: 175}, {region: South, q1: 40, q2: 0, q3: 60, q4: 0, total: 100}]}
+  - name: rollup_and_share
+    steps:
+      - {op: with_subtotals, args: {year: 2030}, expect: [{region: North, product: Coffee, total: 25}, {region: North, product: Tea, total: 150}, {region: North, product: null, total: 175}, {region: South, product: Coffee, total: 100}, {region: South, product: null, total: 100}, {region: null, product: null, total: 275}]}
+      - {op: best_product_share, args: {year: 2030}, expect: [{region: North, product: Tea, share_pct: 85.7}, {region: South, product: Coffee, share_pct: 100}]}

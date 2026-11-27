@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Airline inventory and reservations - relational database or NoSQL? Why?
+  points:
+    - text: Seat inventory must never be oversold - strong consistency and unique constraints in a relational database.
+      keywords: [consisten, oversold, unique, relational, acid]
+    - text: Flight search is read-heavy and often served from caches or precomputed availability (and fare) indexes.
+      keywords: [search, cache, read-heavy, precompute, index]
+    - text: Real airlines deliberately overbook (with limits) - that rule lives in the inventory logic.
+      keywords: [overbook, limit, policy]
+  follow_up: Search must answer "flights BLR to JFK next Friday" in 100 ms across 500 airlines. What do you store where?
+- id: allocation_race
+  stage: design
+  question: 200 people book the last 3 economy seats at the same time. How do you assign seats without double-booking or deadlocks?
+  points:
+    - text: A unique constraint on the seat in reservations guarantees no double assignment.
+      keywords: [unique, constraint, seat_id]
+    - text: Pick a free seat with SELECT ... FOR UPDATE SKIP LOCKED so concurrent bookers take different seats instead of waiting/failing.
+      keywords: [skip locked, for update]
+    - text: When no seat is left, fail cleanly (or waitlist).
+      keywords: [no seat, sold out, waitlist, fail]
+  follow_up: Passengers can choose a specific seat later. How do you combine that with automatic assignment?
+- id: connections
+  stage: after
+  question: How would you find one-stop connections, and how would you scale it to multi-stop search?
+  points:
+    - text: Self-join flights where the first's destination is the second's origin, with a layover window on times.
+      keywords: [self-join, self join, destination = origin, layover, window]
+    - text: Index (origin, departs_at) so the second leg is a range scan.
+      keywords: [index, origin, departs_at, range]
+    - text: Multi-stop search is a graph shortest-path problem - precompute or use a dedicated routing engine; recursive SQL explodes.
+      keywords: [graph, shortest path, dijkstra, precompute, routing, recursive]
+  follow_up: How do you include connections that cross midnight or time zones correctly?

@@ -1,0 +1,28 @@
+scenarios:
+  - name: cancel_and_churn
+    steps:
+      - {op: add_plan, args: {code: basic, monthly_price: 10}}
+      - {op: add_customer, args: {email: ann@co.test}, bind: a}
+      - {op: add_customer, args: {email: bob@co.test}, bind: b}
+      - {op: add_customer, args: {email: cy@co.test}, bind: c}
+      - {op: subscribe, args: {customer_id: $a.id, plan_code: basic, start_at: "2030-01-01T00:00:00Z"}, bind: sa}
+      - {op: subscribe, args: {customer_id: $b.id, plan_code: basic, start_at: "2030-01-01T00:00:00Z"}, bind: sb}
+      - {op: subscribe, args: {customer_id: $c.id, plan_code: basic, start_at: "2030-01-01T00:00:00Z"}, bind: sc}
+      - {op: cancel, args: {subscription_id: $sa.subscription_id, end_at: "2030-03-10T00:00:00Z"}}
+      - {op: cancel, args: {subscription_id: $sb.subscription_id, end_at: "2030-03-12T00:00:00Z"}}
+      - {op: subscribe, args: {customer_id: $b.id, plan_code: basic, start_at: "2030-03-12T00:00:00Z"}}
+      - {op: cancel, args: {subscription_id: $sc.subscription_id, end_at: "2029-12-01T00:00:00Z"}, expect_error: rejected}
+      - {op: churned, args: {from: "2030-03-01T00:00:00Z", to: "2030-04-01T00:00:00Z"}, expect: [{email: ann@co.test}]}
+      - {op: mrr, args: {at: "2030-03-11T00:00:00Z"}, expect: 20}
+      - {op: mrr, args: {at: "2029-06-01T00:00:00Z"}, expect: 0}
+  - name: back_to_back_ok_overlap_not
+    steps:
+      - {op: add_plan, args: {code: basic, monthly_price: 10}}
+      - {op: add_customer, args: {email: ann@co.test}, bind: a}
+      - {op: subscribe, args: {customer_id: $a.id, plan_code: basic, start_at: "2030-01-01T00:00:00Z"}, bind: s}
+      - {op: cancel, args: {subscription_id: $s.subscription_id, end_at: "2030-02-01T00:00:00Z"}}
+      - {op: subscribe, args: {customer_id: $a.id, plan_code: basic, start_at: "2030-01-31T00:00:00Z"}, expect_error: rejected}
+      - {op: subscribe, args: {customer_id: $a.id, plan_code: basic, start_at: "2030-02-01T00:00:00Z"}}
+      - {op: subscribe, args: {customer_id: $a.id, plan_code: nope, start_at: "2031-01-01T00:00:00Z"}, expect_error: rejected}
+      - {op: add_plan, args: {code: basic, monthly_price: 1}, expect_error: unique_violation}
+      - {op: add_plan, args: {code: neg, monthly_price: -1}, expect_error: rejected}

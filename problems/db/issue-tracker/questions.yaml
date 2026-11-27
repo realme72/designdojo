@@ -1,0 +1,37 @@
+- id: storage_choice
+  stage: before
+  question: Jira-like tracker for 100k companies - relational or document store? Why?
+  points:
+    - text: Projects, issues, members and workflows are relational with integrity rules; reporting joins them.
+      keywords: [relational, integrity, join, report]
+    - text: Custom fields per project are semi-structured - a JSONB column (with GIN index) or EAV, inside the relational model.
+      keywords: [custom field, jsonb, gin, eav, semi-structured]
+    - text: Search across issues goes to a search engine.
+      keywords: [search, elasticsearch, full-text]
+    - text: Partition or shard by tenant (company).
+      keywords: [tenant, shard, partition]
+  follow_up: How would you store custom fields that differ per project but must be filterable?
+- id: numbering
+  stage: design
+  question: How do you give each project its own sequence DOJO-1, DOJO-2 … with no duplicates under concurrency?
+  points:
+    - text: A per-project counter column updated atomically (UPDATE projects SET next = next + 1 RETURNING) inside the issue's transaction.
+      keywords: [counter, update, returning, atomic, per-project]
+    - text: The row lock serializes concurrent creators in the same project only.
+      keywords: [row lock, serializ, same project]
+    - text: UNIQUE (project_id, number) as a safety net; MAX(number) + 1 races.
+      keywords: [unique, max + 1, max(, race]
+    - text: Database sequences are global and can leave gaps on rollback.
+      keywords: [sequence, gap, rollback, global]
+  follow_up: An issue moves to another project. What number does it get, and what happens to links to the old key?
+- id: audit
+  stage: after
+  question: Every status change must be auditable. How do you guarantee nothing is missed?
+  points:
+    - text: Write history in the database (trigger) so every code path is covered.
+      keywords: [trigger, database, every path]
+    - text: History rows are append-only with timestamp and actor.
+      keywords: [append-only, timestamp, actor, who]
+    - text: Alternatively event-source the issue and derive current state.
+      keywords: [event sourc, derive]
+  follow_up: How would you compute average time spent IN_PROGRESS per issue from the history?

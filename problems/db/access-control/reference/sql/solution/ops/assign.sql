@@ -1,0 +1,1 @@
+insert into user_roles (user_id, role_id) values (:user_id, :role_id);

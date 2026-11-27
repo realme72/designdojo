@@ -1,0 +1,23 @@
+scenarios:
+  - name: utilization_window
+    steps:
+      - {op: add_vehicle, args: {plate: A, category: SEDAN, daily_rate: 1000}}
+      - {op: add_vehicle, args: {plate: B, category: SEDAN, daily_rate: 1000}}
+      - {op: add_vehicle, args: {plate: C, category: SUV, daily_rate: 1000}}
+      - {op: add_customer, args: {licence: L, name: Ann}, bind: c}
+      - {op: reserve, args: {customer_id: $c.id, category: SEDAN, from_day: "2030-01-28", to_day: "2030-02-03"}}
+      - {op: reserve, args: {customer_id: $c.id, category: SEDAN, from_day: "2030-02-10", to_day: "2030-02-12"}}
+      - {op: reserve, args: {customer_id: $c.id, category: SEDAN, from_day: "2030-01-30", to_day: "2030-02-01"}, bind: x}
+      - {op: cancel, args: {rental_id: $x.rental_id}}
+      - {op: utilization, args: {from_day: "2030-02-01", to_day: "2030-03-01"}, expect: [{plate: A, days: 4}, {plate: B, days: 0}, {plate: C, days: 0}]}
+  - name: validation_and_charges
+    steps:
+      - {op: add_vehicle, args: {plate: A, category: TRUCK, daily_rate: 1000}, expect_error: rejected}
+      - {op: add_vehicle, args: {plate: A, category: SEDAN, daily_rate: 1999.5}}
+      - {op: add_vehicle, args: {plate: A, category: SUV, daily_rate: 10}, expect_error: unique_violation}
+      - {op: add_customer, args: {licence: L, name: Ann}, bind: c}
+      - {op: add_customer, args: {licence: L, name: Bob}, expect_error: unique_violation}
+      - {op: reserve, args: {customer_id: $c.id, category: SEDAN, from_day: "2030-01-05", to_day: "2030-01-05"}, expect_error: rejected}
+      - {op: reserve, args: {customer_id: $c.id, category: SEDAN, from_day: "2030-01-05", to_day: "2030-01-08"}, bind: r}
+      - {op: return_vehicle, args: {rental_id: $r.rental_id, km: 100}, expect: {charge: 5998.5}}
+      - {op: return_vehicle, args: {rental_id: $r.rental_id, km: 100}, expect_error: rejected}

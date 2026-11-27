@@ -1,0 +1,22 @@
+- id: storage_choice
+  stage: before
+  question: A reservation platform for 10,000 restaurants - what storage, and how would you partition it?
+  points:
+    - text: Reservations are transactional with overlap rules - relational.
+      keywords: [relational, transaction, overlap, constraint]
+    - text: Each restaurant is independent - partition or shard by restaurant.
+      keywords: [partition, shard, by restaurant, tenant]
+    - text: Search for availability across restaurants can be precomputed/cached.
+      keywords: [cache, precompute, search, availability]
+  follow_up: A popular restaurant opens bookings for next month at noon. What contention do you expect?
+- id: assignment
+  stage: design
+  question: How do you assign tables so big tables aren't wasted on couples?
+  points:
+    - text: Best fit - the smallest table with enough seats that is free for the whole slot.
+      keywords: [smallest, best fit, enough seats, seats >=]
+    - text: The overlap rule must be enforced by the database (exclusion constraint), not only by the picking query.
+      keywords: [exclusion, constraint, database enforces]
+    - text: Combining tables for large parties needs a reservation-to-tables junction.
+      keywords: [combine, junction, multiple tables, many-to-many]
+  follow_up: Walk-ins arrive without reservations. How do they fit the model?

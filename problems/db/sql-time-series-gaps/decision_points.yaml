@@ -1,0 +1,9 @@
+- id: expected_grid
+  question: How are missing points found?
+  good: generate_series of expected timestamps anti-joined (NOT EXISTS / LEFT JOIN ... IS NULL) with readings.
+- id: frames
+  question: How is the rolling average defined?
+  good: AVG(value) OVER (ORDER BY ts ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) - ROWS counts readings; RANGE with an interval would count time instead.
+- id: islands
+  question: How are consecutive missing hours grouped?
+  good: Gaps-and-islands - hour minus ROW_NUMBER() * 1 hour is constant within a run; group by it.

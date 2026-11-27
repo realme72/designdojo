@@ -1,0 +1,26 @@
+scenarios:
+  - name: book_and_price
+    steps:
+      - {op: add_room_type, args: {name: Deluxe, nightly_rate: 120.00}, bind: t}
+      - {op: add_room, args: {number: "101", room_type_id: $t.id}, bind: r}
+      - {op: add_guest, args: {email: ann@inn.test, name: Ann}, bind: g}
+      - {op: book, args: {room_id: $r.id, guest_id: $g.id, check_in: "2030-03-01", check_out: "2030-03-03"}, expect: {total: 240}}
+      - {op: guest_stays, args: {guest_id: $g.id}, expect: [{number: "101", check_in: "2030-03-01", nights: 2, total: 240, status: CONFIRMED}]}
+  - name: no_double_booking
+    steps:
+      - {op: add_room_type, args: {name: Deluxe, nightly_rate: 100}, bind: t}
+      - {op: add_room, args: {number: "101", room_type_id: $t.id}, bind: r}
+      - {op: add_guest, args: {email: ann@inn.test, name: Ann}, bind: ann}
+      - {op: add_guest, args: {email: bob@inn.test, name: Bob}, bind: bob}
+      - {op: book, args: {room_id: $r.id, guest_id: $ann.id, check_in: "2030-03-01", check_out: "2030-03-05"}}
+      - {op: book, args: {room_id: $r.id, guest_id: $bob.id, check_in: "2030-03-04", check_out: "2030-03-06"}, expect_error: rejected}
+      - {op: book, args: {room_id: $r.id, guest_id: $bob.id, check_in: "2030-03-05", check_out: "2030-03-06"}, expect: {total: 100}}
+  - name: availability
+    steps:
+      - {op: add_room_type, args: {name: Deluxe, nightly_rate: 100}, bind: t}
+      - {op: add_room, args: {number: "102", room_type_id: $t.id}, bind: r2}
+      - {op: add_room, args: {number: "101", room_type_id: $t.id}, bind: r1}
+      - {op: add_guest, args: {email: ann@inn.test, name: Ann}, bind: g}
+      - {op: book, args: {room_id: $r1.id, guest_id: $g.id, check_in: "2030-03-01", check_out: "2030-03-03"}}
+      - {op: available_rooms, args: {room_type_id: $t.id, check_in: "2030-03-02", check_out: "2030-03-04"}, expect: [{number: "102"}]}
+      - {op: available_rooms, args: {room_type_id: $t.id, check_in: "2030-03-03", check_out: "2030-03-04"}, expect: [{number: "101"}, {number: "102"}]}

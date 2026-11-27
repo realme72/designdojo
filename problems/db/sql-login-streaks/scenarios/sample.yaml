@@ -1,0 +1,14 @@
+seed: |
+  insert into users values (1, 'Ann'), (2, 'Bob'), (3, 'Cy');
+  insert into logins values
+    (1, '2030-01-01 08:00Z'), (1, '2030-01-01 20:00Z'), (1, '2030-01-02 09:00Z'), (1, '2030-01-03 23:59Z'),
+    (1, '2030-01-05 10:00Z'),
+    (2, '2030-01-02 10:00Z'), (2, '2030-01-04 10:00Z'), (2, '2030-01-05 00:00Z');
+scenarios:
+  - name: streaks
+    steps:
+      - {op: longest_streak, args: {}, expect: [{name: Ann, streak: 3}, {name: Bob, streak: 2}, {name: Cy, streak: 0}]}
+      - {op: active_n_days_in_row, args: {n: 2}, expect: [{name: Ann}, {name: Bob}]}
+  - name: dau
+    steps:
+      - {op: daily_active, args: {from_day: "2030-01-01", to_day: "2030-01-06"}, expect: [{day: "2030-01-01", users: 1}, {day: "2030-01-02", users: 2}, {day: "2030-01-03", users: 1}, {day: "2030-01-04", users: 1}, {day: "2030-01-05", users: 2}, {day: "2030-01-06", users: 0}]}

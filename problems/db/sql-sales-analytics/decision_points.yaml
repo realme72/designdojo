@@ -1,0 +1,9 @@
+- id: lag
+  question: How is month-over-month growth computed?
+  good: Aggregate per month first, then LAG(revenue) OVER (ORDER BY month); NULLIF to avoid division by zero; round in numeric.
+- id: running
+  question: How is a running total computed, including empty months?
+  good: generate_series of months LEFT JOIN monthly totals, then SUM(...) OVER (ORDER BY month).
+- id: top_per_group
+  question: How is the top customer per month picked?
+  good: Aggregate per (month, customer), then ROW_NUMBER() OVER (PARTITION BY month ORDER BY revenue DESC, name) = 1 or DISTINCT ON.

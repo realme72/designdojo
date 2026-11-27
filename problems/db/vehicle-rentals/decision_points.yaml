@@ -1,0 +1,14 @@
+- id: overlap
+  question: How are double rentals prevented?
+  good: An exclusion constraint on (vehicle_id WITH =, daterange(from_day, to_day) WITH &&) WHERE status <> 'CANCELLED'; CHECK to_day > from_day.
+- id: pricing
+  question: How is the charge computed and kept?
+  good: days x daily_rate + greatest(0, km - 200 x days) x 8 in numeric, stored on the rental at return (rates may change).
+  smells: [FLOAT_MONEY]
+- id: utilization
+  question: How is utilization computed?
+  good: Range intersection (daterange * daterange) and upper - lower, summed per vehicle with LEFT JOIN for zero.
+- id: rules
+  question: Which values are constrained?
+  good: Category CHECK/enum, unique plate and licence, km >= 0, status constrained.
+  smells: [UNCONSTRAINED_STATUS, NO_NATURAL_KEY]

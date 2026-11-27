@@ -1,7 +1,12 @@
-export type Lang = 'java' | 'python'
+export type Lang = 'java' | 'python' | 'sql'
+export type Track = 'lld' | 'db' | 'hld'
+export type TrackInfo = { id: Track; title: string; kind: string; blurb: string; count: number }
 
 export type Problem = {
   id: string
+  track: Track
+  kind: 'code' | 'sql' | 'hld'
+  langs: Lang[]
   title: string
   difficulty?: string
   category?: string
@@ -23,7 +28,66 @@ export type Workspace = {
   curveballs: CurveballInfo[]
 }
 
+export type PlanNode = {
+  id: string
+  type: string
+  base: string
+  relation?: string | null
+  alias?: string | null
+  index?: string | null
+  join?: string | null
+  conds: Record<string, string>
+  est_rows?: number
+  rows?: number | null
+  loops?: number | null
+  ms?: number | null
+  removed: number
+  explain: string
+  children: PlanNode[]
+}
+export type QueryPlan = {
+  analyzed: boolean
+  tree: PlanNode
+  mermaid: string
+  insights: { level: 'info' | 'warning'; node: string; text: string }[]
+  clauses: { clause: string; used: boolean; help: string }[]
+  planning_ms?: number
+  execution_ms?: number
+}
+export type PlanCapture = { step: number; op: string; call: string; plan?: QueryPlan; note?: string }
+export type Question = { id: string; stage: 'before' | 'design' | 'after'; question: string; points: number }
+export type GradedAnswer = {
+  id: string
+  verdict: 'strong' | 'partial' | 'weak' | 'missing' | 'unassessed'
+  covered: number[]
+  partial: number[]
+  feedback: string
+  follow_up: string | null
+}
+export type Grading = {
+  answers: GradedAnswer[]
+  summary: string
+  source: 'ai' | 'offline' | 'none'
+  model?: string
+  cached?: boolean
+  questions?: Record<string, string[]>
+}
+export type ConsoleResult = {
+  error?: string
+  error_line?: number
+  scenario?: string | null
+  data_note?: string | null
+  columns?: string[]
+  rows?: unknown[][]
+  truncated?: boolean
+  message?: string
+  ms?: number
+  plan?: QueryPlan
+  plan_note?: string
+}
+
 export type CaseResult = {
+  plans?: PlanCapture[]
   name: string
   status: 'pass' | 'fail' | 'skipped'
   kind?: string
@@ -81,9 +145,17 @@ export type Smell = {
   symbol: string
   evidence: string
 }
+export type CatalogTable = {
+  name: string
+  columns: { name: string; type: string; notnull: boolean; identity: boolean; default: string | null }[]
+  constraints: { name: string; type: 'p' | 'u' | 'f' | 'c' | 'x' | 't' | 'n'; cols: string[] | null; ref: string | null;
+    refcols: string[] | null; def: string }[]
+  indexes: { unique: boolean; cols: string[] | null; def: string }[]
+}
 export type Analysis = {
   lang: Lang
   smells: Smell[]
+  tables?: CatalogTable[]
   mermaid: string
   stats: { files: number; lines: number; classes: number; abstractions: number; methods: number }
 }
@@ -152,7 +224,17 @@ async function req<T>(method: string, url: string, body?: unknown): Promise<T> {
 const ws = (id: string, lang: Lang) => `/api/ws/${encodeURIComponent(id)}/${lang}`
 
 export const api = {
-  problems: () => req<Problem[]>('GET', '/api/problems'),
+  tracks: () => req<TrackInfo[]>('GET', '/api/tracks'),
+  problems: (track: Track) => req<Problem[]>('GET', `/api/problems?track=${track}`),
+  questions: (id: string, lang: Lang) =>
+    req<{ questions: Question[]; answers: Record<string, string> }>('GET', `${ws(id, lang)}/questions`),
+  saveAnswers: (id: string, lang: Lang, answers: Record<string, string>) =>
+    req<{ ok: true }>('PUT', `${ws(id, lang)}/answers`, { answers }),
+  gradeAnswers: (id: string, lang: Lang, force = false) =>
+    req<Grading>('POST', `${ws(id, lang)}/answers/grade`, { force }),
+  consoleInfo: (id: string, lang: Lang) => req<{ scenarios: string[] }>('GET', `${ws(id, lang)}/console`),
+  console: (id: string, lang: Lang, sql: string, scenario: string | null) =>
+    req<ConsoleResult>('POST', `${ws(id, lang)}/console`, { sql, scenario }),
   problem: (id: string) => req<ProblemDetail>('GET', `/api/problems/${encodeURIComponent(id)}`),
   workspace: (id: string, lang: Lang) => req<Workspace>('GET', ws(id, lang)),
   save: (id: string, lang: Lang, path: string, content: string) =>
@@ -175,7 +257,8 @@ export const api = {
 const LANG_KEY = 'dojo.lang'
 
 /** Remembered language: per problem first, then the last one used anywhere. */
-export function preferredLang(problemId: string, started: Lang[] = []): Lang {
+export function preferredLang(problemId: string, started: Lang[] = [], langs: Lang[] = ['java', 'python']): Lang {
+  if (langs.length === 1) return langs[0]
   try {
     const own = localStorage.getItem(`${LANG_KEY}.${problemId}`)
     if (own === 'java' || own === 'python') return own
@@ -201,5 +284,7 @@ export function rememberLang(problemId: string, lang: Lang) {
   }
 }
 
-export const EXT: Record<Lang, string> = { java: '.java', python: '.py' }
-export const LANG_LABEL: Record<Lang, string> = { java: 'Java', python: 'Python' }
+export const EXT: Record<Lang, string> = { java: '.java', python: '.py', sql: '.sql' }
+export const LANG_LABEL: Record<Lang, string> = { java: 'Java', python: 'Python', sql: 'SQL' }
+export const TRACK_TITLE: Record<Track, string> = { lld: 'Low-level design', db: 'Database design', hld: 'High-level design' }
+export const wsHash = (track: Track, id: string, lang: Lang) => `#/${track}/p/${id}/${lang}`

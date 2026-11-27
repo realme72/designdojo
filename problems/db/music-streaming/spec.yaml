@@ -1,0 +1,12 @@
+schema: designed
+operations:
+  add_artist: {doc: Create an artist (unique name)., params: {name: text}, returns: one, columns: [id]}
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  add_track: {doc: Create a track credited to one or more artists (in order)., params: {title: text, duration_s: int, artist_ids: "int[]"}, returns: one, columns: [id]}
+  create_playlist: {doc: Create a playlist., params: {user_id: bigint, name: text}, returns: one, columns: [id]}
+  append: {doc: Add a track at the end of the playlist., params: {playlist_id: bigint, track_id: bigint}, returns: none}
+  move: {doc: Move the entry at from_pos to to_pos (1-based), shifting others., params: {playlist_id: bigint, from_pos: int, to_pos: int}, returns: none}
+  play: {doc: Record a play., params: {user_id: bigint, track_id: bigint, played_at: timestamptz, seconds: int}, returns: none}
+  playlist: {kind: query, doc: Entries in order with their artists., params: {playlist_id: bigint}, returns: rows, columns: [position, title, artists], ordered: true}
+  top_tracks: {kind: query, doc: The artist's most played tracks (plays >= 30s)., params: {artist_id: bigint, n: int}, returns: rows, columns: [title, plays], ordered: true}
+  listening_minutes: {kind: query, doc: Whole minutes listened by the user on a UTC day., params: {user_id: bigint, day: date}, returns: value}

@@ -1,0 +1,6 @@
+schema: provided
+operations:
+  statement: {kind: query, doc: Transactions with running balance., params: {account_id: int}, returns: rows, columns: [posted_at, amount, balance], ordered: true}
+  balance_as_of: {kind: query, doc: Balance at a moment., params: {account_id: int, at: timestamptz}, returns: value}
+  daily_closing: {kind: query, doc: End-of-day balances, carried forward., params: {account_id: int, from_day: date, to_day: date}, returns: rows, columns: [day, balance], ordered: true}
+  first_overdraft: {kind: query, doc: First transaction taking each account negative., params: {}, returns: rows, columns: [owner, posted_at], ordered: true}

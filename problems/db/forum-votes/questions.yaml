@@ -1,0 +1,44 @@
+- id: storage_choice
+  stage: before
+  question: Relational or NoSQL for a Reddit-like forum? Justify per component.
+  points:
+    - text: Posts, comments, votes and users are relational, with integrity rules (one vote per user, replies on the same post) the database can enforce.
+      keywords: [relational, constraint, integrity, unique, foreign key]
+    - text: Ranking pages (hot/top) are read-heavy and usually served from caches or precomputed lists.
+      keywords: [cache, precompute, redis, read-heavy, materialized]
+    - text: Very large comment trees and vote volumes may be sharded by post/community.
+      keywords: [shard, partition, by community, by post]
+  follow_up: Votes arrive at 50k/s on a viral post. What breaks first?
+- id: vote_change
+  stage: design
+  question: A user changes their upvote to a downvote. How do you implement it so concurrent requests can't produce two votes?
+  points:
+    - text: Composite primary key (user_id, post_id) makes a second row impossible.
+      keywords: [composite, primary key, unique]
+    - text: An atomic upsert - INSERT ... ON CONFLICT (user_id, post_id) DO UPDATE SET value = EXCLUDED.value.
+      keywords: [upsert, on conflict, do update, merge]
+    - text: Reading first and then deciding insert vs update races under concurrency.
+      keywords: [race, read then, check-then, concurren]
+  follow_up: You also keep a score counter on posts. How does a changed vote update it?
+- id: reply_integrity
+  stage: design
+  question: How do you ensure a reply belongs to the same post as the comment it replies to?
+  points:
+    - text: A composite foreign key (post_id, parent_id) referencing comments(post_id, id).
+      keywords: [composite foreign key, composite fk, (post_id, parent_id), post_id, references comments]
+    - text: It needs a UNIQUE (post_id, id) on comments as the referenced key.
+      keywords: [unique (post_id, id), unique]
+    - text: A trigger works too but is more code and easier to get wrong.
+      keywords: [trigger]
+  follow_up: How would you delete a comment that has replies without losing the thread?
+- id: ranking
+  stage: after
+  question: How would you implement a "hot" ranking that mixes score and age, efficiently?
+  points:
+    - text: A formula combining log(score) and post age (e.g. Reddit's hot), computed at write time or periodically.
+      keywords: [log, age, decay, time, formula, gravity]
+    - text: Store the computed rank and index it (community_id, hot_rank) so pages are index scans.
+      keywords: [index, store, precompute, column]
+    - text: Cache the first pages; recompute asynchronously as votes arrive.
+      keywords: [cache, async, recompute, background]
+  follow_up: How do you paginate a ranking that changes while the user scrolls?

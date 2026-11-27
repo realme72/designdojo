@@ -1,0 +1,9 @@
+schema: designed
+operations:
+  add_screen: {doc: Create a screen with its seat grid., params: {name: text, rows: int, seats_per_row: int}, returns: one, columns: [id]}
+  add_show: {doc: Schedule a show (no overlap on the screen)., params: {screen_id: bigint, movie: text, starts_at: timestamptz, ends_at: timestamptz}, returns: one, columns: [id]}
+  book: {doc: Book seats of a show (all or nothing)., params: {show_id: bigint, customer: text, seats: "text[]"}, returns: one, columns: [booking_id]}
+  cancel: {doc: Cancel a booking and free its seats., params: {booking_id: bigint}, returns: none}
+  available: {kind: query, doc: Free seats of a show., params: {show_id: bigint}, returns: value}
+  row_map: {kind: query, doc: Seats of one row with taken flags., params: {show_id: bigint, row: text}, returns: rows, columns: [seat, taken], ordered: true}
+  occupancy: {kind: query, doc: Booked seats vs capacity per show of a movie., params: {movie: text}, returns: rows, columns: [starts_at, booked, capacity], ordered: true}

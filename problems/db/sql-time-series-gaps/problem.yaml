@@ -1,0 +1,8 @@
+id: sql-time-series-gaps
+title: Sensor Time Series
+difficulty: hard
+category: SQL queries
+kind: sql
+time_limit_min: 40
+statement: statement.md
+tags: [generate-series, rolling-window, gaps-and-islands, time-buckets]

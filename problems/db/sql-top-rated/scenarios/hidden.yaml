@@ -1,0 +1,9 @@
+seed: |
+  insert into products values (1, 'A', 'x'), (2, 'B', 'x'), (3, 'C', 'y');
+  insert into reviews values (1, 1, 1, 2, '2030-01-01Z'), (2, 1, 2, 2, '2030-01-01Z'), (3, 2, 3, 1, '2030-01-01Z');
+scenarios:
+  - name: unreviewed_and_same_time
+    steps:
+      - {op: latest_review_per_product, args: {}, expect: [{name: A, rating: 2}, {name: B, rating: 1}]}
+      - {op: best_per_category, args: {min_reviews: 3}, expect: []}
+      - {op: bayesian_ranking, args: {m: 1}, expect: [{name: A, score: 1.889}, {name: C, score: 1.667}, {name: B, score: 1.333}]}

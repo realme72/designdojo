@@ -1,0 +1,6 @@
+schema: provided
+operations:
+  friends: {kind: query, doc: The person's friends., params: {person_id: int}, returns: rows, columns: [name], ordered: true}
+  mutual_friends: {kind: query, doc: Friends in common., params: {a_id: int, b_id: int}, returns: rows, columns: [name], ordered: true}
+  recommendations: {kind: query, doc: Friends-of-friends ranked by mutuals., params: {person_id: int, n: int}, returns: rows, columns: [name, mutuals], ordered: true}
+  most_connected: {kind: query, doc: People by number of friends., params: {n: int}, returns: rows, columns: [name, friends], ordered: true}

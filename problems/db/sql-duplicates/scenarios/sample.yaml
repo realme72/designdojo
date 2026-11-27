@@ -1,0 +1,16 @@
+seed: |
+  insert into signups values
+    (1, 'ann@x.com', 'Ann', '2030-01-02Z'),
+    (2, ' Ann@X.com ', 'Ann B', '2030-01-01Z'),
+    (3, 'bob@x.com', 'Bob', '2030-01-01Z'),
+    (4, 'ANN@x.com', 'Ann C', '2030-01-03Z'),
+    (5, 'Bob@x.com', 'Bobby', '2030-01-05Z'),
+    (6, 'cy@x.com', 'Cy', '2030-01-01Z');
+scenarios:
+  - name: find_and_delete
+    steps:
+      - {op: duplicate_groups, args: {}, expect: [{email: ann@x.com, copies: 3}, {email: bob@x.com, copies: 2}]}
+      - {op: rows_to_delete, args: {}, expect: [{id: 1}, {id: 4}, {id: 5}]}
+      - {op: dedupe, args: {}, expect: [{id: 1}, {id: 4}, {id: 5}]}
+      - {op: remaining, args: {}, expect: 3}
+      - {op: duplicate_groups, args: {}, expect: []}

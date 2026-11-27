@@ -1,0 +1,21 @@
+scenarios:
+  - name: chains_and_teams
+    steps:
+      - {op: add_department, args: {name: Eng}, bind: eng}
+      - {op: hire, args: {name: Ceo, department_id: $eng.id, manager_id: null, salary: 500, hired_on: "2020-01-01"}, bind: ceo}
+      - {op: hire, args: {name: Vp, department_id: $eng.id, manager_id: $ceo.id, salary: 300, hired_on: "2020-02-01"}, bind: vp}
+      - {op: hire, args: {name: Dev1, department_id: $eng.id, manager_id: $vp.id, salary: 100, hired_on: "2021-01-01"}, bind: d1}
+      - {op: hire, args: {name: Dev2, department_id: $eng.id, manager_id: $vp.id, salary: 120, hired_on: "2021-01-01"}}
+      - {op: chain, args: {employee_id: $d1.id}, expect: [{name: Dev1, level: 0}, {name: Vp, level: 1}, {name: Ceo, level: 2}]}
+      - {op: team_size, args: {employee_id: $ceo.id}, expect: 3}
+      - {op: team_size, args: {employee_id: $d1.id}, expect: 0}
+  - name: no_cycles
+    steps:
+      - {op: add_department, args: {name: Eng}, bind: eng}
+      - {op: hire, args: {name: A, department_id: $eng.id, manager_id: null, salary: 500, hired_on: "2020-01-01"}, bind: a}
+      - {op: hire, args: {name: B, department_id: $eng.id, manager_id: $a.id, salary: 300, hired_on: "2020-01-01"}, bind: b}
+      - {op: hire, args: {name: C, department_id: $eng.id, manager_id: $b.id, salary: 300, hired_on: "2020-01-01"}, bind: c}
+      - {op: set_manager, args: {employee_id: $a.id, manager_id: $c.id}, expect_error: rejected}
+      - {op: set_manager, args: {employee_id: $b.id, manager_id: $b.id}, expect_error: rejected}
+      - {op: set_manager, args: {employee_id: $c.id, manager_id: $a.id}}
+      - {op: team_size, args: {employee_id: $b.id}, expect: 0}

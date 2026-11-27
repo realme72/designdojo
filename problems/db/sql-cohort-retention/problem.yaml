@@ -1,0 +1,8 @@
+id: sql-cohort-retention
+title: Cohort Retention
+difficulty: hard
+category: SQL queries
+kind: sql
+time_limit_min: 40
+statement: statement.md
+tags: [cohorts, date-diff, conditional-aggregation, percentages]

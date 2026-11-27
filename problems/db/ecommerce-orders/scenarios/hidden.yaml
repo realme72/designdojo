@@ -1,0 +1,52 @@
+scenarios:
+  - name: stock_is_taken_and_never_negative
+    steps:
+      - {op: add_customer, args: {email: a@shop.test, name: A}, bind: c}
+      - {op: add_product, args: {sku: P, name: P, price: 1.50, stock: 3}, bind: p}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 2}]}}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 2}]}, expect_error: rejected}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 1}]}, expect: {total: 1.5}}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 1}]}, expect_error: rejected}
+  - name: order_is_all_or_nothing
+    steps:
+      - {op: add_customer, args: {email: a@shop.test, name: A}, bind: c}
+      - {op: add_product, args: {sku: P, name: P, price: 2, stock: 5}, bind: p}
+      - {op: add_product, args: {sku: Q, name: Q, price: 3, stock: 0}, bind: q}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 2}, {product_id: $q.id, qty: 1}]}, expect_error: rejected}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 5}]}, expect: {total: 10}}
+      - {op: never_ordered, args: {}, expect: [{sku: Q}]}
+  - name: bad_references_rejected
+    steps:
+      - {op: add_customer, args: {email: a@shop.test, name: A}, bind: c}
+      - {op: add_product, args: {sku: P, name: P, price: 2, stock: 5}, bind: p}
+      - {op: place_order, args: {customer_id: 999999, items: [{product_id: $p.id, qty: 1}]}, expect_error: rejected}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: 999999, qty: 1}]}, expect_error: rejected}
+      - {op: never_ordered, args: {}, expect: [{sku: P}]}
+  - name: domain_rules
+    steps:
+      - {op: add_customer, args: {email: a@shop.test, name: A}, bind: c}
+      - {op: add_product, args: {sku: P, name: P, price: 2, stock: 5}, bind: p}
+      - {op: add_product, args: {sku: N, name: Negative, price: -1, stock: 5}, expect_error: rejected}
+      - {op: add_product, args: {sku: S, name: Minus stock, price: 1, stock: -1}, expect_error: rejected}
+      - {op: add_product, args: {sku: P, name: Same sku, price: 1, stock: 1}, expect_error: unique_violation}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 0}]}, expect_error: rejected}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 1}, {product_id: $p.id, qty: 1}]}, expect_error: rejected}
+      - {op: place_order, args: {customer_id: $c.id, items: [{product_id: $p.id, qty: 1}]}, bind: o}
+      - {op: set_status, args: {order_id: $o.order_id, status: PAID}}
+      - {op: set_status, args: {order_id: $o.order_id, status: LOST}, expect_error: rejected}
+  - name: top_customers_report
+    steps:
+      - {op: add_customer, args: {email: ann@shop.test, name: Ann}, bind: ann}
+      - {op: add_customer, args: {email: bob@shop.test, name: Bob}, bind: bob}
+      - {op: add_customer, args: {email: cy@shop.test, name: Cy}, bind: cy}
+      - {op: add_customer, args: {email: dee@shop.test, name: Dee}}
+      - {op: add_product, args: {sku: A, name: A, price: 10, stock: 100}, bind: a}
+      - {op: add_product, args: {sku: B, name: B, price: 2.50, stock: 100}, bind: b}
+      - {op: place_order, args: {customer_id: $ann.id, items: [{product_id: $a.id, qty: 1}, {product_id: $b.id, qty: 2}]}}
+      - {op: place_order, args: {customer_id: $ann.id, items: [{product_id: $b.id, qty: 2}]}}
+      - {op: place_order, args: {customer_id: $bob.id, items: [{product_id: $a.id, qty: 2}]}}
+      - {op: place_order, args: {customer_id: $cy.id, items: [{product_id: $a.id, qty: 9}]}, bind: big}
+      - {op: set_status, args: {order_id: $big.order_id, status: CANCELLED}}
+      - {op: place_order, args: {customer_id: $cy.id, items: [{product_id: $b.id, qty: 4}]}}
+      - {op: top_customers, args: {n: 10}, expect: [{email: ann@shop.test, orders: 2, total_spent: 20}, {email: bob@shop.test, orders: 1, total_spent: 20}, {email: cy@shop.test, orders: 1, total_spent: 10}]}
+      - {op: top_customers, args: {n: 1}, expect: [{email: ann@shop.test}]}

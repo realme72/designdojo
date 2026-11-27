@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: LinkedIn shows "2nd/3rd degree" for every profile you view. Relational database, graph database, or something else? Why?
+  points:
+    - text: Multi-hop traversals are what graph databases (Neo4j) or graph services optimize for; recursive SQL gets expensive as degree and fan-out grow.
+      keywords: [graph, neo4j, traversal, hop, recursive, fan-out]
+    - text: Users and requests need transactional integrity - relational is a good source of truth.
+      keywords: [relational, integrity, transaction, source of truth]
+    - text: At scale, degrees are precomputed or served by a specialized in-memory graph service, possibly approximate.
+      keywords: [precompute, in-memory, cache, approximate, service]
+  follow_up: How many people are within 3 degrees of an average user with 500 connections, and what does that mean for computing it on the fly?
+- id: symmetric_storage
+  stage: design
+  question: How do you store a mutual connection so A-B and B-A can't both exist as separate rows?
+  points:
+    - text: Store one row per pair in canonical order (smaller id first) with a CHECK and a composite key.
+      keywords: [canonical, smaller id, least, greatest, ordered pair, check]
+    - text: Alternative - store both directions in one transaction for simpler reads, at twice the writes and a consistency risk.
+      keywords: [both directions, two rows, twice]
+    - text: Reads must look at both columns (UNION or OR) - index both.
+      keywords: [union, both columns, index]
+  follow_up: Which version makes "list my connections" faster, and which makes integrity easier?
+- id: request_race
+  stage: design
+  question: A and B send each other requests at the same moment. How do you prevent two pending requests?
+  points:
+    - text: A partial unique index on the canonical pair WHERE status = 'PENDING'.
+      keywords: [partial unique, partial index, where status, unique index, least, greatest]
+    - text: Checking for an existing request first races under concurrency.
+      keywords: [race, check-then, concurren]
+    - text: The second insert fails; the app can then treat it as "accept the other's request".
+      keywords: [accept instead, handle the conflict, retry]
+  follow_up: Requests expire after 30 days. How does that interact with the unique index?

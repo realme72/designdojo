@@ -1,0 +1,6 @@
+schema: provided
+operations:
+  path: {kind: query, doc: Full path of a category., params: {category_id: int}, returns: value}
+  subtree_products: {kind: query, doc: Product count and average price in a subtree., params: {category_id: int}, returns: one, columns: [products, avg_price]}
+  outline: {kind: query, doc: Depth-first outline of the tree., params: {}, returns: rows, columns: [name, depth], ordered: true}
+  leaf_categories: {kind: query, doc: Categories without children., params: {}, returns: rows, columns: [name], ordered: true}

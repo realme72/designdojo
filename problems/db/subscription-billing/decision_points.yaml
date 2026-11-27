@@ -1,0 +1,13 @@
+- id: no_overlap
+  question: How is "one active subscription per customer at any moment" enforced?
+  good: An exclusion constraint on (customer_id WITH =, tstzrange(start_at, end_at) WITH &&) with btree_gist; NULL end = open range. Half-open ranges allow back-to-back.
+- id: billing_once
+  question: How is double billing prevented?
+  good: UNIQUE (subscription_id, period_start) on invoices; the amount copied from the plan at billing time.
+- id: plan_change
+  question: How is a plan change modelled?
+  good: End the old row and insert a new one in the same statement/transaction (history preserved), not an UPDATE of plan_id.
+- id: money
+  question: How is money stored?
+  good: numeric, CHECK price >= 0.
+  smells: [FLOAT_MONEY, NO_DOMAIN_CHECK]

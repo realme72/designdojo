@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: For a food-delivery app, which data goes in a relational database, and what might live elsewhere?
+  points:
+    - text: Orders, payments, menus and their integrity rules belong in a relational, transactional store.
+      keywords: [relational, order, transaction, acid, integrity]
+    - text: Live agent locations are high-frequency writes - an in-memory/geo store (Redis GEO) or time-series store, not the orders table.
+      keywords: [location, redis, geo, in-memory, time-series, gps]
+    - text: Menu browsing/search can be cached or served from a search index.
+      keywords: [cache, search, elasticsearch, read-heavy]
+  follow_up: Agent locations update every 3 seconds for 200k agents. Estimate the write rate and pick the store.
+- id: state_machine
+  stage: design
+  question: How do you make sure an order can't jump from PLACED straight to DELIVERED?
+  points:
+    - text: Model allowed transitions explicitly (a transitions table or CASE in a trigger).
+      keywords: [transition, allowed, table, trigger, state machine]
+    - text: Enforce it in the database (BEFORE UPDATE trigger) so every code path obeys it.
+      keywords: [before update, trigger, database, every path]
+    - text: Updates can also be guarded with WHERE status = expected_previous (optimistic) to avoid lost updates.
+      keywords: [where status, optimistic, compare-and-set, expected]
+  follow_up: You need the time of every status change for SLA reports. Where does that go?
+- id: agent_busy
+  stage: design
+  question: How do you guarantee an agent isn't assigned two active orders by two dispatchers at once?
+  points:
+    - text: A partial unique index on agent_id over active statuses.
+      keywords: [partial unique, partial index, where status, unique index]
+    - text: Checking "is the agent free?" first and then assigning races.
+      keywords: [race, check-then, concurren]
+    - text: Or lock the agent row (SELECT ... FOR UPDATE) during assignment.
+      keywords: [for update, lock agent]
+  follow_up: Agents can now carry up to 2 orders. Does the partial index still work?

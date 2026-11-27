@@ -1,0 +1,8 @@
+id: file-storage
+title: File Storage & Sharing (Google Drive)
+difficulty: hard
+category: SaaS & productivity
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [tree, nulls-not-distinct, inherited-permissions, recursive-cte]

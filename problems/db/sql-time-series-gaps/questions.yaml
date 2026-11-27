@@ -1,0 +1,22 @@
+- id: storage_choice
+  stage: before
+  question: Millions of sensors reporting every minute - would you store readings in plain Postgres tables? What else?
+  points:
+    - text: A time-series database or extension (TimescaleDB, InfluxDB) with time partitioning and compression.
+      keywords: [timescale, influx, time-series, partition, compression, hypertable]
+    - text: Partition by time and drop/archive old partitions for retention.
+      keywords: [partition by time, retention, drop partition, archive]
+    - text: Downsample old data into hourly/daily rollups.
+      keywords: [downsampl, rollup, aggregate, continuous aggregate]
+  follow_up: Queries are almost always "one sensor, last 24 hours". Which index or key layout serves that best?
+- id: frames
+  stage: design
+  question: "\"Average of the last 3 readings\" vs \"average over the last 3 hours\" - how do the window frames differ?"
+  points:
+    - text: ROWS BETWEEN 2 PRECEDING AND CURRENT ROW counts readings, regardless of time gaps.
+      keywords: [rows between, 2 preceding, readings, count]
+    - text: RANGE BETWEEN INTERVAL '3 hours' PRECEDING AND CURRENT ROW counts by time, so gaps shrink the window.
+      keywords: [range, interval, time-based, gaps]
+    - text: Missing data biases both; sometimes fill gaps first (interpolate or carry forward).
+      keywords: [fill, interpolat, carry forward, bias]
+  follow_up: How would you carry forward the last known value into missing hours?

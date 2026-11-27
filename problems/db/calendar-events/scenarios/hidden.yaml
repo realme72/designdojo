@@ -1,0 +1,23 @@
+scenarios:
+  - name: responses_rules
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: add_user, args: {name: Bob}, bind: bob}
+      - {op: add_user, args: {name: Cy}, bind: cy}
+      - {op: create_event, args: {organizer_id: $ann.id, title: E, starts_at: "2030-01-06T09:00:00Z", ends_at: "2030-01-06T09:00:00Z"}, expect_error: rejected}
+      - {op: create_event, args: {organizer_id: $ann.id, title: E, starts_at: "2030-01-06T09:00:00Z", ends_at: "2030-01-06T10:00:00Z"}, bind: e}
+      - {op: respond, args: {event_id: $e.id, user_id: $cy.id, response: ACCEPTED}, expect_error: rejected}
+      - {op: invite, args: {event_id: $e.id, user_id: $bob.id}}
+      - {op: invite, args: {event_id: $e.id, user_id: $cy.id}}
+      - {op: respond, args: {event_id: $e.id, user_id: $bob.id, response: MAYBE}, expect_error: rejected}
+      - {op: respond, args: {event_id: $e.id, user_id: $bob.id, response: TENTATIVE}}
+      - {op: respond, args: {event_id: $e.id, user_id: $cy.id, response: ACCEPTED}}
+      - {op: attendance, args: {event_id: $e.id}, expect: [{response: ACCEPTED, people: 2}, {response: TENTATIVE, people: 1}]}
+  - name: agenda_window_edges
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: ann}
+      - {op: create_event, args: {organizer_id: $ann.id, title: Late, starts_at: "2030-01-06T23:00:00Z", ends_at: "2030-01-07T01:00:00Z"}}
+      - {op: create_event, args: {organizer_id: $ann.id, title: Ends, starts_at: "2030-01-05T22:00:00Z", ends_at: "2030-01-06T00:00:00Z"}}
+      - {op: create_event, args: {organizer_id: $ann.id, title: Mid, starts_at: "2030-01-06T12:00:00Z", ends_at: "2030-01-06T13:00:00Z"}}
+      - {op: agenda, args: {user_id: $ann.id, from: "2030-01-06T00:00:00Z", to: "2030-01-07T00:00:00Z"}, expect: [{title: Mid}, {title: Late}]}
+      - {op: conflicts, args: {user_id: $ann.id}, expect: []}

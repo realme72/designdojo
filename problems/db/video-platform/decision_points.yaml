@@ -1,0 +1,15 @@
+- id: one_channel
+  question: How is "at most one channel per user" enforced?
+  good: channels.user_id UNIQUE NOT NULL (a one-to-one relationship), not checked in application code.
+  smells: [MISSING_FK]
+- id: views
+  question: How are views stored?
+  good: An append-only views table with nullable viewer FK, timestamptz and an index on (video_id, viewed_at); at scale, aggregated into counters/rollups.
+  smells: [FK_NOT_INDEXED, TIMESTAMP_NO_TZ]
+- id: visibility
+  question: How is visibility constrained?
+  good: CHECK (visibility IN (...)) or an enum; private videos excluded in queries.
+  smells: [UNCONSTRAINED_STATUS]
+- id: top_per_group
+  question: How do you get the top video per channel?
+  good: Window function (row_number/rank partitioned by channel) or DISTINCT ON, over pre-aggregated view counts.

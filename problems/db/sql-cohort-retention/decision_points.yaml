@@ -1,0 +1,9 @@
+- id: offsets
+  question: How is the month offset computed?
+  good: (year(active) - year(cohort)) * 12 + month(active) - month(cohort) on date_trunc('month') values - not days / 30.
+- id: matrix
+  question: How do zero cells appear?
+  good: Cross join cohorts with generate_series(0, max_offset) and LEFT JOIN the counted activity.
+- id: distinct_users
+  question: How are users counted?
+  good: COUNT(DISTINCT user_id) per cohort and offset - activity has many rows per user.

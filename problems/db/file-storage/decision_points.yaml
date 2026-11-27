@@ -1,0 +1,14 @@
+- id: sibling_names
+  question: How are sibling names kept unique, including top-level folders?
+  good: UNIQUE NULLS NOT DISTINCT (owner_id, parent_id, name) on folders (PG15+), or a partial unique index for parent_id IS NULL; UNIQUE (folder_id, name) on files.
+- id: tree
+  question: How is the tree stored and protected from cycles?
+  good: Adjacency list (parent_id self-FK) with a trigger rejecting moves into the folder's own subtree (recursive check); alternatives - materialized path / ltree.
+  smells: [FK_NOT_INDEXED]
+- id: inheritance
+  question: How is inherited access evaluated?
+  good: Walk up from the file's folder with WITH RECURSIVE and check shares on any ancestor; at scale, precompute (closure table) or cache.
+- id: roles
+  question: How are share roles constrained?
+  good: CHECK role IN ('VIEW', 'EDIT'), composite PK (folder_id, user_id).
+  smells: [UNCONSTRAINED_STATUS, NO_PRIMARY_KEY]

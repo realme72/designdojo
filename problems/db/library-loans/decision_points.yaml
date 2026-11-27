@@ -1,0 +1,13 @@
+- id: one_active_loan
+  question: How is "a copy is on one active loan at a time" enforced?
+  good: A partial unique index on loans (copy_id) WHERE returned_at IS NULL - race-free and keeps history.
+- id: member_limit
+  question: How is the 3-loan limit enforced?
+  good: A trigger counting active loans (with the member row locked, FOR UPDATE) or an active_loans counter with CHECK (<= 3) updated atomically.
+- id: book_vs_copy
+  question: How are books and copies separated?
+  good: books (ISBN, title) 1:N copies (barcode); loans reference copies, not books.
+  smells: [MISSING_FK, NO_NATURAL_KEY]
+- id: dates
+  question: How are due dates and fines computed?
+  good: due_at stored at checkout (policy may change); fine from ceil(late seconds / 86400) * rate in numeric.

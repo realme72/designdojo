@@ -1,0 +1,20 @@
+scenarios:
+  - name: no_overlaps_for_doctor_or_patient
+    steps:
+      - {op: add_doctor, args: {name: Dr Rao, specialty: derma}, bind: d1}
+      - {op: add_doctor, args: {name: Dr Sen, specialty: ortho}, bind: d2}
+      - {op: add_patient, args: {name: Ann}, bind: ann}
+      - {op: add_patient, args: {name: Bob}, bind: bob}
+      - {op: book, args: {doctor_id: $d1.id, patient_id: $ann.id, starts_at: "2030-01-07T10:00:00Z", minutes: 30}}
+      - {op: book, args: {doctor_id: $d1.id, patient_id: $bob.id, starts_at: "2030-01-07T10:15:00Z", minutes: 15}, expect_error: rejected}
+      - {op: book, args: {doctor_id: $d2.id, patient_id: $ann.id, starts_at: "2030-01-07T10:15:00Z", minutes: 15}, expect_error: rejected}
+      - {op: book, args: {doctor_id: $d1.id, patient_id: $bob.id, starts_at: "2030-01-07T10:30:00Z", minutes: 15}}
+      - {op: doctor_day, args: {doctor_id: $d1.id, day: "2030-01-07"}, expect: [{patient: Ann}, {patient: Bob}]}
+  - name: free_slots
+    steps:
+      - {op: add_doctor, args: {name: Dr Rao, specialty: derma}, bind: d}
+      - {op: add_patient, args: {name: Ann}, bind: a}
+      - {op: book, args: {doctor_id: $d.id, patient_id: $a.id, starts_at: "2030-01-07T09:15:00Z", minutes: 60}}
+      - {op: book, args: {doctor_id: $d.id, patient_id: $a.id, starts_at: "2030-01-07T11:00:00Z", minutes: 15}}
+      - {op: book, args: {doctor_id: $d.id, patient_id: $a.id, starts_at: "2030-01-07T15:30:00Z", minutes: 60}}
+      - {op: free_slots, args: {doctor_id: $d.id, day: "2030-01-07"}, expect: [{slot: "2030-01-07T10:30:00+00:00"}, {slot: "2030-01-07T11:30:00+00:00"}, {slot: "2030-01-07T12:00:00+00:00"}, {slot: "2030-01-07T12:30:00+00:00"}, {slot: "2030-01-07T13:00:00+00:00"}, {slot: "2030-01-07T13:30:00+00:00"}, {slot: "2030-01-07T14:00:00+00:00"}, {slot: "2030-01-07T14:30:00+00:00"}, {slot: "2030-01-07T15:00:00+00:00"}, {slot: "2030-01-07T16:30:00+00:00"}]}

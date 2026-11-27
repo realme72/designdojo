@@ -1,0 +1,5 @@
+schema: provided
+operations:
+  funnel: {kind: query, doc: Users reaching each step in order., params: {from: timestamptz, to: timestamptz}, returns: one, columns: [viewed, carted, purchased]}
+  conversion: {kind: query, doc: Step conversion percentages., params: {from: timestamptz, to: timestamptz}, returns: one, columns: [view_to_cart_pct, cart_to_purchase_pct, overall_pct]}
+  daily_funnel: {kind: query, doc: Funnel by day of first view., params: {from: timestamptz, to: timestamptz}, returns: rows, columns: [day, viewed, purchased], ordered: true}

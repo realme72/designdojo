@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Inventory for an e-commerce company - relational database or NoSQL? Why?
+  points:
+    - text: Stock changes must be transactional and never go negative - ACID and CHECK constraints.
+      keywords: [acid, transaction, check, never negative, constraint]
+    - text: Movements form an auditable ledger; reports aggregate across warehouses - relational joins and aggregates.
+      keywords: [ledger, audit, aggregate, join, report]
+    - text: Read-heavy availability ("in stock?") can be cached or replicated with slight staleness; the reservation/decrement path stays authoritative.
+      keywords: [cache, replica, stale, authoritative, read-heavy]
+  follow_up: Black Friday - 10,000 orders per second on 50 hot products. Where is the bottleneck?
+- id: stock_vs_ledger
+  stage: design
+  question: Store current stock, or only movements and compute stock from them? Why?
+  points:
+    - text: Movements alone are a perfect audit trail but summing them on every read is slow.
+      keywords: [audit, sum, slow, every read]
+    - text: Keep both - a current-stock row updated in the same transaction as each movement (a cached aggregate).
+      keywords: [both, same transaction, cached, current stock]
+    - text: The invariant stock = sum(movements) can be checked periodically or by a trigger.
+      keywords: [invariant, reconcil, verify, periodic, trigger]
+  follow_up: Someone fixes a stock number with a direct UPDATE. How would you detect it?
+- id: oversell
+  stage: design
+  question: Two orders ship the last 5 units from the same warehouse at once. How do you prevent negative stock?
+  points:
+    - text: Atomic decrement - UPDATE stock SET qty = qty - n with CHECK (qty >= 0), or WHERE qty >= n and check affected rows.
+      keywords: [atomic, decrement, check, qty >= 0, where qty]
+    - text: The row lock serializes the two updates; one fails cleanly.
+      keywords: [row lock, serializ, one fails]
+    - text: Read-then-write in the application races.
+      keywords: [race, read-then, check-then]
+  follow_up: An order needs items from two warehouses. How do you avoid deadlocks?

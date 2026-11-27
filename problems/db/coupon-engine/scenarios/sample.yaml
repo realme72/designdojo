@@ -1,0 +1,16 @@
+scenarios:
+  - name: percent_and_flat
+    steps:
+      - {op: create_coupon, args: {code: SAVE10, percent_off: 10, flat_off: null, min_order: 0, max_uses: 100, per_user: 5, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}}
+      - {op: create_coupon, args: {code: FLAT50, percent_off: null, flat_off: 50, min_order: 0, max_uses: 100, per_user: 5, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}}
+      - {op: redeem, args: {code: save10, user_id: 1, order_total: 199.99, at: "2030-01-05T00:00:00Z"}, expect: {discount: 20}}
+      - {op: redeem, args: {code: FLAT50, user_id: 1, order_total: 30, at: "2030-01-05T00:00:00Z"}, expect: {discount: 30}}
+      - {op: usage_report, args: {}, expect: [{code: FLAT50, uses: 1, total_discount: 30}, {code: SAVE10, uses: 1, total_discount: 20}]}
+  - name: limits_hold
+    steps:
+      - {op: create_coupon, args: {code: ONCE, percent_off: 50, flat_off: null, min_order: 0, max_uses: 2, per_user: 1, valid_from: "2030-01-01T00:00:00Z", valid_to: "2030-02-01T00:00:00Z"}}
+      - {op: redeem, args: {code: ONCE, user_id: 1, order_total: 10, at: "2030-01-05T00:00:00Z"}}
+      - {op: redeem, args: {code: ONCE, user_id: 1, order_total: 10, at: "2030-01-05T00:00:00Z"}, expect_error: rejected}
+      - {op: redeem, args: {code: ONCE, user_id: 2, order_total: 10, at: "2030-01-05T00:00:00Z"}}
+      - {op: redeem, args: {code: ONCE, user_id: 3, order_total: 10, at: "2030-01-05T00:00:00Z"}, expect_error: rejected}
+      - {op: usage_report, args: {}, expect: [{code: ONCE, uses: 2, total_discount: 10}]}

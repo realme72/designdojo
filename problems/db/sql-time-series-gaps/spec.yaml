@@ -1,0 +1,6 @@
+schema: provided
+operations:
+  missing_hours: {kind: query, doc: Expected hours without a reading., params: {sensor_id: int, from: timestamptz, to: timestamptz}, returns: rows, columns: [hour], ordered: true}
+  rolling_avg: {kind: query, doc: 3-reading rolling average., params: {sensor_id: int}, returns: rows, columns: [ts, value, avg3], ordered: true}
+  outages: {kind: query, doc: Runs of consecutive missing hours., params: {sensor_id: int, from: timestamptz, to: timestamptz}, returns: rows, columns: [started, ended, hours], ordered: true}
+  hourly_max: {kind: query, doc: Peak hour per sensor on a day., params: {day: date}, returns: rows, columns: [sensor, peak_hour, peak], ordered: true}

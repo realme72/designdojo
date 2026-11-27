@@ -22,7 +22,7 @@ def test_problems_and_workspace_scaffold(client):
     paths = {f["path"]: f["editable"] for f in ws["files"]}
     assert paths["solution/__init__.py"] is True
     assert paths["contract/__init__.py"] is False
-    assert (root / "parking-lot-python" / ".dojo.json").exists()
+    assert (root / "lld" / "parking-lot-python" / ".dojo.json").exists()
 
 
 @pytest.mark.parametrize("path", [
@@ -46,14 +46,14 @@ def test_file_lifecycle_and_reset_keeps_backup(client):
     c.put("/api/ws/parking-lot/java/file", json={"path": "solution/Solution.java", "content": "mine"})
     backup = c.post("/api/ws/parking-lot/java/reset").json()["backup"]
     assert (Path(backup) / "Solution.java").read_text() == "mine"
-    assert "TODO" in (root / "parking-lot-java" / "solution" / "Solution.java").read_text()
+    assert "TODO" in (root / "lld" / "parking-lot-java" / "solution" / "Solution.java").read_text()
 
 
 @pytest.mark.docker
 def test_judge_strips_hidden_details(client):
     c, root = client
     c.get("/api/ws/parking-lot/python")
-    sol = root / "parking-lot-python" / "solution"
+    sol = root / "lld" / "parking-lot-python" / "solution"
     shutil.rmtree(sol)
     shutil.copytree(ROOT / "tests/fixtures/parking-lot/python/naive/solution", sol)
     entry = c.post("/api/ws/parking-lot/python/judge", json={"mode": "submit"}).json()
@@ -75,3 +75,27 @@ def test_concurrent_workspace_opens_never_see_partial_files(client):
     with ThreadPoolExecutor(16) as pool:
         codes = list(pool.map(lambda u: c.get(u).status_code, urls))
     assert set(codes) == {200}
+
+
+def test_tracks_are_separate(client):
+    c, root = client
+    tracks = {t["id"]: t for t in c.get("/api/tracks").json()}
+    assert set(tracks) == {"lld", "db", "hld"}
+    lld = {p["id"] for p in c.get("/api/problems?track=lld").json()}
+    db = {p["id"] for p in c.get("/api/problems?track=db").json()}
+    assert "parking-lot" in lld and "ecommerce-orders" in db and not lld & db
+    assert all(p["langs"] == ["sql"] for p in c.get("/api/problems?track=db").json())
+    assert c.get("/api/ws/ecommerce-orders/java").status_code == 404  # no Java for DB problems
+    assert c.get("/api/problems?track=nope").status_code == 404
+
+
+def test_legacy_workspace_moves_into_track(client):
+    c, root = client
+    legacy = root / "parking-lot-python"
+    legacy.mkdir()
+    (legacy / ".dojo.json").write_text('{"problem": "parking-lot", "lang": "python"}\n')
+    (legacy / "solution").mkdir()
+    (legacy / "solution" / "mine.py").write_text("# my work\n")
+    c.get("/api/ws/parking-lot/python")
+    assert not legacy.exists()
+    assert (root / "lld" / "parking-lot-python" / "solution" / "mine.py").read_text() == "# my work\n"

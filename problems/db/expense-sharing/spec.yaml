@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  create_group: {doc: Create a group., params: {name: text}, returns: one, columns: [id]}
+  add_member: {doc: Add a user to a group., params: {group_id: bigint, user_id: bigint}, returns: none}
+  add_expense_equal: {doc: "Split equally to the cent; leftover cents to the first participants.", params: {group_id: bigint, paid_by: bigint, amount: numeric, description: text, participants: "int[]"}, returns: one, columns: [id]}
+  add_expense_exact: {doc: Split by exact amounts that must sum to the total., params: {group_id: bigint, paid_by: bigint, amount: numeric, description: text, shares: jsonb}, returns: one, columns: [id]}
+  settle: {doc: A member pays another member back., params: {group_id: bigint, from_id: bigint, to_id: bigint, amount: numeric}, returns: none}
+  balances: {kind: query, doc: Net balance per member (positive = owed)., params: {group_id: bigint}, returns: rows, columns: [name, balance], ordered: true}
+  expense_shares: {kind: query, doc: Shares of an expense., params: {expense_id: bigint}, returns: rows, columns: [name, share], ordered: true}

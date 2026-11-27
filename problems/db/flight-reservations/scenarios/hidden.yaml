@@ -1,0 +1,27 @@
+scenarios:
+  - name: sold_out_and_unique
+    steps:
+      - {op: add_flight, args: {code: X1, origin: BOM, destination: GOI, departs_at: "2030-01-01T06:00:00Z", arrives_at: "2030-01-01T07:00:00Z"}, bind: f}
+      - {op: add_seats, args: {flight_id: $f.id, class: ECONOMY, first_no: 1, last_no: 1}}
+      - {op: book, args: {flight_id: $f.id, class: ECONOMY, passenger: Ann, pnr: P1}, expect: {seat_no: 1}}
+      - {op: book, args: {flight_id: $f.id, class: ECONOMY, passenger: Bob, pnr: P2}, expect_error: rejected}
+      - {op: book, args: {flight_id: $f.id, class: BUSINESS, passenger: Bob, pnr: P3}, expect_error: rejected}
+      - {op: add_seats, args: {flight_id: $f.id, class: ECONOMY, first_no: 1, last_no: 2}, expect_error: rejected}
+      - {op: add_seats, args: {flight_id: $f.id, class: FIRST, first_no: 5, last_no: 5}, expect_error: rejected}
+      - {op: load_factor, args: {flight_id: $f.id}, expect: {booked: 1, capacity: 1}}
+  - name: flight_rules
+    steps:
+      - {op: add_flight, args: {code: X1, origin: BOM, destination: BOM, departs_at: "2030-01-01T06:00:00Z", arrives_at: "2030-01-01T07:00:00Z"}, expect_error: rejected}
+      - {op: add_flight, args: {code: X2, origin: BOM, destination: GOI, departs_at: "2030-01-01T07:00:00Z", arrives_at: "2030-01-01T07:00:00Z"}, expect_error: rejected}
+      - {op: add_flight, args: {code: X3, origin: BOM, destination: GOI, departs_at: "2030-01-01T06:00:00Z", arrives_at: "2030-01-01T07:00:00Z"}}
+      - {op: add_flight, args: {code: X3, origin: GOI, destination: BOM, departs_at: "2030-01-02T06:00:00Z", arrives_at: "2030-01-02T07:00:00Z"}, expect_error: unique_violation}
+  - name: connection_windows
+    steps:
+      - {op: add_flight, args: {code: A1, origin: BLR, destination: DXB, departs_at: "2030-01-01T00:00:00Z", arrives_at: "2030-01-01T04:00:00Z"}}
+      - {op: add_flight, args: {code: A2, origin: BLR, destination: DOH, departs_at: "2030-01-01T01:00:00Z", arrives_at: "2030-01-01T05:00:00Z"}}
+      - {op: add_flight, args: {code: B1, origin: DXB, destination: JFK, departs_at: "2030-01-01T04:44:00Z", arrives_at: "2030-01-01T18:00:00Z"}}
+      - {op: add_flight, args: {code: B2, origin: DXB, destination: JFK, departs_at: "2030-01-01T04:45:00Z", arrives_at: "2030-01-01T18:30:00Z"}}
+      - {op: add_flight, args: {code: B3, origin: DOH, destination: JFK, departs_at: "2030-01-01T11:00:00Z", arrives_at: "2030-01-01T23:00:00Z"}}
+      - {op: add_flight, args: {code: B4, origin: DOH, destination: JFK, departs_at: "2030-01-01T11:01:00Z", arrives_at: "2030-01-01T19:00:00Z"}}
+      - {op: add_flight, args: {code: B5, origin: DOH, destination: LHR, departs_at: "2030-01-01T06:00:00Z", arrives_at: "2030-01-01T12:00:00Z"}}
+      - {op: connections, args: {origin: BLR, destination: JFK}, expect: [{first: A1, second: B2, layover_min: 45}, {first: A2, second: B3, layover_min: 360}]}

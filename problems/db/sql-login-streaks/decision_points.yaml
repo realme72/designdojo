@@ -1,0 +1,9 @@
+- id: islands
+  question: How are consecutive days grouped?
+  good: Dedupe to distinct (user, day), then day - ROW_NUMBER() OVER (PARTITION BY user ORDER BY day) is constant within a run (gaps-and-islands); group by it and count.
+- id: zero_days
+  question: How do days with no activity appear?
+  good: generate_series of days LEFT JOIN activity, COUNT(DISTINCT user_id).
+- id: utc_days
+  question: How are timestamps bucketed?
+  good: (logged_at AT TIME ZONE 'UTC')::date - explicit time zone, not the session's.

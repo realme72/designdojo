@@ -1,0 +1,8 @@
+id: wallet-ledger
+title: Wallet Ledger (Double-Entry)
+difficulty: hard
+category: Commerce & payments
+kind: sql
+time_limit_min: 50
+statement: statement.md
+tags: [double-entry, idempotency, constraint-trigger, running-balance]

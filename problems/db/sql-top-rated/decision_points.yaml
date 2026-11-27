@@ -1,0 +1,9 @@
+- id: ties
+  question: How are ties kept?
+  good: RANK() (not ROW_NUMBER) over per-product averages, filtered to rank 1; HAVING count >= min before ranking.
+- id: latest
+  question: How is the latest row per group picked?
+  good: DISTINCT ON (product) ORDER BY product, created_at DESC, id DESC - or ROW_NUMBER = 1.
+- id: bayes
+  question: Why a Bayesian average?
+  good: It shrinks products with few reviews toward the global mean so one 5-star review doesn't top the chart; LEFT JOIN keeps unreviewed products.

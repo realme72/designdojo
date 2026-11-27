@@ -1,0 +1,8 @@
+id: sql-funnel
+title: Conversion Funnel
+difficulty: medium
+category: SQL queries
+kind: sql
+time_limit_min: 35
+statement: statement.md
+tags: [ordered-events, conditional-aggregation, self-join, percentages]

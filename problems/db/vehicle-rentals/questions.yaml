@@ -1,0 +1,33 @@
+- id: storage_choice
+  stage: before
+  question: Fleet and rentals for a car-rental company - relational or NoSQL? Why?
+  points:
+    - text: Rentals must never overlap for a vehicle - transactional, constraint-enforced (relational).
+      keywords: [overlap, constraint, transaction, relational, consisten]
+    - text: Billing and history need exact, auditable records.
+      keywords: [billing, audit, exact, history]
+    - text: Vehicle telemetry (GPS, fuel) is a separate high-volume time-series store.
+      keywords: [telemetry, gps, time-series, iot, separate]
+  follow_up: Vehicles move between cities. How does availability search per city work?
+- id: date_ranges
+  stage: design
+  question: How do you represent rental periods and check availability?
+  points:
+    - text: Half-open day ranges [from, to) - the return day can start another rental.
+      keywords: [half-open, "[)", daterange, return day]
+    - text: An exclusion constraint per vehicle with && on the ranges (btree_gist).
+      keywords: [exclusion, "&&", gist, overlap]
+    - text: Availability = vehicles with NOT EXISTS an overlapping active rental.
+      keywords: [not exists, anti-join, availability]
+  follow_up: Customers can extend a rental while it's ongoing. What can go wrong?
+- id: utilization
+  stage: after
+  question: How would you compute fleet utilization for a month?
+  points:
+    - text: Intersect each rental's range with the month (range * range) and count days.
+      keywords: [intersect, "*", range intersection, upper - lower, days]
+    - text: LEFT JOIN vehicles so idle vehicles count with 0 - and beware that daterange(NULL, NULL) from an unmatched row is unbounded, not empty.
+      keywords: [left join, idle, zero, coalesce, unbounded, "null"]
+    - text: Divide by vehicle-days available in the month for a percentage.
+      keywords: [divide, percentage, vehicle-days, ratio]
+  follow_up: This report runs over 5 years of data daily. How do you make it fast?

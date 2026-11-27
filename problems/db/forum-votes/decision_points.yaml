@@ -1,0 +1,14 @@
+- id: votes
+  question: How are votes stored and changed?
+  good: votes(user_id, post_id, value) with a composite PK and CHECK (value in (-1, 1)); changing a vote is INSERT ... ON CONFLICT DO UPDATE (atomic upsert), not read-then-write.
+  smells: [NO_PRIMARY_KEY, NO_DOMAIN_CHECK]
+- id: same_post_replies
+  question: How do you guarantee a reply is on the same post as its parent?
+  good: A composite foreign key (post_id, parent_id) REFERENCES comments (post_id, id), backed by UNIQUE (post_id, id) - the database enforces it, no trigger needed.
+- id: tree_reads
+  question: How is the comment tree read?
+  good: WITH RECURSIVE over the parent_id adjacency list with a path array for depth-first order; index on (post_id) / (parent_id).
+  smells: [FK_NOT_INDEXED]
+- id: score
+  question: How is the score computed?
+  good: SUM of votes with COALESCE to 0 via LEFT JOIN or subquery; at scale a denormalized score column updated with each vote.

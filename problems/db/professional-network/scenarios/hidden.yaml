@@ -1,0 +1,39 @@
+scenarios:
+  - name: invalid_requests
+    steps:
+      - {op: add_user, args: {name: Ann}, bind: a}
+      - {op: add_user, args: {name: Bob}, bind: b}
+      - {op: request, args: {from_id: $a.id, to_id: $a.id}, expect_error: rejected}
+      - {op: request, args: {from_id: $a.id, to_id: 999999}, expect_error: rejected}
+      - {op: accept, args: {from_id: $a.id, to_id: $b.id}, expect_error: rejected}
+      - {op: request, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: request, args: {from_id: $a.id, to_id: $b.id}, expect_error: rejected}
+      - {op: accept, args: {from_id: $b.id, to_id: $a.id}, expect_error: rejected}
+      - {op: accept, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: accept, args: {from_id: $a.id, to_id: $b.id}, expect_error: rejected}
+      - {op: connections, args: {user_id: $a.id}, expect: [{name: Bob}]}
+  - name: degree_limits_and_cycles
+    steps:
+      - {op: add_user, args: {name: A}, bind: a}
+      - {op: add_user, args: {name: B}, bind: b}
+      - {op: add_user, args: {name: C}, bind: c}
+      - {op: add_user, args: {name: D}, bind: d}
+      - {op: add_user, args: {name: E}, bind: e}
+      - {op: add_user, args: {name: Z}, bind: z}
+      - {op: request, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: accept, args: {from_id: $a.id, to_id: $b.id}}
+      - {op: request, args: {from_id: $b.id, to_id: $c.id}}
+      - {op: accept, args: {from_id: $b.id, to_id: $c.id}}
+      - {op: request, args: {from_id: $c.id, to_id: $a.id}}
+      - {op: accept, args: {from_id: $c.id, to_id: $a.id}}
+      - {op: request, args: {from_id: $c.id, to_id: $d.id}}
+      - {op: accept, args: {from_id: $c.id, to_id: $d.id}}
+      - {op: request, args: {from_id: $d.id, to_id: $e.id}}
+      - {op: accept, args: {from_id: $d.id, to_id: $e.id}}
+      - {op: degree, args: {from_id: $a.id, to_id: $c.id}, expect: 1}
+      - {op: degree, args: {from_id: $a.id, to_id: $d.id}, expect: 2}
+      - {op: degree, args: {from_id: $a.id, to_id: $e.id}, expect: 3}
+      - {op: degree, args: {from_id: $b.id, to_id: $e.id}, expect: 3}
+      - {op: degree, args: {from_id: $a.id, to_id: $z.id}, expect: null}
+      - {op: mutual, args: {a_id: $a.id, b_id: $d.id}, expect: [{name: C}]}
+      - {op: connections, args: {user_id: $c.id}, expect: [{name: A}, {name: B}, {name: D}]}

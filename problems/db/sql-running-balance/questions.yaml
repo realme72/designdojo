@@ -1,0 +1,22 @@
+- id: approach
+  stage: before
+  question: How do you produce a bank statement with a running balance in SQL? What detail is easy to get wrong?
+  points:
+    - text: SUM(amount) OVER (PARTITION BY account ORDER BY time) - a window, not GROUP BY.
+      keywords: [sum over, window, partition by, order by]
+    - text: Two transactions with the same timestamp need a tie-breaker (id) and a ROWS frame, or the default RANGE frame gives both the combined total.
+      keywords: [tie, same timestamp, rows, range, peers, id]
+    - text: Store signed amounts (or debit/credit with a sign) consistently.
+      keywords: [signed, debit, credit, sign]
+  follow_up: How would you produce the opening balance for a statement that starts mid-year?
+- id: storage
+  stage: after
+  question: Balances for millions of accounts are requested constantly. Do you sum transactions every time?
+  points:
+    - text: No - keep a current balance per account updated with each transaction (transactionally), and verify it against the ledger.
+      keywords: [current balance, maintain, cached, verify, reconcil]
+    - text: Periodic snapshots (daily closing balance) make "as of" queries cheap - start from the snapshot and add the remainder.
+      keywords: [snapshot, daily closing, checkpoint, as of]
+    - text: Index (account_id, posted_at) for range sums.
+      keywords: [index, account_id, posted_at]
+  follow_up: A transaction is back-dated two weeks. Which snapshots become wrong?

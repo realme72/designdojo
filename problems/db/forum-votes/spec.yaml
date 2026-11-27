@@ -1,0 +1,11 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user (unique username)., params: {username: text}, returns: one, columns: [id]}
+  add_community: {doc: Create a community (unique name)., params: {name: text}, returns: one, columns: [id]}
+  create_post: {doc: Create a post in a community., params: {community_id: bigint, user_id: bigint, title: text, created_at: timestamptz}, returns: one, columns: [id]}
+  vote: {doc: Cast or change a vote (+1 or -1)., params: {user_id: bigint, post_id: bigint, value: int}, returns: none}
+  unvote: {doc: Remove the user's vote., params: {user_id: bigint, post_id: bigint}, returns: none}
+  comment: {doc: Comment on a post, optionally replying to a comment on the same post., params: {post_id: bigint, user_id: bigint, parent_id: bigint, body: text}, returns: one, columns: [id]}
+  top_posts: {kind: query, doc: Highest-scoring posts of a community., params: {community_id: bigint, n: int}, returns: rows, columns: [post_id, title, score], ordered: true}
+  comment_tree: {kind: query, doc: All comments of a post depth-first., params: {post_id: bigint}, returns: rows, columns: [id, depth, body], ordered: true}
+  karma: {kind: query, doc: Sum of votes on the user's posts., params: {user_id: bigint}, returns: value}

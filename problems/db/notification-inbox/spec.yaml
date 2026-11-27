@@ -1,0 +1,10 @@
+schema: designed
+operations:
+  add_user: {doc: Create a user., params: {name: text}, returns: one, columns: [id]}
+  notify: {doc: Create a notification once per (user, key); nothing if muted. Returns its id., params: {user_id: bigint, type: text, text: text, key: text, created_at: timestamptz}, returns: rows, columns: [id]}
+  mute: {doc: Mute a type., params: {user_id: bigint, type: text}, returns: none}
+  unmute: {doc: Unmute a type., params: {user_id: bigint, type: text}, returns: none}
+  mark_read: {doc: Mark one notification read., params: {notification_id: bigint}, returns: none}
+  mark_all_read: {doc: Mark all the user's notifications read., params: {user_id: bigint}, returns: none}
+  unread_count: {kind: query, doc: Unread notifications of the user., params: {user_id: bigint}, returns: value}
+  inbox: {kind: query, doc: Newest n notifications., params: {user_id: bigint, n: int}, returns: rows, columns: [type, text, read], ordered: true}

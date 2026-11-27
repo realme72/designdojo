@@ -1,0 +1,34 @@
+scenarios:
+  - name: thread_depth_first
+    steps:
+      - {op: add_user, args: {handle: ann}, bind: a}
+      - {op: post, args: {user_id: $a.id, body: root, posted_at: "2030-01-01T10:00:00Z", reply_to: null}, bind: r}
+      - {op: post, args: {user_id: $a.id, body: r1, posted_at: "2030-01-01T10:01:00Z", reply_to: $r.id}, bind: r1}
+      - {op: post, args: {user_id: $a.id, body: r2, posted_at: "2030-01-01T10:02:00Z", reply_to: $r.id}, bind: r2}
+      - {op: post, args: {user_id: $a.id, body: r1a, posted_at: "2030-01-01T10:03:00Z", reply_to: $r1.id}, bind: r1a}
+      - {op: post, args: {user_id: $a.id, body: other, posted_at: "2030-01-01T10:04:00Z", reply_to: null}}
+      - {op: post, args: {user_id: $a.id, body: r1a1, posted_at: "2030-01-01T10:05:00Z", reply_to: $r1a.id}}
+      - {op: thread, args: {tweet_id: $r.id}, expect: [{body: root, depth: 0}, {body: r1, depth: 1}, {body: r1a, depth: 2}, {body: r1a1, depth: 3}, {body: r2, depth: 1}]}
+      - {op: thread, args: {tweet_id: $r2.id}, expect: [{body: r2, depth: 0}]}
+  - name: text_limits_and_refs
+    steps:
+      - {op: add_user, args: {handle: ann}, bind: a}
+      - {op: post, args: {user_id: $a.id, body: "", posted_at: "2030-01-01T10:00:00Z", reply_to: null}, expect_error: rejected}
+      - {op: post, args: {user_id: $a.id, body: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", posted_at: "2030-01-01T10:00:00Z", reply_to: null}, expect_error: rejected}
+      - {op: post, args: {user_id: $a.id, body: "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy", posted_at: "2030-01-01T10:00:00Z", reply_to: null}}
+      - {op: post, args: {user_id: $a.id, body: orphan, posted_at: "2030-01-01T10:00:00Z", reply_to: 999999}, expect_error: rejected}
+      - {op: post, args: {user_id: 999999, body: ghost, posted_at: "2030-01-01T10:00:00Z", reply_to: null}, expect_error: rejected}
+  - name: top_tweets_ranking
+    steps:
+      - {op: add_user, args: {handle: ann}, bind: a}
+      - {op: add_user, args: {handle: bob}, bind: b}
+      - {op: add_user, args: {handle: cy}, bind: c}
+      - {op: post, args: {user_id: $a.id, body: one, posted_at: "2030-01-01T10:00:00Z", reply_to: null}, bind: t1}
+      - {op: post, args: {user_id: $b.id, body: two, posted_at: "2030-01-01T10:00:00Z", reply_to: null}, bind: t2}
+      - {op: post, args: {user_id: $c.id, body: three, posted_at: "2030-01-01T10:00:00Z", reply_to: null}, bind: t3}
+      - {op: retweet, args: {user_id: $b.id, tweet_id: $t1.id}}
+      - {op: retweet, args: {user_id: $a.id, tweet_id: $t2.id}}
+      - {op: retweet, args: {user_id: $c.id, tweet_id: $t2.id}}
+      - {op: post, args: {user_id: $c.id, body: re, posted_at: "2030-01-01T11:00:00Z", reply_to: $t1.id}}
+      - {op: retweet, args: {user_id: $a.id, tweet_id: $t3.id}}
+      - {op: top_tweets, args: {n: 3}, expect: [{id: $t2.id, retweets: 2, replies: 0}, {id: $t1.id, retweets: 1, replies: 1}, {id: $t3.id, retweets: 1, replies: 0}]}

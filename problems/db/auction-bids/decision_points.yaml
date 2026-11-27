@@ -1,0 +1,10 @@
+- id: highest_bid_race
+  question: How do two simultaneous bids not both become "the highest"?
+  good: Keep current_price/current_leader on the item and accept a bid with one conditional UPDATE (WHERE amount >= current_price + 1 AND now < ends_at) - the row lock serializes bids on that item; insert the bid only if the update matched.
+- id: rules
+  question: Which rules are database constraints?
+  good: CHECK start_price > 0, amount > 0, FKs, append-only bids; seller-not-bidder via the conditional update or a trigger.
+  smells: [NO_DOMAIN_CHECK, MISSING_FK]
+- id: winner
+  question: How is the winner derived?
+  good: From current_leader (or the max bid) for auctions with ends_at <= :at; DISTINCT ON / window when computed from bids.

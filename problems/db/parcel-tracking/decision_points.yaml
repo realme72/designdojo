@@ -1,0 +1,11 @@
+- id: event_log
+  question: How is tracking history stored?
+  good: An append-only events table (shipment, status, location, at); current status derived from the latest event or cached on the shipment by the same transaction/trigger.
+- id: transitions
+  question: How are illegal scans rejected?
+  good: An allowed_transitions table checked by a BEFORE INSERT trigger against the latest event, which also rejects time going backwards; status constrained by FK/CHECK.
+  smells: [UNCONSTRAINED_STATUS]
+- id: latest
+  question: How is the latest event per shipment found?
+  good: DISTINCT ON (shipment_id) ORDER BY shipment_id, at DESC, id DESC, or a window function, or a cached current status; index (shipment_id, at).
+  smells: [FK_NOT_INDEXED]

@@ -1,0 +1,8 @@
+id: vehicle-rentals
+title: Vehicle Rentals (Zoomcar)
+difficulty: medium
+category: Booking & reservations
+kind: sql
+time_limit_min: 45
+statement: statement.md
+tags: [daterange, exclusion-constraint, range-intersection, pricing]

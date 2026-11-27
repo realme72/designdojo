@@ -1,0 +1,23 @@
+scenarios:
+  - name: progress_and_next
+    steps:
+      - {op: add_course, args: {title: SQL}, bind: c}
+      - {op: add_lesson, args: {course_id: $c.id, title: Select}, bind: l1}
+      - {op: add_lesson, args: {course_id: $c.id, title: Joins}, bind: l2}
+      - {op: add_lesson, args: {course_id: $c.id, title: Windows}, bind: l3}
+      - {op: add_student, args: {name: Ann}, bind: s}
+      - {op: enroll, args: {student_id: $s.id, course_id: $c.id}}
+      - {op: complete, args: {student_id: $s.id, lesson_id: $l1.id, at: "2030-01-01T10:00:00Z"}}
+      - {op: complete, args: {student_id: $s.id, lesson_id: $l1.id, at: "2030-01-02T10:00:00Z"}}
+      - {op: complete, args: {student_id: $s.id, lesson_id: $l3.id, at: "2030-01-02T10:00:00Z"}}
+      - {op: progress, args: {student_id: $s.id, course_id: $c.id}, expect: {done: 2, total: 3, percent: 66}}
+      - {op: next_lesson, args: {student_id: $s.id, course_id: $c.id}, expect: [{title: Joins}]}
+  - name: enrolled_only
+    steps:
+      - {op: add_course, args: {title: SQL}, bind: c}
+      - {op: add_course, args: {title: Go}, bind: g}
+      - {op: add_lesson, args: {course_id: $g.id, title: Intro}, bind: gl}
+      - {op: add_student, args: {name: Ann}, bind: s}
+      - {op: enroll, args: {student_id: $s.id, course_id: $c.id}}
+      - {op: enroll, args: {student_id: $s.id, course_id: $c.id}, expect_error: rejected}
+      - {op: complete, args: {student_id: $s.id, lesson_id: $gl.id, at: "2030-01-01T10:00:00Z"}, expect_error: rejected}
